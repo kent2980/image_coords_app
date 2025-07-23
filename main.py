@@ -1,6 +1,5 @@
-def main():
-    print("Hello from image-coords-app!")
-
+from src.image_coords_app import CoordinateApp
 
 if __name__ == "__main__":
-    main()
+    app = CoordinateApp()
+    app.run_app()

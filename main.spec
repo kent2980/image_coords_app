@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ['viewer_app.py'],
+    ['main.py'],
     pathex=[],
     binaries=[],
     datas=[],
@@ -22,7 +22,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='viewer_app',
+    name='main',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -38,7 +38,7 @@ exe = EXE(
 )
 app = BUNDLE(
     exe,
-    name='viewer_app.app',
+    name='main.app',
     icon=None,
     bundle_identifier=None,
 )

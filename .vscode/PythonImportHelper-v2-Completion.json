@@ -69,22 +69,6 @@
         "documentation": {}
     },
     {
-        "label": "filedialog",
-        "importPath": "tkinter",
-        "description": "tkinter",
-        "isExtraImport": true,
-        "detail": "tkinter",
-        "documentation": {}
-    },
-    {
-        "label": "messagebox",
-        "importPath": "tkinter",
-        "description": "tkinter",
-        "isExtraImport": true,
-        "detail": "tkinter",
-        "documentation": {}
-    },
-    {
         "label": "Image",
         "importPath": "PIL",
         "description": "PIL",
@@ -101,27 +85,11 @@
         "documentation": {}
     },
     {
-        "label": "Image",
-        "importPath": "PIL",
-        "description": "PIL",
+        "label": "CoordinateApp",
+        "importPath": "src.image_coords_app",
+        "description": "src.image_coords_app",
         "isExtraImport": true,
-        "detail": "PIL",
-        "documentation": {}
-    },
-    {
-        "label": "ImageTk",
-        "importPath": "PIL",
-        "description": "PIL",
-        "isExtraImport": true,
-        "detail": "PIL",
-        "documentation": {}
-    },
-    {
-        "label": "load_coordinates",
-        "importPath": "utils.coords_loader",
-        "description": "utils.coords_loader",
-        "isExtraImport": true,
-        "detail": "utils.coords_loader",
+        "detail": "src.image_coords_app",
         "documentation": {}
     },
     {
@@ -215,138 +183,12 @@
         "documentation": {}
     },
     {
-        "label": "on_click",
-        "kind": 2,
+        "label": "CoordinateApp",
+        "kind": 6,
         "importPath": "src.image_coords_app",
         "description": "src.image_coords_app",
-        "peekOfCode": "def on_click(event):\n    x, y = event.x, event.y\n    coordinates.append((x, y))\n    canvas.create_oval(x - 3, y - 3, x + 3, y + 3, fill=\"red\")\ndef save_coordinates():\n    if not coordinates:\n        messagebox.showinfo(\"Info\", \"座標がありません。\")\n        return\n    file_path = filedialog.asksaveasfilename(\n        defaultextension=\".txt\",",
+        "peekOfCode": "class CoordinateApp:\n    def __init__(self):\n        self.root = tk.Tk()\n        self.root.title(\"Image Coordinate App\")\n        self.canvas = tk.Canvas(self.root)\n        self.canvas.pack()\n        self.btn_select = tk.Button(\n            self.root, text=\"Select Image\", command=self.select_image\n        )\n        self.btn_select.pack(side=\"left\", padx=5, pady=5)",
         "detail": "src.image_coords_app",
-        "documentation": {}
-    },
-    {
-        "label": "save_coordinates",
-        "kind": 2,
-        "importPath": "src.image_coords_app",
-        "description": "src.image_coords_app",
-        "peekOfCode": "def save_coordinates():\n    if not coordinates:\n        messagebox.showinfo(\"Info\", \"座標がありません。\")\n        return\n    file_path = filedialog.asksaveasfilename(\n        defaultextension=\".txt\",\n        filetypes=[(\"Text files\", \"*.txt\"), (\"All files\", \"*.*\")],\n    )\n    if not file_path:\n        return",
-        "detail": "src.image_coords_app",
-        "documentation": {}
-    },
-    {
-        "label": "select_image",
-        "kind": 2,
-        "importPath": "src.image_coords_app",
-        "description": "src.image_coords_app",
-        "peekOfCode": "def select_image():\n    file_path = filedialog.askopenfilename(\n        filetypes=[(\"Image files\", \"*.png;*.jpg;*.jpeg;*.bmp;*.gif\")]\n    )\n    if not file_path:\n        return\n    try:\n        img = Image.open(file_path)\n    except Exception as e:\n        messagebox.showerror(\"エラー\", f\"画像を開けませんでした: {e}\")",
-        "detail": "src.image_coords_app",
-        "documentation": {}
-    },
-    {
-        "label": "coordinates",
-        "kind": 5,
-        "importPath": "src.image_coords_app",
-        "description": "src.image_coords_app",
-        "peekOfCode": "coordinates = []\ndef on_click(event):\n    x, y = event.x, event.y\n    coordinates.append((x, y))\n    canvas.create_oval(x - 3, y - 3, x + 3, y + 3, fill=\"red\")\ndef save_coordinates():\n    if not coordinates:\n        messagebox.showinfo(\"Info\", \"座標がありません。\")\n        return\n    file_path = filedialog.asksaveasfilename(",
-        "detail": "src.image_coords_app",
-        "documentation": {}
-    },
-    {
-        "label": "root",
-        "kind": 5,
-        "importPath": "src.image_coords_app",
-        "description": "src.image_coords_app",
-        "peekOfCode": "root = tk.Tk()\nroot.title(\"画像座標取得アプリ\")\ncanvas = tk.Canvas(root)\ncanvas.pack()\ncanvas.bind(\"<Button-1>\", on_click)\nbtn_select = tk.Button(root, text=\"画像を選択\", command=select_image)\nbtn_select.pack(side=\"left\", padx=5, pady=5)\nbtn_save = tk.Button(root, text=\"座標を保存\", command=save_coordinates)\nbtn_save.pack(side=\"left\", padx=5, pady=5)\nroot.mainloop()",
-        "detail": "src.image_coords_app",
-        "documentation": {}
-    },
-    {
-        "label": "canvas",
-        "kind": 5,
-        "importPath": "src.image_coords_app",
-        "description": "src.image_coords_app",
-        "peekOfCode": "canvas = tk.Canvas(root)\ncanvas.pack()\ncanvas.bind(\"<Button-1>\", on_click)\nbtn_select = tk.Button(root, text=\"画像を選択\", command=select_image)\nbtn_select.pack(side=\"left\", padx=5, pady=5)\nbtn_save = tk.Button(root, text=\"座標を保存\", command=save_coordinates)\nbtn_save.pack(side=\"left\", padx=5, pady=5)\nroot.mainloop()",
-        "detail": "src.image_coords_app",
-        "documentation": {}
-    },
-    {
-        "label": "btn_select",
-        "kind": 5,
-        "importPath": "src.image_coords_app",
-        "description": "src.image_coords_app",
-        "peekOfCode": "btn_select = tk.Button(root, text=\"画像を選択\", command=select_image)\nbtn_select.pack(side=\"left\", padx=5, pady=5)\nbtn_save = tk.Button(root, text=\"座標を保存\", command=save_coordinates)\nbtn_save.pack(side=\"left\", padx=5, pady=5)\nroot.mainloop()",
-        "detail": "src.image_coords_app",
-        "documentation": {}
-    },
-    {
-        "label": "btn_save",
-        "kind": 5,
-        "importPath": "src.image_coords_app",
-        "description": "src.image_coords_app",
-        "peekOfCode": "btn_save = tk.Button(root, text=\"座標を保存\", command=save_coordinates)\nbtn_save.pack(side=\"left\", padx=5, pady=5)\nroot.mainloop()",
-        "detail": "src.image_coords_app",
-        "documentation": {}
-    },
-    {
-        "label": "display_coordinates",
-        "kind": 2,
-        "importPath": "src.viewer_app",
-        "description": "src.viewer_app",
-        "peekOfCode": "def display_coordinates(coordinates):\n    for x, y in coordinates:\n        canvas.create_oval(x - 3, y - 3, x + 3, y + 3, fill=\"red\")\ndef load_and_display(coords_path):\n    try:\n        coordinates = load_coordinates(coords_path)\n        display_coordinates(coordinates)\n    except Exception as e:\n        messagebox.showerror(\"Error\", f\"Failed to load coordinates: {e}\")\ndef select_and_show_image():",
-        "detail": "src.viewer_app",
-        "documentation": {}
-    },
-    {
-        "label": "load_and_display",
-        "kind": 2,
-        "importPath": "src.viewer_app",
-        "description": "src.viewer_app",
-        "peekOfCode": "def load_and_display(coords_path):\n    try:\n        coordinates = load_coordinates(coords_path)\n        display_coordinates(coordinates)\n    except Exception as e:\n        messagebox.showerror(\"Error\", f\"Failed to load coordinates: {e}\")\ndef select_and_show_image():\n    global img, tk_img, canvas\n    file_path = filedialog.askopenfilename(\n        title=\"画像ファイルを選択\",",
-        "detail": "src.viewer_app",
-        "documentation": {}
-    },
-    {
-        "label": "select_and_show_image",
-        "kind": 2,
-        "importPath": "src.viewer_app",
-        "description": "src.viewer_app",
-        "peekOfCode": "def select_and_show_image():\n    global img, tk_img, canvas\n    file_path = filedialog.askopenfilename(\n        title=\"画像ファイルを選択\",\n        filetypes=[(\"Image files\", \"*.jpg;*.jpeg;*.png;*.bmp;*.gif\")],\n    )\n    if not file_path:\n        return\n    img = Image.open(file_path)\n    tk_img = ImageTk.PhotoImage(img)",
-        "detail": "src.viewer_app",
-        "documentation": {}
-    },
-    {
-        "label": "root",
-        "kind": 5,
-        "importPath": "src.viewer_app",
-        "description": "src.viewer_app",
-        "peekOfCode": "root = tk.Tk()\nroot.title(\"Coordinate Viewer\")\ncanvas = tk.Canvas(root)\ncanvas.pack()\nbtn = tk.Button(root, text=\"画像を選択\", command=select_and_show_image)\nbtn.pack()\nroot.mainloop()",
-        "detail": "src.viewer_app",
-        "documentation": {}
-    },
-    {
-        "label": "canvas",
-        "kind": 5,
-        "importPath": "src.viewer_app",
-        "description": "src.viewer_app",
-        "peekOfCode": "canvas = tk.Canvas(root)\ncanvas.pack()\nbtn = tk.Button(root, text=\"画像を選択\", command=select_and_show_image)\nbtn.pack()\nroot.mainloop()",
-        "detail": "src.viewer_app",
-        "documentation": {}
-    },
-    {
-        "label": "btn",
-        "kind": 5,
-        "importPath": "src.viewer_app",
-        "description": "src.viewer_app",
-        "peekOfCode": "btn = tk.Button(root, text=\"画像を選択\", command=select_and_show_image)\nbtn.pack()\nroot.mainloop()",
-        "detail": "src.viewer_app",
-        "documentation": {}
-    },
-    {
-        "label": "main",
-        "kind": 2,
-        "importPath": "main",
-        "description": "main",
-        "peekOfCode": "def main():\n    print(\"Hello from image-coords-app!\")\nif __name__ == \"__main__\":\n    main()",
-        "detail": "main",
         "documentation": {}
     }
 ]
