@@ -65,7 +65,7 @@ pip install pillow pyinstaller
 ### 2. ビルドコマンド（画像同格）
 
 ```bash
-pyinstaller --onefile --windowed main.py
+pyinstaller --onefile --windowed --name image_coords_app main.py
 ```
 
 > ✅ `:`（コロン）で区切ること（macOS）
@@ -98,7 +98,7 @@ pip install pillow pyinstaller
 ### 2. ビルドコマンド（画像同格）
 
 ```bash
-pyinstaller --onefile --windowed main.py
+pyinstaller --onefile --windowed --name image_coords_app main.py
 ```
 
 > ✅ `;`（セミコロン）で区切ること（Windows）
