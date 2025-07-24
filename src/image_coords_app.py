@@ -180,4 +180,3 @@ class CoordinateApp:
 
     def run_app(self):
         self.root.mainloop()
-        self.root.mainloop()
