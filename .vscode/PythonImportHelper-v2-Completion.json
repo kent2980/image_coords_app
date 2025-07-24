@@ -187,7 +187,25 @@
         "kind": 6,
         "importPath": "src.image_coords_app",
         "description": "src.image_coords_app",
-        "peekOfCode": "class CoordinateApp:\n    def __init__(self):\n        self.root = tk.Tk()\n        self.root.title(\"Image Coordinate App\")\n        self.canvas = tk.Canvas(self.root)\n        self.canvas.pack()\n        self.btn_select = tk.Button(\n            self.root, text=\"Select Image\", command=self.select_image\n        )\n        self.btn_select.pack(side=\"left\", padx=5, pady=5)",
+        "peekOfCode": "class CoordinateApp:\n    def __init__(self):\n        self.root = tk.Tk()\n        self.root.title(\"Image Coordinate App\")\n        self.canvas = tk.Canvas(self.root, width=CANVAS_WIDTH, height=CANVAS_HEIGHT)\n        self.canvas.pack()\n        self.btn_select = tk.Button(\n            self.root, text=\"Select Image\", command=self.select_image\n        )\n        self.btn_select.pack(side=\"left\", padx=5, pady=5)",
+        "detail": "src.image_coords_app",
+        "documentation": {}
+    },
+    {
+        "label": "CANVAS_WIDTH",
+        "kind": 5,
+        "importPath": "src.image_coords_app",
+        "description": "src.image_coords_app",
+        "peekOfCode": "CANVAS_WIDTH = 800\nCANVAS_HEIGHT = 600\nclass CoordinateApp:\n    def __init__(self):\n        self.root = tk.Tk()\n        self.root.title(\"Image Coordinate App\")\n        self.canvas = tk.Canvas(self.root, width=CANVAS_WIDTH, height=CANVAS_HEIGHT)\n        self.canvas.pack()\n        self.btn_select = tk.Button(\n            self.root, text=\"Select Image\", command=self.select_image",
+        "detail": "src.image_coords_app",
+        "documentation": {}
+    },
+    {
+        "label": "CANVAS_HEIGHT",
+        "kind": 5,
+        "importPath": "src.image_coords_app",
+        "description": "src.image_coords_app",
+        "peekOfCode": "CANVAS_HEIGHT = 600\nclass CoordinateApp:\n    def __init__(self):\n        self.root = tk.Tk()\n        self.root.title(\"Image Coordinate App\")\n        self.canvas = tk.Canvas(self.root, width=CANVAS_WIDTH, height=CANVAS_HEIGHT)\n        self.canvas.pack()\n        self.btn_select = tk.Button(\n            self.root, text=\"Select Image\", command=self.select_image\n        )",
         "detail": "src.image_coords_app",
         "documentation": {}
     }
