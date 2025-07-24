@@ -5,13 +5,15 @@ from tkinter import filedialog, messagebox
 
 from PIL import Image, ImageTk
 
+CANVAS_WIDTH = 800
+CANVAS_HEIGHT = 600
 
 class CoordinateApp:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("Image Coordinate App")
 
-        self.canvas = tk.Canvas(self.root)
+        self.canvas = tk.Canvas(self.root, width=CANVAS_WIDTH, height=CANVAS_HEIGHT)
         self.canvas.pack()
 
         self.btn_select = tk.Button(
@@ -116,12 +118,13 @@ class CoordinateApp:
 
         try:
             img = Image.open(image_path)
+            img = self._resize_image(img)  # リサイズ追加
         except Exception as e:
             messagebox.showerror("エラー", f"画像を開けませんでした: {e}")
             return
 
         self.tk_img = ImageTk.PhotoImage(img)
-        self.canvas.config(width=img.width, height=img.height)
+        self.canvas.config(width=CANVAS_WIDTH, height=CANVAS_HEIGHT)
         self.canvas.delete("all")
         self.canvas.create_image(0, 0, anchor="nw", image=self.tk_img)
         self.coordinates = [
@@ -141,6 +144,18 @@ class CoordinateApp:
         self.current_image_path = image_path
         self.current_json_path = file_path
         self.current_comment = comment
+    def _resize_image(self, img):
+        # アスペクト比を維持してリサイズ
+        img_ratio = img.width / img.height
+        canvas_ratio = CANVAS_WIDTH / CANVAS_HEIGHT
+
+        if img_ratio > canvas_ratio:
+            new_width = CANVAS_WIDTH
+            new_height = int(CANVAS_WIDTH / img_ratio)
+        else:
+            new_height = CANVAS_HEIGHT
+            new_width = int(CANVAS_HEIGHT * img_ratio)
+        return img.resize((new_width, new_height), Image.LANCZOS)
 
     def select_image(self):
         file_path = filedialog.askopenfilename(
@@ -150,17 +165,16 @@ class CoordinateApp:
             return
         try:
             img = Image.open(file_path)
+            img = self._resize_image(img)  # リサイズ追加
         except Exception as e:
             messagebox.showerror("エラー", f"画像を開けませんでした: {e}")
             return
         self.tk_img = ImageTk.PhotoImage(img)
-        self.canvas.config(width=img.width, height=img.height)
+        self.canvas.config(width=CANVAS_WIDTH, height=CANVAS_HEIGHT)
         self.canvas.delete("all")
         self.canvas.create_image(0, 0, anchor="nw", image=self.tk_img)
         self.coordinates.clear()
-        self.current_image_path = file_path  # 画像パスを保存
-
-        # 新しい画像を選択した場合はjson保存先情報をリセット
+        self.current_image_path = file_path
         self.current_json_path = None
         self.current_comment = ""
 
