@@ -25,12 +25,17 @@ class CoordinateApp:
             'on_mode_change': self.on_mode_change,
             'open_settings': self.open_settings,
             'undo_action': self.undo_action,
-            'redo_action': self.redo_action
+            'redo_action': self.redo_action,
+            'on_settings_changed': self.on_settings_changed,
+            'on_image_loaded': self.on_image_loaded
         }
         self.ui = UIComponents(self.root, callbacks)
         
         # UIをセットアップ
         self._setup_ui()
+        
+        # 設定を読み込んでデフォルト値を適用
+        self._load_and_apply_settings()
         
         # メニューボタンを設定
         self._setup_menu_buttons()
@@ -51,6 +56,21 @@ class CoordinateApp:
         self.canvas = self.ui.setup_canvas()
         
         self.ui.setup_sidebar()
+        
+        # 初期画像を表示（キャンバス作成後）
+        self.ui._load_and_display_image()
+        
+    def _load_and_apply_settings(self):
+        """設定を読み込んで適用"""
+        # FileManagerから設定を読み込み
+        settings = self.file_manager._load_settings_from_ini()
+        
+        # デフォルトモードを適用
+        default_mode = settings.get('default_mode', '編集')
+        self.ui.mode_var.set(default_mode)
+        
+        # モード変更を適用
+        self.on_mode_change()
         
     def _setup_menu_buttons(self):
         """メニューボタンを設定"""
@@ -239,7 +259,12 @@ class CoordinateApp:
         
     def open_settings(self):
         """設定ダイアログを開く"""
-        self.file_manager.create_settings_dialog(self.root)
+        self.file_manager.create_settings_dialog(self.root, self.on_settings_changed)
+    
+    def on_settings_changed(self):
+        """設定変更時のコールバック"""
+        # モデル選択リストを更新
+        self.ui.update_model_combobox()
     
     def undo_action(self):
         """元に戻す操作"""
@@ -250,6 +275,15 @@ class CoordinateApp:
         """進む操作"""
         if self.coordinate_manager.redo():
             self.coordinate_manager.redraw_all_markers(self.canvas)
+    
+    def on_image_loaded(self, image_info):
+        """画像が読み込まれた際のコールバック"""
+        # coordinate_managerに画像情報を設定
+        self.coordinate_manager.set_image_info(image_info)
+        
+        # マーカーをクリア（新しい画像なので）
+        self.coordinate_manager.clear_markers()
+        self.coordinate_manager.redraw_all_markers(self.canvas)
         
     def run_app(self):
         """アプリケーションを実行"""

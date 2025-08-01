@@ -7,6 +7,45 @@
 - 使用ライブラリ：`tkinter`, `Pillow`, `PyInstaller`
 - 表示画像：`your_image.jpg`（例：`sg180306_01-thumb-570xauto-21122.jpg`）
 
+## 📋 設定ファイル
+
+### アプリケーション設定（自動生成）
+アプリケーションの設定は、ユーザーのホームディレクトリに自動的に保存されます：
+- **ファイル名**: `image_coords_settings.ini`
+- **場所**: `%USERPROFILE%\image_coords_settings.ini` (Windows) / `~/image_coords_settings.ini` (Mac/Linux)
+
+**設定項目**:
+```ini
+[Settings]
+image_directory = C:\path\to\images
+data_directory = C:\path\to\data
+default_mode = 編集
+```
+
+### ドロップダウンリスト設定
+アプリケーションの動作をカスタマイズするため、実行ファイルと同じディレクトリに以下のテキストファイルを配置してください：
+
+### models.txt (不要 - 現在は画像ディレクトリから自動読み込み)
+~~モデル選択のドロップダウンに表示される項目を定義します。~~
+現在は設定ウィンドウで指定した画像ディレクトリ内の画像ファイル名が自動的に読み込まれます。
+
+### defects.txt
+不良名選択のドロップダウンに表示される項目を定義します。
+```
+ズレ
+裏
+飛び
+傷
+汚れ
+欠け
+変色
+寸法不良
+形状不良
+その他
+```
+
+**注意**: ファイルが存在しない場合は、デフォルト値が使用されます。
+
 ---
 
 ## 📦 アプリのコード（共通）

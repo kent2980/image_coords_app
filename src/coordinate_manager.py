@@ -141,3 +141,22 @@ class CoordinateManager:
     def get_current_image_path(self):
         """現在の画像パスを取得"""
         return self.current_image_path
+    
+    def set_image_info(self, image_info):
+        """画像情報を設定"""
+        self.current_image_path = image_info['image_path']
+        # 画像の表示領域情報も保存（座標変換で使用）
+        self.image_display_info = {
+            'display_x': image_info['display_x'],
+            'display_y': image_info['display_y'],
+            'display_width': image_info['display_width'],
+            'display_height': image_info['display_height'],
+            'original_width': image_info['original_width'],
+            'original_height': image_info['original_height']
+        }
+    
+    def clear_markers(self):
+        """座標マーカーをクリア"""
+        self.coordinates = []
+        # 状態を保存
+        self._save_state()
