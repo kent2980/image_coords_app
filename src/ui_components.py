@@ -107,31 +107,6 @@ class UIComponents:
             print(f"画像ファイル読み込みエラー: {e}")
             return []
     
-    def _load_models_from_file(self):
-        """設定で指定された画像ディレクトリから画像ファイル名を読み込み"""
-        try:
-            # 設定ファイルから画像ディレクトリを取得
-            settings = self._load_settings()
-            image_directory = settings.get('image_directory', '')
-            
-            if image_directory and image_directory != "未選択":
-                # 画像ディレクトリから画像ファイル名を取得
-                image_files = self._get_image_files_from_directory(image_directory)
-                
-                if image_files:
-                    return image_files
-                else:
-                    # 画像ファイルが見つからない場合はディレクトリ名を表示
-                    return [f"画像なし（{os.path.basename(image_directory)}）"]
-            else:
-                # 画像ディレクトリが設定されていない場合
-                return ["画像ディレクトリが未設定"]
-                
-        except Exception as e:
-            # エラーが発生した場合はデフォルト値を返す
-            print(f"画像ファイル読み込みエラー: {e}")
-            return ["設定エラー"]
-    
     def _load_defects_from_file(self):
         """外部ファイルから不良名リストを読み込み"""
         try:
@@ -289,7 +264,13 @@ class UIComponents:
         tk.Label(model_frame, text="モデル:", font=("Arial", 10)).pack(side=tk.LEFT)
         
         # 設定で指定された画像ディレクトリから画像ファイル名を読み込み
-        model_values = self._load_models_from_file()
+        model_data = self.callbacks.get('load_models_from_file', lambda: [])()
+        
+        # 辞書リストからファイル名のみを抽出してコンボボックス用のリストを作成
+        model_values = [list(item.keys())[0] for item in model_data]
+        
+        # 辞書データを保持（画像パス取得で使用）
+        self.model_data = model_data
         
         self.model_combobox = ttk.Combobox(
             model_frame,
@@ -428,8 +409,14 @@ class UIComponents:
     def update_model_combobox(self):
         """モデル選択リストを更新"""
         if hasattr(self, 'model_combobox'):
-            # 新しいモデルリストを取得
-            model_values = self._load_models_from_file()
+            # 新しいモデルデータを取得
+            model_data = self.callbacks.get('load_models_from_file', lambda: [])()
+            
+            # 辞書リストからファイル名のみを抽出
+            model_values = [list(item.keys())[0] for item in model_data]
+            
+            # 辞書データを保持
+            self.model_data = model_data
             
             # コンボボックスの値を更新
             self.model_combobox['values'] = model_values
@@ -501,79 +488,124 @@ class UIComponents:
                     self.canvas.delete("all")
                 return
             
-            # 設定から画像ディレクトリを取得
-            settings = self._load_settings()
-            image_directory = settings.get('image_directory', '')
-            
-            if not image_directory or not os.path.exists(image_directory):
-                return
-            
-            # 画像ファイルのパスを構築
-            # サポートする拡張子を順番に試す
-            image_extensions = ['.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tiff', '.webp']
+            # 保存されている辞書データから画像パスを取得
             image_path = None
+            if hasattr(self, 'model_data'):
+                for item in self.model_data:
+                    if selected_model in item:
+                        image_path = item[selected_model]
+                        break
             
-            for ext in image_extensions:
-                potential_path = os.path.join(image_directory, selected_model + ext)
-                if os.path.exists(potential_path):
-                    image_path = potential_path
-                    break
-            
+            # 辞書データがない場合は従来の方法で検索
             if not image_path:
+                # 設定から画像ディレクトリを取得
+                settings = self._load_settings()
+                image_directory = settings.get('image_directory', '')
+                
+                if not image_directory or not os.path.exists(image_directory):
+                    return
+                
+                # 画像ファイルのパスを構築
+                # サポートする拡張子を順番に試す
+                image_extensions = ['.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tiff', '.webp']
+                
+                for ext in image_extensions:
+                    potential_path = os.path.join(image_directory, selected_model + ext)
+                    if os.path.exists(potential_path):
+                        image_path = potential_path
+                        break
+            
+            if not image_path or not os.path.exists(image_path):
                 # 画像ファイルが見つからない場合はキャンバスをクリア
                 if hasattr(self, 'canvas') and self.canvas:
                     self.canvas.delete("all")
                 return
             
             # 画像を読み込み
-            with Image.open(image_path) as pil_image:
-                # キャンバスサイズに合わせて画像をリサイズ（アスペクト比を保持）
-                canvas_width = self.CANVAS_WIDTH
-                canvas_height = self.CANVAS_HEIGHT
+            if self.callbacks.get('load_image_for_display'):
+                image_data = self.callbacks['load_image_for_display'](image_path)
                 
-                # 元の画像サイズ
-                orig_width, orig_height = pil_image.size
-                
-                # アスペクト比を計算
-                aspect_ratio = orig_width / orig_height
-                
-                # キャンバスに収まるサイズを計算
-                if aspect_ratio > canvas_width / canvas_height:
-                    # 横長の画像
-                    new_width = canvas_width
-                    new_height = int(canvas_width / aspect_ratio)
-                else:
-                    # 縦長の画像
-                    new_height = canvas_height
-                    new_width = int(canvas_height * aspect_ratio)
-                
-                # 画像をリサイズ
-                resized_image = pil_image.resize((new_width, new_height), Image.Resampling.LANCZOS)
-                
-                # PhotoImageに変換
-                self.current_image = ImageTk.PhotoImage(resized_image)
+                if not image_data:
+                    # 画像読み込みに失敗した場合はキャンバスをクリア
+                    if hasattr(self, 'canvas') and self.canvas:
+                        self.canvas.delete("all")
+                    return
                 
                 # キャンバスに表示
                 if hasattr(self, 'canvas') and self.canvas:
                     self.canvas.delete("all")
                     
                     # 画像を中央に配置
-                    x = (canvas_width - new_width) // 2
-                    y = (canvas_height - new_height) // 2
+                    canvas_width = self.CANVAS_WIDTH
+                    canvas_height = self.CANVAS_HEIGHT
+                    x = (canvas_width - image_data['display_width']) // 2
+                    y = (canvas_height - image_data['display_height']) // 2
                     
+                    # coordinate_managerで読み込まれたImageTkオブジェクトを使用
+                    self.current_image = image_data['tk_image']
                     self.canvas.create_image(x, y, anchor=tk.NW, image=self.current_image)
                     
                     # 画像の表示領域をcoordinate_managerに通知
                     if self.callbacks.get('on_image_loaded'):
                         self.callbacks['on_image_loaded']({
-                            'image_path': image_path,
+                            'image_path': image_data['image_path'],
                             'display_x': x,
                             'display_y': y,
-                            'display_width': new_width,
-                            'display_height': new_height,
-                            'original_width': orig_width,
-                            'original_height': orig_height
+                            'display_width': image_data['display_width'],
+                            'display_height': image_data['display_height'],
+                            'original_width': image_data['original_width'],
+                            'original_height': image_data['original_height']
                         })
+            else:
+                # フォールバック: 従来の方法で画像を読み込み
+                with Image.open(image_path) as pil_image:
+                    # キャンバスサイズに合わせて画像をリサイズ（アスペクト比を保持）
+                    canvas_width = self.CANVAS_WIDTH
+                    canvas_height = self.CANVAS_HEIGHT
+                    
+                    # 元の画像サイズ
+                    orig_width, orig_height = pil_image.size
+                    
+                    # アスペクト比を計算
+                    aspect_ratio = orig_width / orig_height
+                    
+                    # キャンバスに収まるサイズを計算
+                    if aspect_ratio > canvas_width / canvas_height:
+                        # 横長の画像
+                        new_width = canvas_width
+                        new_height = int(canvas_width / aspect_ratio)
+                    else:
+                        # 縦長の画像
+                        new_height = canvas_height
+                        new_width = int(canvas_height * aspect_ratio)
+                    
+                    # 画像をリサイズ
+                    resized_image = pil_image.resize((new_width, new_height), Image.Resampling.LANCZOS)
+                    
+                    # PhotoImageに変換
+                    self.current_image = ImageTk.PhotoImage(resized_image)
+                    
+                    # キャンバスに表示
+                    if hasattr(self, 'canvas') and self.canvas:
+                        self.canvas.delete("all")
+                        
+                        # 画像を中央に配置
+                        x = (canvas_width - new_width) // 2
+                        y = (canvas_height - new_height) // 2
+                        
+                        self.canvas.create_image(x, y, anchor=tk.NW, image=self.current_image)
+                        
+                        # 画像の表示領域をcoordinate_managerに通知
+                        if self.callbacks.get('on_image_loaded'):
+                            self.callbacks['on_image_loaded']({
+                                'image_path': image_path,
+                                'display_x': x,
+                                'display_y': y,
+                                'display_width': new_width,
+                                'display_height': new_height,
+                                'original_width': orig_width,
+                                'original_height': orig_height
+                            })
         
         except Exception as e:
             print(f"画像読み込みエラー: {e}")

@@ -4,6 +4,7 @@ Main Application Module
 """
 
 import tkinter as tk
+import os
 from .ui_components import UIComponents
 from .coordinate_manager import CoordinateManager
 from .file_manager import FileManager
@@ -27,7 +28,9 @@ class CoordinateApp:
             'undo_action': self.undo_action,
             'redo_action': self.redo_action,
             'on_settings_changed': self.on_settings_changed,
-            'on_image_loaded': self.on_image_loaded
+            'on_image_loaded': self.on_image_loaded,
+            'load_models_from_file': self.load_models_from_file,
+            'load_image_for_display': self.load_image_for_display
         }
         self.ui = UIComponents(self.root, callbacks)
         
@@ -284,6 +287,109 @@ class CoordinateApp:
         # マーカーをクリア（新しい画像なので）
         self.coordinate_manager.clear_markers()
         self.coordinate_manager.redraw_all_markers(self.canvas)
+    
+    def load_models_from_file(self):
+        """設定で指定された画像ディレクトリから画像ファイル名を読み込み
+        
+        Returns:
+            List[Dict[str, str]]: [{"filename": "フルパス"}, ...] 形式のリスト
+        """
+        try:
+            # 設定ファイルから画像ディレクトリを取得
+            settings = self.file_manager._load_settings_from_ini()
+            image_directory = settings.get('image_directory', '')
+            
+            if image_directory and image_directory != "未選択":
+                # 画像ディレクトリから画像ファイル名とフルパスを取得
+                image_files_dict = self._get_image_files_with_paths(image_directory)
+                
+                if image_files_dict:
+                    return image_files_dict
+                else:
+                    # 画像ファイルが見つからない場合
+                    return [{"画像なし": f"画像なし（{os.path.basename(image_directory)}）"}]
+            else:
+                # 画像ディレクトリが設定されていない場合
+                return [{"画像ディレクトリが未設定": "画像ディレクトリが未設定"}]
+                
+        except Exception as e:
+            # エラーが発生した場合はデフォルト値を返す
+            print(f"画像ファイル読み込みエラー: {e}")
+            return [{"設定エラー": "設定エラー"}]
+    
+    def _get_image_files_with_paths(self, directory):
+        """指定されたディレクトリから画像ファイル名とフルパスの辞書リストを取得
+        
+        Returns:
+            List[Dict[str, str]]: [{"filename": "フルパス"}, ...] 形式のリスト
+        """
+        import os
+        
+        if not directory or not os.path.exists(directory):
+            return []
+        
+        # サポートする画像拡張子
+        image_extensions = {'.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tiff', '.webp'}
+        
+        try:
+            image_files_dict = []
+            for filename in os.listdir(directory):
+                full_path = os.path.join(directory, filename)
+                if os.path.isfile(full_path):
+                    # 拡張子を取得して小文字に変換
+                    _, ext = os.path.splitext(filename)
+                    if ext.lower() in image_extensions:
+                        # 拡張子を除いたファイル名をキーに、フルパスを値にした辞書を作成
+                        name_without_ext = os.path.splitext(filename)[0]
+                        image_files_dict.append({name_without_ext: full_path})
+            
+            # ファイル名でソート
+            return sorted(image_files_dict, key=lambda x: list(x.keys())[0])
+            
+        except Exception as e:
+            print(f"画像ファイル読み込みエラー: {e}")
+            return []
+    
+    def load_image_for_display(self, image_path):
+        """表示用に画像を読み込み、coordinate_managerを使用してリサイズ"""
+        try:
+            # coordinate_managerのload_imageメソッドを使用
+            tk_image = self.coordinate_manager.load_image(image_path)
+            
+            # 画像情報を取得（元のサイズなど）
+            from PIL import Image
+            with Image.open(image_path) as pil_image:
+                orig_width, orig_height = pil_image.size
+            
+            # 表示サイズを計算（UIComponentsの定数を使用）
+            canvas_width = self.ui.CANVAS_WIDTH
+            canvas_height = self.ui.CANVAS_HEIGHT
+            
+            # アスペクト比を計算
+            aspect_ratio = orig_width / orig_height
+            
+            # キャンバスに収まるサイズを計算
+            if aspect_ratio > canvas_width / canvas_height:
+                # 横長の画像
+                new_width = canvas_width
+                new_height = int(canvas_width / aspect_ratio)
+            else:
+                # 縦長の画像
+                new_height = canvas_height
+                new_width = int(canvas_height * aspect_ratio)
+            
+            return {
+                'tk_image': tk_image,
+                'display_width': new_width,
+                'display_height': new_height,
+                'original_width': orig_width,
+                'original_height': orig_height,
+                'image_path': image_path
+            }
+            
+        except Exception as e:
+            print(f"画像読み込みエラー: {e}")
+            return None
         
     def run_app(self):
         """アプリケーションを実行"""
