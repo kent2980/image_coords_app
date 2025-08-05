@@ -45,7 +45,89 @@ class CoordinateApp:
         
         # イベントバインド
         self._bind_events()
+
+        # JSON保存ディレクトリをセットアップ
+        self._setup_json_save_dir()
+
+    def _setup_json_save_dir(self):
+        """ 
+        JSONファイルの保存先ディレクトリを作成 
+        \データディレクトリ\日付\モデル名\
         
+        Returns:
+            str: 作成されたディレクトリのパス（作成できない場合はNone）
+        """
+        try:
+            # 設定を読み込み
+            settings = self.file_manager._load_settings_from_ini()
+            data_directory = settings.get('data_directory', '')
+            
+            if not data_directory or data_directory == "未選択":
+                print("データディレクトリが設定されていません。")
+                return None
+            
+            # データディレクトリが存在するかチェック
+            if not os.path.exists(data_directory):
+                print(f"データディレクトリが存在しません: {data_directory}")
+                return None
+            
+            # 現在の日付を取得（YYYY-MM-DD形式）
+            current_date = self.ui.selected_date.strftime('%Y-%m-%d')
+            
+            # 現在選択されているモデル名を取得
+            model_name = self.ui.model_var.get()
+            
+            if not model_name or model_name.startswith("画像") or model_name == "設定エラー":
+                print("有効なモデルが選択されていません。")
+                return None
+            
+            # ディレクトリパスを構築: データディレクトリ\日付\モデル名
+            save_dir = os.path.join(data_directory, current_date, model_name)
+            
+            # ディレクトリを作成（存在しない場合）
+            os.makedirs(save_dir, exist_ok=True)
+            
+            print(f"保存ディレクトリを作成/確認しました: {save_dir}")
+            return save_dir
+            
+        except Exception as e:
+            print(f"保存ディレクトリ作成エラー: {e}")
+            return None
+    
+    def _get_next_sequential_number(self, directory):
+        """指定されたディレクトリ内の連番ファイル名の次の番号を取得
+        
+        Args:
+            directory (str): 検索対象のディレクトリパス
+            
+        Returns:
+            int: 次の連番（0001から開始）
+        """
+        if not os.path.exists(directory):
+            return 1
+        
+        try:
+            # ディレクトリ内のJSONファイルを検索
+            json_files = []
+            for filename in os.listdir(directory):
+                if filename.endswith('.json') and os.path.isfile(os.path.join(directory, filename)):
+                    # ファイル名から数字部分を抽出
+                    name_without_ext = os.path.splitext(filename)[0]
+                    
+                    # 4桁の数字のみのファイル名かチェック
+                    if name_without_ext.isdigit() and len(name_without_ext) == 4:
+                        json_files.append(int(name_without_ext))
+            
+            if not json_files:
+                # 連番ファイルが存在しない場合は1から開始
+                return 1
+            
+            # 最大値の次の番号を返す
+            return max(json_files) + 1
+            
+        except Exception as e:
+            print(f"連番取得エラー: {e}")
+            return 1
     def _setup_ui(self):
         """UIをセットアップ"""
         self.ui.setup_main_layout()
@@ -230,12 +312,37 @@ class CoordinateApp:
             # フォームデータを取得
             form_data = self.ui.get_form_data()
             
-            # 保存ファイル名を生成
-            save_name = form_data.get('save_name', '')
-            default_filename = f"{save_name}.json" if save_name else "coordinates.json"
+            # 保存ディレクトリを作成
+            save_dir = self._setup_json_save_dir()
             
-            # 保存先を選択
-            file_path = self.file_manager.save_json_file(default_filename)
+            if not save_dir:
+                # ディレクトリ作成に失敗した場合は従来の方法でファイル選択
+                save_name = form_data.get('save_name', '')
+                default_filename = f"{save_name}.json" if save_name else "coordinates.json"
+                file_path = self.file_manager.save_json_file(default_filename)
+            else:
+                # 自動的にファイルパスを生成
+                save_name = form_data.get('save_name', '')
+                
+                if save_name:
+                    # 保存名が設定されている場合
+                    filename = f"{save_name}.json"
+                    file_path = os.path.join(save_dir, filename)
+                    
+                    # 同名ファイルが存在する場合は連番を付ける
+                    counter = 1
+                    while os.path.exists(file_path):
+                        name_part = os.path.splitext(filename)[0]
+                        file_path = os.path.join(save_dir, f"{name_part}_{counter:04d}.json")
+                        counter += 1
+                else:
+                    # 保存名が設定されていない場合は連番ファイル名を生成
+                    next_number = self._get_next_sequential_number(save_dir)
+                    filename = f"{next_number:04d}.json"
+                    file_path = os.path.join(save_dir, filename)
+                    
+                    # 保存名フィールドに生成されたファイル名（拡張子なし）を設定
+                    self.ui.save_name_var.set(f"{next_number:04d}")
             
             if not file_path:
                 return
@@ -250,7 +357,7 @@ class CoordinateApp:
             # データを保存
             self.file_manager.save_json_data(file_path, save_data)
             
-            self.file_manager.show_success_message("座標をJSON形式で保存しました。")
+            self.file_manager.show_success_message(f"座標をJSON形式で保存しました。\n保存先: {file_path}")
             
         except Exception as e:
             self.file_manager.show_error_message(str(e))
