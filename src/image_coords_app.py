@@ -32,7 +32,8 @@ class CoordinateApp:
             'load_models_from_file': self.load_models_from_file,
             'load_image_for_display': self.load_image_for_display,
             'setup_json_save_dir': self._setup_json_save_dir,
-            'setup_save_name_entry': self._setup_save_name_entry
+            'setup_save_name_entry': self._setup_save_name_entry,
+            'on_form_data_changed': self.on_form_data_changed
         }
         self.ui = UIComponents(self.root, callbacks)
         
@@ -242,6 +243,32 @@ class CoordinateApp:
     def _bind_events(self):
         """イベントをバインド"""
         self.canvas.bind("<Button-1>", self.on_click)
+        self.canvas.bind("<Button-3>", self.on_right_click)  # 右クリックで座標選択
+        
+    def on_right_click(self, event):
+        """右クリック時の処理 - 既存座標の選択"""
+        x, y = event.x, event.y
+        
+        # 最も近い座標を検索
+        min_distance = float('inf')
+        selected_index = -1
+        
+        for i, (coord_x, coord_y) in enumerate(self.coordinate_manager.coordinates):
+            distance = ((x - coord_x) ** 2 + (y - coord_y) ** 2) ** 0.5
+            if distance < 20 and distance < min_distance:  # 20ピクセル以内
+                min_distance = distance
+                selected_index = i
+        
+        if selected_index >= 0:
+            # 座標を選択
+            self.coordinate_manager.set_current_coordinate(selected_index)
+            
+            # フォームを選択した座標の詳細情報で更新
+            detail = self.coordinate_manager.get_current_coordinate_detail()
+            if detail:
+                self.ui.update_form_with_coordinate_detail(detail)
+            
+            print(f"座標 {selected_index + 1} を選択しました")
         
     def on_mode_change(self):
         """モード変更時の処理"""
@@ -257,8 +284,22 @@ class CoordinateApp:
         # 座標を追加
         self.coordinate_manager.add_coordinate(x, y)
         
-        # マーカーを描画
-        self.coordinate_manager.draw_coordinate_marker(self.canvas, x, y)
+        # マーカーを描画（座標数を番号として使用）
+        number = len(self.coordinate_manager.coordinates)
+        self.coordinate_manager.draw_coordinate_marker(self.canvas, x, y, number)
+
+        # 新しい座標を選択状態にする
+        new_index = len(self.coordinate_manager.coordinates) - 1
+        self.coordinate_manager.set_current_coordinate(new_index)
+        
+        # フォームを新しい座標の詳細情報で更新
+        detail = self.coordinate_manager.get_current_coordinate_detail()
+        if detail:
+            self.ui.update_form_with_coordinate_detail(detail)
+        
+        # リファレンス入力フィールドにフォーカスを当てる
+        self.ui.focus_reference_entry()
+
         
     def select_date(self):
         """日付選択ダイアログを表示"""
@@ -328,14 +369,21 @@ class CoordinateApp:
                 height=self.ui.CANVAS_HEIGHT
             )
             
-            # 座標を設定
-            self.coordinate_manager.set_coordinates(parsed_data['coordinates'])
+            # 座標と詳細情報を設定
+            self.coordinate_manager.set_coordinates_with_details(
+                parsed_data['coordinates'], 
+                parsed_data.get('coordinate_details', [])
+            )
             
             # キャンバスを再描画
             self.coordinate_manager.redraw_all_markers(self.canvas)
             
-            # フォームデータを設定
-            self.ui.set_form_data(parsed_data['form_data'])
+            # 最初の座標を選択状態にする
+            if self.coordinate_manager.coordinates:
+                self.coordinate_manager.set_current_coordinate(0)
+                self.ui.update_form_with_coordinate_detail(
+                    self.coordinate_manager.get_current_coordinate_detail()
+                )
             
             # ファイルパスを記憶
             self.file_manager.current_json_path = file_path
@@ -390,11 +438,14 @@ class CoordinateApp:
             if not file_path:
                 return
                 
+            # 座標詳細情報を取得
+            coordinate_details = self.coordinate_manager.get_all_coordinate_details()
+                
             # 保存データを作成
             save_data = self.file_manager.create_save_data(
                 coordinates,
                 self.coordinate_manager.get_current_image_path() or "",
-                form_data
+                coordinate_details
             )
             
             # データを保存
@@ -440,6 +491,36 @@ class CoordinateApp:
         # マーカーをクリア（新しい画像なので）
         self.coordinate_manager.clear_markers()
         self.coordinate_manager.redraw_all_markers(self.canvas)
+    
+    def on_form_data_changed(self):
+        """フォームデータが変更された時の処理"""
+        # 現在選択中の座標があれば詳細情報を更新
+        if self.coordinate_manager.current_coordinate_index >= 0:
+            detail = self.ui.get_current_coordinate_detail()
+            self.coordinate_manager.update_current_coordinate_detail(detail)
+        
+        # 座標が存在し、現在のJSONファイルがある場合のみ自動更新
+        coordinates = self.coordinate_manager.get_coordinates()
+        
+        if coordinates and hasattr(self.file_manager, 'current_json_path') and self.file_manager.current_json_path:
+            try:
+                # 座標詳細情報を取得
+                coordinate_details = self.coordinate_manager.get_all_coordinate_details()
+                
+                # 保存データを作成
+                save_data = self.file_manager.create_save_data(
+                    coordinates,
+                    self.coordinate_manager.get_current_image_path() or "",
+                    coordinate_details
+                )
+                
+                # 現在のJSONファイルを更新
+                self.file_manager.save_json_data(self.file_manager.current_json_path, save_data)
+                
+                print(f"JSONファイルを自動更新しました: {self.file_manager.current_json_path}")
+                
+            except Exception as e:
+                print(f"自動更新エラー: {e}")
     
     def load_models_from_file(self):
         """設定で指定された画像ディレクトリから画像ファイル名を読み込み

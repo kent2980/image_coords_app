@@ -115,25 +115,44 @@ class FileManager:
         except Exception as e:
             raise Exception(f"JSONファイルの保存に失敗しました: {e}")
             
-    def create_save_data(self, coordinates, image_path="", form_data=None):
-        """保存用データを作成"""
+    def create_save_data(self, coordinates, image_path="", coordinate_details=None):
+        """保存用データを作成
+        
+        Args:
+            coordinates: 座標リスト [(x, y), ...]
+            image_path: 画像パス
+            coordinate_details: 座標ごとの詳細情報リスト [{"item_number": "1", "reference": "...", ...}, ...]
+        """
         data = {
             "timestamp": datetime.now().isoformat(),
             "image_path": image_path,
-            "coordinates": [{"x": x, "y": y} for x, y in coordinates]
+            "coordinates": []
         }
         
-        if form_data:
-            data.update({
-                "date": form_data.get('date', datetime.now().date()).isoformat() if form_data.get('date') else None,
-                "model": form_data.get('model', ''),
-                "save_name": form_data.get('save_name', ''),
-                "item_number": form_data.get('item_number', ''),
-                "reference": form_data.get('reference', ''),
-                "defect": form_data.get('defect', ''),
-                "comment": form_data.get('comment', ''),
-                "repaired": form_data.get('repaired', 'いいえ')
-            })
+        # 座標と詳細情報を結合
+        for i, (x, y) in enumerate(coordinates):
+            coord_data = {
+                "x": x,
+                "y": y,
+                "item_number": "",
+                "reference": "",
+                "defect": "ズレ",
+                "comment": "",
+                "repaired": "いいえ"
+            }
+            
+            # 詳細情報がある場合は上書き
+            if coordinate_details and i < len(coordinate_details):
+                detail = coordinate_details[i]
+                coord_data.update({
+                    "item_number": detail.get('item_number', ''),
+                    "reference": detail.get('reference', ''),
+                    "defect": detail.get('defect', 'ズレ'),
+                    "comment": detail.get('comment', ''),
+                    "repaired": detail.get('repaired', 'いいえ')
+                })
+            
+            data["coordinates"].append(coord_data)
             
         return data
         
@@ -142,26 +161,25 @@ class FileManager:
         result = {
             'image_path': data.get('image_path', ''),
             'coordinates': [],
-            'form_data': {}
+            'coordinate_details': []
         }
         
         # 座標データを変換
         coordinates = data.get('coordinates', [])
         for coord in coordinates:
             if isinstance(coord, dict) and 'x' in coord and 'y' in coord:
+                # 座標を追加
                 result['coordinates'].append((coord['x'], coord['y']))
                 
-        # フォームデータを変換
-        if 'date' in data and data['date']:
-            try:
-                result['form_data']['date'] = datetime.fromisoformat(data['date']).date()
-            except:
-                pass
-                
-        form_fields = ['model', 'save_name', 'item_number', 'reference', 'defect', 'comment', 'repaired']
-        for field in form_fields:
-            if field in data:
-                result['form_data'][field] = data[field]
+                # 詳細情報を追加
+                detail = {
+                    'item_number': coord.get('item_number', ''),
+                    'reference': coord.get('reference', ''),
+                    'defect': coord.get('defect', 'ズレ'),
+                    'comment': coord.get('comment', ''),
+                    'repaired': coord.get('repaired', 'いいえ')
+                }
+                result['coordinate_details'].append(detail)
                 
         return result
         

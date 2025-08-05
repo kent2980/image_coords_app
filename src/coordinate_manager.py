@@ -13,6 +13,8 @@ class CoordinateManager:
         self.canvas_width = canvas_width
         self.canvas_height = canvas_height
         self.coordinates = []
+        self.coordinate_details = []  # 座標ごとの詳細情報
+        self.current_coordinate_index = -1  # 現在選択中の座標インデックス
         self.tk_img = None
         self.current_image_path = None
         
@@ -66,18 +68,59 @@ class CoordinateManager:
     def add_coordinate(self, x, y):
         """座標を追加"""
         self.coordinates.append((x, y))
+        
+        # 新しい座標の詳細情報を初期化
+        detail = {
+            'item_number': str(len(self.coordinates)),
+            'reference': '',
+            'defect': 'ズレ',
+            'comment': '',
+            'repaired': 'いいえ'
+        }
+        self.coordinate_details.append(detail)
+        
         self._save_state()  # 状態を履歴に保存
         
     def remove_coordinate(self, index):
         """指定インデックスの座標を削除"""
         if 0 <= index < len(self.coordinates):
-            return self.coordinates.pop(index)
+            coord = self.coordinates.pop(index)
+            if index < len(self.coordinate_details):
+                self.coordinate_details.pop(index)
+            self._save_state()
+            return coord
         return None
         
     def clear_coordinates(self):
         """全座標をクリア"""
         self.coordinates.clear()
+        self.coordinate_details.clear()
+        self.current_coordinate_index = -1
         self._save_state()  # 状態を履歴に保存
+        
+    def set_current_coordinate(self, index):
+        """現在選択中の座標を設定"""
+        if 0 <= index < len(self.coordinates):
+            self.current_coordinate_index = index
+            return True
+        return False
+        
+    def get_current_coordinate_detail(self):
+        """現在選択中の座標の詳細情報を取得"""
+        if 0 <= self.current_coordinate_index < len(self.coordinate_details):
+            return self.coordinate_details[self.current_coordinate_index].copy()
+        return None
+        
+    def update_current_coordinate_detail(self, detail):
+        """現在選択中の座標の詳細情報を更新"""
+        if 0 <= self.current_coordinate_index < len(self.coordinate_details):
+            self.coordinate_details[self.current_coordinate_index].update(detail)
+            return True
+        return False
+        
+    def get_all_coordinate_details(self):
+        """全座標の詳細情報を取得"""
+        return [detail.copy() for detail in self.coordinate_details]
         
     def get_coordinates(self):
         """座標リストを取得"""
@@ -86,6 +129,28 @@ class CoordinateManager:
     def set_coordinates(self, coordinates):
         """座標リストを設定"""
         self.coordinates = coordinates.copy()
+        
+    def set_coordinates_with_details(self, coordinates, coordinate_details=None):
+        """座標リストと詳細情報を設定"""
+        self.coordinates = coordinates.copy()
+        
+        if coordinate_details:
+            self.coordinate_details = coordinate_details.copy()
+        else:
+            # 詳細情報がない場合は初期化
+            self.coordinate_details = []
+            for i in range(len(coordinates)):
+                detail = {
+                    'item_number': str(i + 1),
+                    'reference': '',
+                    'defect': 'ズレ',
+                    'comment': '',
+                    'repaired': 'いいえ'
+                }
+                self.coordinate_details.append(detail)
+        
+        self.current_coordinate_index = -1
+        self._save_state()
         
     def load_image(self, image_path):
         """画像を読み込み"""
@@ -112,14 +177,17 @@ class CoordinateManager:
             
         return img.resize((new_width, new_height), Image.LANCZOS)
         
-    def draw_coordinate_marker(self, canvas, x, y, size=6):
+    def draw_coordinate_marker(self, canvas, x, y, number, size=12):
         """座標マーカーを描画"""
-        # X印を描画
-        canvas.create_line(
-            x - size, y - size, x + size, y + size, fill="white", width=3
+        # 背景の円を描画（視認性向上）
+        canvas.create_oval(
+            x - size, y - size, x + size, y + size,
+            fill="red", outline="white", width=2
         )
-        canvas.create_line(
-            x + size, y - size, x - size, y + size, fill="white", width=3
+        # 数字を描画
+        canvas.create_text(
+            x, y, text=str(number), fill="white",
+            font=("Arial", 10, "bold")
         )
         
     def redraw_all_markers(self, canvas):
@@ -130,9 +198,9 @@ class CoordinateManager:
         if self.tk_img:
             canvas.create_image(0, 0, anchor="nw", image=self.tk_img)
             
-        # 座標マーカーを再描画
-        for x, y in self.coordinates:
-            self.draw_coordinate_marker(canvas, x, y)
+        # 座標マーカーを再描画（数字付き）
+        for i, (x, y) in enumerate(self.coordinates, 1):
+            self.draw_coordinate_marker(canvas, x, y, i)
             
     def get_current_image(self):
         """現在の画像を取得"""

@@ -310,32 +310,49 @@ class UIComponents:
     
     def setup_sidebar(self):
         """サイドバーをセットアップ"""
+        # サイドバーのスタイル設定
+        self.sidebar_frame.config(bg='#f5f5f5', relief='ridge', bd=1)
+        
         # タイトル
         title_label = tk.Label(
             self.sidebar_frame,
-            text="詳細情報",
-            font=("Arial", 14, "bold")
+            text="不良詳細情報",
+            font=("Arial", 14, "bold"),
+            bg='#f5f5f5',
+            fg='#333333'
         )
-        title_label.pack(pady=10)
+        title_label.pack(pady=(15, 20))
+        
+        # 区切り線
+        separator1 = tk.Frame(self.sidebar_frame, height=1, bg='#cccccc')
+        separator1.pack(fill=tk.X, padx=15, pady=(0, 15))
         
         # アイテム番号
-        self._create_centered_input_field(
-            "番号", self.item_number_var, width=10
+        self._create_styled_input_field(
+            "項目番号", self.item_number_var, width=12
         )
         
         # リファレンス
-        self._create_centered_input_field(
-            "Rf", self.reference_var, width=15
+        self.reference_entry = self._create_styled_input_field(
+            "リファレンス", self.reference_var, width=15
         )
+        
+        # 区切り線
+        separator2 = tk.Frame(self.sidebar_frame, height=1, bg='#cccccc')
+        separator2.pack(fill=tk.X, padx=15, pady=(15, 10))
         
         # 不良名
         self._create_defect_selection()
         
-        # コメント
-        self._create_comment_field()
-        
         # 修理済み
         self._create_repaired_selection()
+        
+        # 区切り線
+        separator3 = tk.Frame(self.sidebar_frame, height=1, bg='#cccccc')
+        separator3.pack(fill=tk.X, padx=15, pady=(15, 10))
+        
+        # コメント
+        self._create_comment_field()
     
     def _create_centered_input_field(self, label_text, variable, width=15):
         """中央寄せの入力フィールドを作成"""
@@ -350,13 +367,61 @@ class UIComponents:
         
         entry = tk.Entry(content_frame, textvariable=variable, width=width)
         entry.pack(side=tk.LEFT, padx=5)
+        
+        return entry  # Entryウィジェットを返す
+    
+    def _create_styled_input_field(self, label_text, variable, width=15):
+        """スタイル付きの入力フィールドを作成"""
+        # メインフレーム
+        main_frame = tk.Frame(self.sidebar_frame, bg='#f5f5f5')
+        main_frame.pack(fill=tk.X, padx=15, pady=8)
+        
+        # ラベル
+        label = tk.Label(
+            main_frame, 
+            text=label_text, 
+            font=("Arial", 10, "bold"),
+            bg='#f5f5f5',
+            fg='#555555',
+            anchor='w'
+        )
+        label.pack(fill=tk.X, pady=(0, 3))
+        
+        # 入力フィールド
+        entry = tk.Entry(
+            main_frame, 
+            textvariable=variable, 
+            width=width,
+            font=("Arial", 10),
+            relief='solid',
+            bd=1,
+            highlightthickness=1,
+            highlightcolor='#4CAF50',
+            bg='white'
+        )
+        entry.pack(fill=tk.X)
+        
+        # 変更検出のイベントをバインド
+        variable.trace_add('write', self._on_form_data_changed)
+        
+        return entry
     
     def _create_defect_selection(self):
         """不良名選択フィールドを作成"""
-        defect_frame = tk.Frame(self.sidebar_frame)
-        defect_frame.pack(fill=tk.X, padx=10, pady=5)
+        # メインフレーム
+        defect_frame = tk.Frame(self.sidebar_frame, bg='#f5f5f5')
+        defect_frame.pack(fill=tk.X, padx=15, pady=8)
         
-        tk.Label(defect_frame, text="不良名:", font=("Arial", 10)).pack(side=tk.LEFT)
+        # ラベル
+        label = tk.Label(
+            defect_frame, 
+            text="不良名", 
+            font=("Arial", 10, "bold"),
+            bg='#f5f5f5',
+            fg='#555555',
+            anchor='w'
+        )
+        label.pack(fill=tk.X, pady=(0, 3))
         
         # 外部ファイルから不良名リストを読み込み
         defect_values = self._load_defects_from_file()
@@ -366,45 +431,96 @@ class UIComponents:
             textvariable=self.defect_var,
             values=defect_values,
             state="readonly",
-            width=15
+            font=("Arial", 10)
         )
-        self.defect_combobox.pack(side=tk.LEFT, padx=5)
+        self.defect_combobox.pack(fill=tk.X)
         self.defect_combobox.current(0)
+        
+        # 変更検出のイベントをバインド
+        self.defect_var.trace_add('write', self._on_form_data_changed)
     
     def _create_comment_field(self):
         """コメントフィールドを作成"""
-        comment_frame = tk.Frame(self.sidebar_frame)
-        comment_frame.pack(fill=tk.X, padx=10, pady=5)
+        # メインフレーム
+        comment_frame = tk.Frame(self.sidebar_frame, bg='#f5f5f5')
+        comment_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=8)
         
-        tk.Label(comment_frame, text="コメント:", font=("Arial", 10)).pack(anchor='w')
+        # ラベル
+        label = tk.Label(
+            comment_frame, 
+            text="コメント", 
+            font=("Arial", 10, "bold"),
+            bg='#f5f5f5',
+            fg='#555555',
+            anchor='w'
+        )
+        label.pack(fill=tk.X, pady=(0, 3))
         
-        self.comment_text = tk.Text(comment_frame, height=12, width=30, font=("Arial", 9))
-        self.comment_text.pack(fill=tk.X, pady=(2, 0))
+        # テキストフィールドとスクロールバーのフレーム
+        text_frame = tk.Frame(comment_frame, bg='#f5f5f5')
+        text_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # テキストフィールド
+        self.comment_text = tk.Text(
+            text_frame, 
+            height=8, 
+            font=("Arial", 9),
+            relief='solid',
+            bd=1,
+            highlightthickness=1,
+            highlightcolor='#4CAF50',
+            bg='white',
+            wrap=tk.WORD
+        )
+        self.comment_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        # スクロールバー
+        scrollbar = tk.Scrollbar(text_frame, command=self.comment_text.yview)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.comment_text.config(yscrollcommand=scrollbar.set)
+        
+        # コメントフィールドの変更検出
+        self.comment_text.bind('<KeyRelease>', self._on_comment_changed)
+        self.comment_text.bind('<FocusOut>', self._on_comment_changed)
     
     def _create_repaired_selection(self):
         """修理済み選択フィールドを作成"""
-        repaired_frame = tk.Frame(self.sidebar_frame)
-        repaired_frame.pack(fill=tk.X, padx=10, pady=5)
+        # メインフレーム
+        repaired_frame = tk.Frame(self.sidebar_frame, bg='#f5f5f5')
+        repaired_frame.pack(fill=tk.X, padx=15, pady=8)
         
-        tk.Label(repaired_frame, text="修理済み:", font=("Arial", 10)).pack(side=tk.LEFT)
+        # ラベル
+        label = tk.Label(
+            repaired_frame, 
+            text="修理済み", 
+            font=("Arial", 10, "bold"),
+            bg='#f5f5f5',
+            fg='#555555',
+            anchor='w'
+        )
+        label.pack(fill=tk.X, pady=(0, 5))
+        
+        # ラジオボタンフレーム
+        radio_frame = tk.Frame(repaired_frame, bg='#f5f5f5')
+        radio_frame.pack(fill=tk.X)
         
         self.repaired_yes = tk.Radiobutton(
-            repaired_frame,
+            radio_frame,
             text="はい",
             variable=self.repaired_var,
             value="はい",
-            font=("Arial", 10)
+            font=("Arial", 10),
         )
-        self.repaired_yes.pack(side=tk.LEFT, padx=5)
+        self.repaired_yes.pack(side=tk.LEFT, padx=(10, 20))
         
         self.repaired_no = tk.Radiobutton(
-            repaired_frame,
+            radio_frame,
             text="いいえ",
             variable=self.repaired_var,
             value="いいえ",
-            font=("Arial", 10)
+            font=("Arial", 10),
         )
-        self.repaired_no.pack(side=tk.LEFT, padx=5)
+        self.repaired_no.pack(side=tk.LEFT, padx=10)
     
     def update_model_combobox(self):
         """モデル選択リストを更新"""
@@ -471,6 +587,49 @@ class UIComponents:
             self.comment_text.insert("1.0", data['comment'])
         if 'repaired' in data:
             self.repaired_var.set(data['repaired'])
+    
+    def focus_reference_entry(self):
+        """リファレンス入力フィールドにフォーカスを当てる"""
+        if hasattr(self, 'reference_entry') and self.reference_entry:
+            self.reference_entry.focus_set()
+            self.reference_entry.icursor(tk.END)  # カーソルを末尾に移動
+    
+    def update_form_with_coordinate_detail(self, detail):
+        """座標の詳細情報でフォームを更新"""
+        if detail:
+            self.item_number_var.set(detail.get('item_number', ''))
+            self.reference_var.set(detail.get('reference', ''))
+            self.defect_var.set(detail.get('defect', 'ズレ'))
+            self.repaired_var.set(detail.get('repaired', 'いいえ'))
+            
+            # コメントフィールドを更新
+            if self.comment_text:
+                self.comment_text.delete("1.0", tk.END)
+                self.comment_text.insert("1.0", detail.get('comment', ''))
+    
+    def get_current_coordinate_detail(self):
+        """現在のフォームから座標詳細情報を取得"""
+        return {
+            'item_number': self.item_number_var.get(),
+            'reference': self.reference_var.get(),
+            'defect': self.defect_var.get(),
+            'comment': self.comment_text.get("1.0", tk.END).strip() if self.comment_text else "",
+            'repaired': self.repaired_var.get()
+        }
+    
+    def _on_form_data_changed(self, *args):
+        """フォームデータが変更された時のイベントハンドラー"""
+        if self.callbacks.get('on_form_data_changed'):
+            self.callbacks['on_form_data_changed']()
+    
+    def _on_comment_changed(self, event=None):
+        """コメントフィールドが変更された時のイベントハンドラー"""
+        if self.callbacks.get('on_form_data_changed'):
+            self.callbacks['on_form_data_changed']()
+    
+    def enable_auto_save(self, enable=True):
+        """自動保存機能の有効/無効を切り替え"""
+        self._auto_save_enabled = enable
     
     def _on_model_selected(self, event=None):
         """モデル選択時のイベントハンドラー"""
