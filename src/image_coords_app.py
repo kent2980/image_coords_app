@@ -49,6 +49,9 @@ class CoordinateApp:
         # JSON保存ディレクトリをセットアップ
         self._setup_json_save_dir()
 
+        # 保存名エントリをセットアップ
+        self._setup_save_name_entry()
+
     def _setup_json_save_dir(self):
         """ 
         JSONファイルの保存先ディレクトリを作成 
@@ -128,6 +131,17 @@ class CoordinateApp:
         except Exception as e:
             print(f"連番取得エラー: {e}")
             return 1
+        
+    def _setup_save_name_entry(self):
+        """保存名エントリをセットアップ"""
+        # 保存名エントリをUIにセットアップ
+        save_frame = self.ui.save_name_entry
+        # 保存名を取得
+        save_name = self._get_next_sequential_number(self._setup_json_save_dir())
+        # 保存名エントリに設定
+        save_frame.delete(0, tk.END)
+        save_frame.insert(0, f"{save_name:04d}")  # 4桁の連番形式で設定
+
     def _setup_ui(self):
         """UIをセットアップ"""
         self.ui.setup_main_layout()
@@ -359,6 +373,9 @@ class CoordinateApp:
             
             self.file_manager.show_success_message(f"座標をJSON形式で保存しました。\n保存先: {file_path}")
             
+            # 保存名エントリを更新
+            self._setup_save_name_entry()
+
         except Exception as e:
             self.file_manager.show_error_message(str(e))
             

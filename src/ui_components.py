@@ -294,7 +294,7 @@ class UIComponents:
         self.save_name_entry = tk.Entry(
             save_frame,
             textvariable=self.save_name_var,
-            width=50  # 幅を広げて長い名前に対応
+            width=50,  # 幅を広げて長い名前に対応    
         )
         self.save_name_entry.pack(side=tk.LEFT, padx=5)
     
