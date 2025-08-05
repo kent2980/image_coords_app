@@ -30,7 +30,9 @@ class CoordinateApp:
             'on_settings_changed': self.on_settings_changed,
             'on_image_loaded': self.on_image_loaded,
             'load_models_from_file': self.load_models_from_file,
-            'load_image_for_display': self.load_image_for_display
+            'load_image_for_display': self.load_image_for_display,
+            'setup_json_save_dir': self._setup_json_save_dir,
+            'setup_save_name_entry': self._setup_save_name_entry
         }
         self.ui = UIComponents(self.root, callbacks)
         
@@ -46,8 +48,8 @@ class CoordinateApp:
         # イベントバインド
         self._bind_events()
 
-        # JSON保存ディレクトリをセットアップ
-        self._setup_json_save_dir()
+        # 保存先ディレクトリをセットアップ
+        self._setup_save_name_entry()
 
         # 保存名エントリをセットアップ
         self._setup_save_name_entry()
@@ -131,6 +133,30 @@ class CoordinateApp:
         except Exception as e:
             print(f"連番取得エラー: {e}")
             return 1
+    
+    def _setup_save_name_entry(self):
+        """保存名エントリに連番ファイル名を自動設定"""
+        try:
+            # 現在の保存名をチェック
+            current_save_name = self.ui.save_name_var.get()
+            
+            # 保存名が空の場合のみ自動設定
+            if not current_save_name.strip():
+                # 保存ディレクトリを取得
+                save_dir = self._setup_json_save_dir()
+                
+                if save_dir:
+                    # 次の連番を取得
+                    next_number = self._get_next_sequential_number(save_dir)
+                    
+                    # 4桁ゼロパディングで保存名を設定
+                    auto_save_name = f"{next_number:04d}"
+                    self.ui.save_name_var.set(auto_save_name)
+                    
+                    print(f"保存名を自動設定しました: {auto_save_name}")
+                    
+        except Exception as e:
+            print(f"保存名自動設定エラー: {e}")
         
     def _setup_save_name_entry(self):
         """保存名エントリをセットアップ"""
@@ -241,6 +267,9 @@ class CoordinateApp:
         if not result['cancelled'] and result['date']:
             self.ui.selected_date = result['date']
             self.ui.update_date_label(result['date'])
+            
+            # 日付が変更されたら保存名エントリを更新
+            self._setup_save_name_entry()
             
     def select_image(self):
         """画像を選択"""

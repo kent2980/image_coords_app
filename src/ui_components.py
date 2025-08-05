@@ -475,6 +475,15 @@ class UIComponents:
     def _on_model_selected(self, event=None):
         """モデル選択時のイベントハンドラー"""
         self._load_and_display_image()
+        
+        # 保存ディレクトリをセットアップ
+        if self.callbacks.get('setup_json_save_dir'):
+            self.callbacks['setup_json_save_dir']()
+        
+        # 保存名エントリを自動設定
+        if self.callbacks.get('setup_save_name_entry'):
+            self.callbacks['setup_save_name_entry']()
+        
     
     def _load_and_display_image(self):
         """選択されたモデルの画像を読み込んでキャンバスに表示"""
