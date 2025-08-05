@@ -327,9 +327,9 @@ class UIComponents:
         separator1 = tk.Frame(self.sidebar_frame, height=1, bg='#cccccc')
         separator1.pack(fill=tk.X, padx=15, pady=(0, 15))
         
-        # アイテム番号
-        self._create_styled_input_field(
-            "項目番号", self.item_number_var, width=12
+        # アイテム番号（読み取り専用）
+        self.item_number_entry = self._create_styled_input_field(
+            "項目番号", self.item_number_var, width=12, readonly=True
         )
         
         # リファレンス
@@ -370,7 +370,7 @@ class UIComponents:
         
         return entry  # Entryウィジェットを返す
     
-    def _create_styled_input_field(self, label_text, variable, width=15):
+    def _create_styled_input_field(self, label_text, variable, width=15, readonly=False):
         """スタイル付きの入力フィールドを作成"""
         # メインフレーム
         main_frame = tk.Frame(self.sidebar_frame, bg='#f5f5f5')
@@ -388,6 +388,9 @@ class UIComponents:
         label.pack(fill=tk.X, pady=(0, 3))
         
         # 入力フィールド
+        entry_state = "readonly" if readonly else "normal"
+        entry_bg = '#f0f0f0' if readonly else 'white'
+        
         entry = tk.Entry(
             main_frame, 
             textvariable=variable, 
@@ -397,12 +400,14 @@ class UIComponents:
             bd=1,
             highlightthickness=1,
             highlightcolor='#4CAF50',
-            bg='white'
+            bg=entry_bg,
+            state=entry_state
         )
         entry.pack(fill=tk.X)
         
-        # 変更検出のイベントをバインド
-        variable.trace_add('write', self._on_form_data_changed)
+        # 読み取り専用でない場合のみ変更検出のイベントをバインド
+        if not readonly:
+            variable.trace_add('write', self._on_form_data_changed)
         
         return entry
     
@@ -607,6 +612,67 @@ class UIComponents:
                 self.comment_text.delete("1.0", tk.END)
                 self.comment_text.insert("1.0", detail.get('comment', ''))
     
+    def display_coordinate_info_for_viewing(self, detail, coordinate_index):
+        """閲覧モード用の座標情報表示（より詳細な情報を含む）"""
+        if detail:
+            # 基本情報を更新
+            self.update_form_with_coordinate_detail(detail)
+            
+            # 閲覧モード時は座標番号も表示
+            coord_num = coordinate_index + 1
+            
+            # サイドバーのタイトルを更新
+            self._update_sidebar_title_for_viewing(coord_num)
+            
+            print(f"[閲覧モード] 座標 {coord_num} の詳細:")
+            print(f"  項目番号: {detail.get('item_number', '未設定')}")
+            print(f"  リファレンス: {detail.get('reference', '未設定')}")
+            print(f"  不良名: {detail.get('defect', 'ズレ')}")
+            print(f"  修理済み: {detail.get('repaired', 'いいえ')}")
+            comment = detail.get('comment', '')
+            if comment:
+                print(f"  コメント: {comment}")
+            else:
+                print("  コメント: なし")
+    
+    def _update_sidebar_title_for_viewing(self, coord_num):
+        """閲覧モード用のサイドバータイトルを更新"""
+        # サイドバーのタイトルラベルを検索して更新
+        for child in self.sidebar_frame.winfo_children():
+            if isinstance(child, tk.Label) and hasattr(child, 'config'):
+                current_text = child.cget('text')
+                if '不良詳細情報' in current_text or '座標' in current_text:
+                    child.config(text=f"座標 {coord_num} の詳細情報")
+                    break
+    
+    def display_coordinate_summary_for_viewing(self, summary):
+        """閲覧モード用の座標概要情報を表示"""
+        if summary:
+            total = summary.get('total_count', 0)
+            repaired = summary.get('repaired_count', 0)
+            unrepaired = summary.get('unrepaired_count', 0)
+            defect_counts = summary.get('defect_counts', {})
+            
+            print(f"[閲覧モード] 座標の概要:")
+            print(f"  総座標数: {total}個")
+            print(f"  修理済み: {repaired}個")
+            print(f"  未修理: {unrepaired}個")
+            
+            if defect_counts:
+                print("  不良種別:")
+                for defect, count in defect_counts.items():
+                    print(f"    {defect}: {count}個")
+    
+    def reset_sidebar_title_for_viewing(self):
+        """閲覧モード用のサイドバータイトルをリセット"""
+        # サイドバーのタイトルラベルを検索してリセット
+        for child in self.sidebar_frame.winfo_children():
+            if isinstance(child, tk.Label) and hasattr(child, 'config'):
+                current_text = child.cget('text')
+                if '座標' in current_text and '詳細情報' in current_text:
+                    child.config(text="不良詳細情報")
+                    break
+    
     def get_current_coordinate_detail(self):
         """現在のフォームから座標詳細情報を取得"""
         return {
@@ -616,6 +682,61 @@ class UIComponents:
             'comment': self.comment_text.get("1.0", tk.END).strip() if self.comment_text else "",
             'repaired': self.repaired_var.get()
         }
+    
+    def clear_form(self):
+        """フォームをクリア"""
+        self.item_number_var.set("")
+        self.reference_var.set("")
+        self.defect_var.set("ズレ")
+        self.repaired_var.set("いいえ")
+        
+        # コメントフィールドをクリア
+        if self.comment_text:
+            self.comment_text.delete("1.0", tk.END)
+    
+    def set_readonly_mode(self, readonly=True):
+        """サイドバーの読み取り専用モードを設定"""
+        state = "readonly" if readonly else "normal"
+        
+        # 項目番号とリファレンス入力フィールド
+        if hasattr(self, 'reference_entry'):
+            self.reference_entry.config(state=state)
+        
+        # 不良名コンボボックス
+        if hasattr(self, 'defect_combobox'):
+            self.defect_combobox.config(state="disabled" if readonly else "readonly")
+        
+        # 修理済みラジオボタン
+        if hasattr(self, 'repaired_yes'):
+            self.repaired_yes.config(state="disabled" if readonly else "normal")
+        if hasattr(self, 'repaired_no'):
+            self.repaired_no.config(state="disabled" if readonly else "normal")
+        
+        # コメントテキストフィールド
+        if self.comment_text:
+            self.comment_text.config(state="disabled" if readonly else "normal")
+            
+        # 閲覧モード時は背景色を変更して視覚的に分かりやすくする
+        if readonly:
+            bg_color = '#f0f0f0'  # 薄いグレー
+            if hasattr(self, 'reference_entry'):
+                self.reference_entry.config(readonlybackground=bg_color)
+            if hasattr(self, 'defect_combobox'):
+                self.defect_combobox.config(background=bg_color)
+            if self.comment_text:
+                self.comment_text.config(bg=bg_color)
+        else:
+            # 編集モード時は通常の背景色に戻す
+            bg_color = 'white'
+            if hasattr(self, 'reference_entry'):
+                self.reference_entry.config(readonlybackground=bg_color)
+            if hasattr(self, 'defect_combobox'):
+                self.defect_combobox.config(background=bg_color)
+            if self.comment_text:
+                self.comment_text.config(bg=bg_color)
+            
+        # 項目番号フィールドは常に読み取り専用
+        # (項目番号は自動生成されるため)
     
     def _on_form_data_changed(self, *args):
         """フォームデータが変更された時のイベントハンドラー"""

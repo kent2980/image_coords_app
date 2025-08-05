@@ -177,20 +177,34 @@ class CoordinateManager:
             
         return img.resize((new_width, new_height), Image.LANCZOS)
         
-    def draw_coordinate_marker(self, canvas, x, y, number, size=12):
+    def draw_coordinate_marker(self, canvas, x, y, number, size=12, is_selected=False):
         """座標マーカーを描画"""
+        # 選択状態に応じて色を変更
+        if is_selected:
+            fill_color = "yellow"
+            outline_color = "orange"
+            outline_width = 3
+            text_color = "black"
+        else:
+            fill_color = "red"
+            outline_color = "white"
+            outline_width = 2
+            text_color = "white"
+        
         # 背景の円を描画（視認性向上）
         canvas.create_oval(
             x - size, y - size, x + size, y + size,
-            fill="red", outline="white", width=2
+            fill=fill_color, outline=outline_color, width=outline_width,
+            tags=f"marker_{number}"
         )
         # 数字を描画
         canvas.create_text(
-            x, y, text=str(number), fill="white",
-            font=("Arial", 10, "bold")
+            x, y, text=str(number), fill=text_color,
+            font=("Arial", 10, "bold"),
+            tags=f"marker_{number}"
         )
         
-    def redraw_all_markers(self, canvas):
+    def redraw_all_markers(self, canvas, selected_index=-1):
         """すべての座標マーカーを再描画"""
         canvas.delete("all")
         
@@ -200,7 +214,20 @@ class CoordinateManager:
             
         # 座標マーカーを再描画（数字付き）
         for i, (x, y) in enumerate(self.coordinates, 1):
-            self.draw_coordinate_marker(canvas, x, y, i)
+            is_selected = (i - 1) == selected_index
+            self.draw_coordinate_marker(canvas, x, y, i, is_selected=is_selected)
+    
+    def highlight_coordinate(self, canvas, index):
+        """指定された座標をハイライト表示"""
+        if 0 <= index < len(self.coordinates):
+            # すべてのマーカーを再描画（選択状態を反映）
+            self.redraw_all_markers(canvas, selected_index=index)
+            return True
+        return False
+    
+    def clear_highlight(self, canvas):
+        """ハイライト表示をクリア"""
+        self.redraw_all_markers(canvas, selected_index=-1)
             
     def get_current_image(self):
         """現在の画像を取得"""
@@ -222,6 +249,39 @@ class CoordinateManager:
             'original_width': image_info['original_width'],
             'original_height': image_info['original_height']
         }
+    
+    def get_coordinate_summary(self):
+        """座標の概要情報を取得（閲覧モード用）"""
+        summary = {
+            'total_count': len(self.coordinates),
+            'defect_counts': {},
+            'repaired_count': 0,
+            'unrepaired_count': 0
+        }
+        
+        for detail in self.coordinate_details:
+            # 不良種別ごとの件数をカウント
+            defect = detail.get('defect', 'ズレ')
+            summary['defect_counts'][defect] = summary['defect_counts'].get(defect, 0) + 1
+            
+            # 修理済み/未修理の件数をカウント
+            repaired = detail.get('repaired', 'いいえ')
+            if repaired == 'はい':
+                summary['repaired_count'] += 1
+            else:
+                summary['unrepaired_count'] += 1
+        
+        return summary
+    
+    def get_coordinate_detail_with_position(self, index):
+        """座標の詳細情報と位置情報を取得（閲覧モード用）"""
+        if 0 <= index < len(self.coordinates) and index < len(self.coordinate_details):
+            x, y = self.coordinates[index]
+            detail = self.coordinate_details[index].copy()
+            detail['position'] = {'x': x, 'y': y}
+            detail['coordinate_number'] = index + 1
+            return detail
+        return None
     
     def clear_markers(self):
         """座標マーカーをクリア"""

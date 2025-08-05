@@ -272,10 +272,87 @@ class CoordinateApp:
         
     def on_mode_change(self):
         """モード変更時の処理"""
-        if self.ui.mode_var.get() == "編集":
+        current_mode = self.ui.mode_var.get()
+        
+        if current_mode == "編集":
+            # 編集モード: 左クリックで座標追加、右クリックで座標選択
             self.canvas.bind("<Button-1>", self.on_click)
+            self.canvas.bind("<Button-3>", self.on_right_click)
+            # サイドバーを編集可能にする
+            self.ui.set_readonly_mode(False)
+            # サイドバータイトルをリセット
+            self.ui.reset_sidebar_title_for_viewing()
+            print("[モード変更] 編集モードに切り替えました")
         else:
-            self.canvas.unbind("<Button-1>")
+            # 閲覧モード: 左クリックで座標選択のみ
+            self.canvas.bind("<Button-1>", self.on_view_click)
+            self.canvas.unbind("<Button-3>")
+            # サイドバーを読み取り専用にする
+            self.ui.set_readonly_mode(True)
+            print("[モード変更] 閲覧モードに切り替えました")
+            
+            # 座標がある場合は概要情報を表示し、最初の座標を自動選択
+            if self.coordinate_manager.coordinates:
+                # 座標概要情報を表示
+                summary = self.coordinate_manager.get_coordinate_summary()
+                self.ui.display_coordinate_summary_for_viewing(summary)
+                
+                # 最初の座標を選択
+                self.coordinate_manager.set_current_coordinate(0)
+                detail = self.coordinate_manager.get_current_coordinate_detail()
+                if detail:
+                    self.ui.display_coordinate_info_for_viewing(detail, 0)
+                self._highlight_selected_coordinate(0)
+                print("[閲覧モード] 最初の座標を自動選択しました")
+            
+        # ハイライトをクリア（モード変更時は一旦リセット）
+        if current_mode == "編集":
+            self._clear_highlight()
+            
+    def on_view_click(self, event):
+        """閲覧モード時のキャンバスクリック処理"""
+        x, y = event.x, event.y
+        
+        # 最も近い座標を検索
+        min_distance = float('inf')
+        selected_index = -1
+        
+        for i, (coord_x, coord_y) in enumerate(self.coordinate_manager.coordinates):
+            distance = ((x - coord_x) ** 2 + (y - coord_y) ** 2) ** 0.5
+            if distance < 20 and distance < min_distance:  # 20ピクセル以内
+                min_distance = distance
+                selected_index = i
+        
+        if selected_index >= 0:
+            # 座標を選択
+            self.coordinate_manager.set_current_coordinate(selected_index)
+            
+            # フォームを選択した座標の詳細情報で更新（閲覧モード用）
+            detail = self.coordinate_manager.get_current_coordinate_detail()
+            if detail:
+                # 閲覧モード専用の詳細表示を使用
+                self.ui.display_coordinate_info_for_viewing(detail, selected_index)
+                
+            # 選択した座標をハイライト表示
+            self._highlight_selected_coordinate(selected_index)
+            
+            print(f"[閲覧モード] 座標 {selected_index + 1} を選択しました")
+        else:
+            # 座標が選択されていない場合はフォームをクリア
+            self.coordinate_manager.current_coordinate_index = -1
+            self.ui.clear_form()
+            self._clear_highlight()
+            print("[閲覧モード] 座標の選択を解除しました")
+    
+    def _highlight_selected_coordinate(self, index):
+        """選択された座標をハイライト表示"""
+        # coordinate_managerの新しいハイライト機能を使用
+        self.coordinate_manager.highlight_coordinate(self.canvas, index)
+    
+    def _clear_highlight(self):
+        """ハイライト表示をクリア"""
+        # coordinate_managerの新しいクリア機能を使用
+        self.coordinate_manager.clear_highlight(self.canvas)
             
     def on_click(self, event):
         """キャンバスクリック時の処理"""
@@ -378,15 +455,42 @@ class CoordinateApp:
             # キャンバスを再描画
             self.coordinate_manager.redraw_all_markers(self.canvas)
             
-            # 最初の座標を選択状態にする
-            if self.coordinate_manager.coordinates:
+            # 座標数を表示
+            coord_count = len(self.coordinate_manager.coordinates)
+            print(f"JSONファイルを読み込みました: {coord_count}個の座標")
+            
+            # 閲覧モードの場合は座標概要を表示
+            current_mode = self.ui.mode_var.get()
+            if current_mode == "閲覧":
+                # 座標概要情報を表示
+                summary = self.coordinate_manager.get_coordinate_summary()
+                self.ui.display_coordinate_summary_for_viewing(summary)
+                
+                # 最初の座標を選択して詳細表示
+                if self.coordinate_manager.coordinates:
+                    self.coordinate_manager.set_current_coordinate(0)
+                    detail = self.coordinate_manager.get_current_coordinate_detail()
+                    if detail:
+                        self.ui.display_coordinate_info_for_viewing(detail, 0)
+                    self._highlight_selected_coordinate(0)
+                    print("[閲覧モード] 最初の座標を自動選択しました")
+            elif current_mode == "編集" and self.coordinate_manager.coordinates:
+                # 編集モードの場合は通常の表示
                 self.coordinate_manager.set_current_coordinate(0)
-                self.ui.update_form_with_coordinate_detail(
-                    self.coordinate_manager.get_current_coordinate_detail()
-                )
+                detail = self.coordinate_manager.get_current_coordinate_detail()
+                if detail:
+                    self.ui.update_form_with_coordinate_detail(detail)
             
             # ファイルパスを記憶
             self.file_manager.current_json_path = file_path
+            
+            # 読み込み完了メッセージ
+            if current_mode == "閲覧":
+                self.file_manager.show_info_message(
+                    f"JSONファイルを閲覧モードで読み込みました。\n"
+                    f"座標数: {coord_count}個\n"
+                    f"座標をクリックして詳細情報を確認できます。"
+                )
             
         except Exception as e:
             self.file_manager.show_error_message(str(e))
