@@ -1,0 +1,10 @@
+YOLOv8
+YOLOv5
+YOLOv4
+Faster R-CNN
+SSD MobileNet
+DETR
+RetinaNet
+EfficientDet
+Custom Model A
+Custom Model B

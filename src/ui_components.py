@@ -58,4 +58,4 @@ class UIComponents:
     
     def __getattr__(self, name):
         """属性アクセスを現在のUIコンポーネントに委譲"""
-        return getattr(self.current_ui, name)        python main_mvc.py
+        return getattr(self.current_ui, name)

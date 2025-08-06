@@ -1,46 +1,11 @@
-# 💪 画像座標管理アプリケーション (MVC アーキテクチャ版)
-
-## 🏗️ アーキテクチャ概要
-
-このアプリケーションは **MVC (Model-View-Controller)** パターンで設計されており、保守性と拡張性を向上させています。
-
-### 📁 プロジェクト構造
-```
-src/
-├── models/          # データモデル
-│   ├── coordinate_model.py    # 座標データ管理
-│   ├── app_settings_model.py  # アプリケーション設定
-│   ├── worker_model.py        # 作業者情報管理
-│   └── image_model.py         # 画像処理・変換
-├── views/           # UI コンポーネント
-│   ├── main_view.py           # メインウィンドウ
-│   ├── coordinate_canvas_view.py # 座標表示キャンバス
-│   ├── sidebar_view.py        # サイドバー
-│   └── dialogs.py             # ダイアログ
-└── controllers/     # ビジネスロジック
-    ├── main_controller.py     # メインコントローラー
-    ├── coordinate_controller.py # 座標操作
-    └── file_controller.py     # ファイル操作
-```
-
-## 🚀 実行方法
-
-### MVC版（推奨）
-```bash
-python main_mvc.py
-```
-
-### レガシー版
-```bash
-python main.py
-```
+# 💪 Python GUI アプリのビルド手順（macOS & Windows）
 
 ## 📁 前提条件
 
-- Python 3.12+ インストール済み
-- 必要ライブラリ：`tkinter`, `Pillow`, `PyInstaller`
-
-## 🔧 ビルド手順（macOS & Windows）
+- Python 3.x インストール済み
+- アプリファイル：`image_coords_app.py`
+- 使用ライブラリ：`tkinter`, `Pillow`, `PyInstaller`
+- 表示画像：`your_image.jpg`（例：`sg180306_01-thumb-570xauto-21122.jpg`）
 
 ## 📋 設定ファイル
 

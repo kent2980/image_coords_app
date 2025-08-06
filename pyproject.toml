@@ -1,14 +1,10 @@
 [project]
 name = "image-coords-app"
-version = "2.0.0"
-description = "Image coordinate management application with MVC architecture"
+version = "0.1.0"
+description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "pillow>=11.3.0",
     "pyinstaller>=6.14.2",
 ]
-
-[project.scripts]
-image-coords-app = "main_mvc:main"
-image-coords-legacy = "main:main"
