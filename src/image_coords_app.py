@@ -33,7 +33,9 @@ class CoordinateApp:
             'load_image_for_display': self.load_image_for_display,
             'setup_json_save_dir': self._setup_json_save_dir,
             'setup_save_name_entry': self._setup_save_name_entry,
-            'on_form_data_changed': self.on_form_data_changed
+            'on_form_data_changed': self.on_form_data_changed,
+            'save_json': self.save_coordinates,
+            'search_coordinates': self.search_coordinates
         }
         self.ui = UIComponents(self.root, callbacks)
         
@@ -54,11 +56,21 @@ class CoordinateApp:
 
         # 保存名エントリをセットアップ
         self._setup_save_name_entry()
+        
+        # 作業者入力ダイアログを表示
+        self._setup_worker_input()
+
+    def _setup_worker_input(self):
+        """作業者入力を設定"""
+        worker_name = self.ui.show_worker_input_dialog()
+        if worker_name is None:
+            # 作業者入力がキャンセルされた場合はアプリを終了
+            return
 
     def _setup_json_save_dir(self):
         """ 
         JSONファイルの保存先ディレクトリを作成 
-        \データディレクトリ\日付\モデル名\
+        \データディレクトリ\日付\モデル名\ロット番号\
         
         Returns:
             str: 作成されたディレクトリのパス（作成できない場合はNone）
@@ -72,10 +84,14 @@ class CoordinateApp:
                 print("データディレクトリが設定されていません。")
                 return None
             
-            # データディレクトリが存在するかチェック
+            # データディレクトリが存在するかチェック、存在しない場合は作成
             if not os.path.exists(data_directory):
-                print(f"データディレクトリが存在しません: {data_directory}")
-                return None
+                try:
+                    os.makedirs(data_directory, exist_ok=True)
+                    print(f"データディレクトリを作成しました: {data_directory}")
+                except Exception as e:
+                    print(f"データディレクトリの作成に失敗しました: {data_directory}, エラー: {e}")
+                    return None
             
             # 現在の日付を取得（YYYY-MM-DD形式）
             current_date = self.ui.selected_date.strftime('%Y-%m-%d')
@@ -87,8 +103,15 @@ class CoordinateApp:
                 print("有効なモデルが選択されていません。")
                 return None
             
-            # ディレクトリパスを構築: データディレクトリ\日付\モデル名
-            save_dir = os.path.join(data_directory, current_date, model_name)
+            # 現在のロット番号を取得
+            lot_number = self.ui.get_current_lot_number()
+            
+            if not lot_number or lot_number.strip() == "":
+                print("ロット番号が設定されていません。")
+                return None
+            
+            # ディレクトリパスを構築: データディレクトリ\日付\モデル名\ロット番号
+            save_dir = os.path.join(data_directory, current_date, model_name, lot_number)
             
             # ディレクトリを作成（存在しない場合）
             os.makedirs(save_dir, exist_ok=True)
@@ -109,7 +132,7 @@ class CoordinateApp:
         Returns:
             int: 次の連番（0001から開始）
         """
-        if not os.path.exists(directory):
+        if not directory or not os.path.exists(directory):
             return 1
         
         try:
@@ -158,16 +181,6 @@ class CoordinateApp:
                     
         except Exception as e:
             print(f"保存名自動設定エラー: {e}")
-        
-    def _setup_save_name_entry(self):
-        """保存名エントリをセットアップ"""
-        # 保存名エントリをUIにセットアップ
-        save_frame = self.ui.save_name_entry
-        # 保存名を取得
-        save_name = self._get_next_sequential_number(self._setup_json_save_dir())
-        # 保存名エントリに設定
-        save_frame.delete(0, tk.END)
-        save_frame.insert(0, f"{save_name:04d}")  # 4桁の連番形式で設定
 
     def _setup_ui(self):
         """UIをセットアップ"""
@@ -369,10 +382,11 @@ class CoordinateApp:
         new_index = len(self.coordinate_manager.coordinates) - 1
         self.coordinate_manager.set_current_coordinate(new_index)
         
-        # フォームを新しい座標の詳細情報で更新
-        detail = self.coordinate_manager.get_current_coordinate_detail()
-        if detail:
-            self.ui.update_form_with_coordinate_detail(detail)
+        # 新しい座標なのでフォームをクリア
+        self.ui.clear_form()
+        
+        # 項目番号のみ設定（座標の番号）
+        self.ui.item_number_var.set(str(number))
         
         # リファレンス入力フィールドにフォーカスを当てる
         self.ui.focus_reference_entry()
@@ -452,6 +466,16 @@ class CoordinateApp:
                 parsed_data.get('coordinate_details', [])
             )
             
+            # ロット番号をUIに設定
+            if 'lot_number' in parsed_data and parsed_data['lot_number']:
+                self.ui.set_current_lot_number(parsed_data['lot_number'])
+            else:
+                self.ui.set_current_lot_number("")
+            
+            # 作業者NoをUIに設定
+            if 'worker_no' in parsed_data and parsed_data['worker_no']:
+                self.ui.set_current_worker(parsed_data['worker_no'])
+            
             # キャンバスを再描画
             self.coordinate_manager.redraw_all_markers(self.canvas)
             
@@ -507,11 +531,18 @@ class CoordinateApp:
             # フォームデータを取得
             form_data = self.ui.get_form_data()
             
+            # ロット番号をチェック
+            current_lot_number = self.ui.get_current_lot_number()
+            if not current_lot_number or current_lot_number.strip() == "":
+                self.file_manager.show_error_message("ロット番号が入力されていません。\nロット番号を入力してから保存してください。")
+                return
+            
             # 保存ディレクトリを作成
             save_dir = self._setup_json_save_dir()
             
             if not save_dir:
                 # ディレクトリ作成に失敗した場合は従来の方法でファイル選択
+                # （データディレクトリ、モデル名、またはロット番号が設定されていない場合）
                 save_name = form_data.get('save_name', '')
                 default_filename = f"{save_name}.json" if save_name else "coordinates.json"
                 file_path = self.file_manager.save_json_file(default_filename)
@@ -544,12 +575,18 @@ class CoordinateApp:
                 
             # 座標詳細情報を取得
             coordinate_details = self.coordinate_manager.get_all_coordinate_details()
+            
+            # 現在のロット番号と作業者Noを取得
+            current_lot_number = self.ui.get_current_lot_number()
+            current_worker_no = self.ui.get_current_worker()
                 
             # 保存データを作成
             save_data = self.file_manager.create_save_data(
                 coordinates,
                 self.coordinate_manager.get_current_image_path() or "",
-                coordinate_details
+                coordinate_details,
+                current_lot_number,
+                current_worker_no
             )
             
             # データを保存
@@ -611,11 +648,17 @@ class CoordinateApp:
                 # 座標詳細情報を取得
                 coordinate_details = self.coordinate_manager.get_all_coordinate_details()
                 
+                # 現在のロット番号と作業者Noを取得
+                current_lot_number = self.ui.get_current_lot_number()
+                current_worker_no = self.ui.get_current_worker()
+                
                 # 保存データを作成
                 save_data = self.file_manager.create_save_data(
                     coordinates,
                     self.coordinate_manager.get_current_image_path() or "",
-                    coordinate_details
+                    coordinate_details,
+                    current_lot_number,
+                    current_worker_no
                 )
                 
                 # 現在のJSONファイルを更新
@@ -728,6 +771,11 @@ class CoordinateApp:
         except Exception as e:
             print(f"画像読み込みエラー: {e}")
             return None
+    
+    def search_coordinates(self):
+        """座標検索機能（閲覧モード用）"""
+        # TODO: 座標検索機能を実装
+        print("検索機能は今後実装予定です。")
         
     def run_app(self):
         """アプリケーションを実行"""

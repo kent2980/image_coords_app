@@ -115,17 +115,21 @@ class FileManager:
         except Exception as e:
             raise Exception(f"JSONファイルの保存に失敗しました: {e}")
             
-    def create_save_data(self, coordinates, image_path="", coordinate_details=None):
+    def create_save_data(self, coordinates, image_path="", coordinate_details=None, lot_number="", worker_no=""):
         """保存用データを作成
         
         Args:
             coordinates: 座標リスト [(x, y), ...]
             image_path: 画像パス
             coordinate_details: 座標ごとの詳細情報リスト [{"item_number": "1", "reference": "...", ...}, ...]
+            lot_number: ロット番号
+            worker_no: 作業者No
         """
         data = {
             "timestamp": datetime.now().isoformat(),
             "image_path": image_path,
+            "lot_number": lot_number,
+            "worker_no": worker_no,
             "coordinates": []
         }
         
@@ -160,6 +164,8 @@ class FileManager:
         """読み込んだデータを解析"""
         result = {
             'image_path': data.get('image_path', ''),
+            'lot_number': data.get('lot_number', ''),
+            'worker_no': data.get('worker_no', ''),
             'coordinates': [],
             'coordinate_details': []
         }
