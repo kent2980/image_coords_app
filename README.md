@@ -1,5 +1,54 @@
 # 💪 Python GUI アプリのビルド手順（macOS & Windows）
 
+## 🏗️ アーキテクチャ
+
+このプロジェクトは **MVCアーキテクチャ** に基づいて設計されています。
+
+### 🔧 プロジェクト構造
+```
+src/
+├── models/           # データモデル層
+│   ├── coordinate_model.py      # 座標データの管理
+│   ├── app_settings_model.py    # アプリケーション設定
+│   ├── worker_model.py          # 作業者データ
+│   └── image_model.py           # 画像データ
+├── views/            # ビュー層
+│   ├── main_view.py             # メインウィンドウ
+│   ├── coordinate_canvas_view.py # キャンバス表示
+│   ├── sidebar_view.py          # サイドバーUI
+│   └── dialogs/                 # ダイアログ
+│       ├── worker_input_dialog.py
+│       ├── settings_dialog.py
+│       └── date_select_dialog.py
+├── controllers/      # コントローラー層
+│   ├── main_controller.py       # メインコントローラー
+│   ├── coordinate_controller.py # 座標操作制御
+│   └── file_controller.py       # ファイル操作制御
+├── coordinate_manager.py        # レガシー（旧アーキテクチャ）
+├── file_manager.py              # レガシー（旧アーキテクチャ）
+├── ui_components.py             # レガシー（旧アーキテクチャ）
+└── image_coords_app.py          # レガシー（旧アーキテクチャ）
+```
+
+### 🚀 実行方法
+
+#### MVCアーキテクチャ版（推奨）
+```bash
+python main_mvc.py
+```
+
+#### レガシー版
+```bash
+python main.py
+```
+
+### 📋 MVCアーキテクチャの利点
+
+- **分離された責任**: データ（Model）、表示（View）、制御（Controller）が明確に分離
+- **保守性**: 各層が独立しており、変更の影響範囲が限定的
+- **テスト容易性**: 各層を個別にテストしやすい
+- **拡張性**: 新しい機能を追加する際の構造が明確
+
 ## 📁 前提条件
 
 - Python 3.x インストール済み
