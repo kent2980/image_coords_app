@@ -251,6 +251,90 @@ class FileController:
         from tkinter import messagebox
         messagebox.showinfo(title, message)
     
+    def save_lot_number_info(self, lot_number: str, save_dir: str) -> bool:
+        """ロット番号情報をJSONファイルに保存
+        
+        Args:
+            lot_number: ロット番号
+            save_dir: 保存ディレクトリのパス
+            
+        Returns:
+            bool: 保存成功時はTrue、失敗時はFalse
+        """
+        try:
+            # {lot_number: file_path}の辞書を作成
+            lot_number_dict = {lot_number: save_dir}
+            
+            # プロジェクトのルートディレクトリにlot_number_info.jsonが存在しなければ作成、存在すれば追加する
+            project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            lot_number_info_path = os.path.join(project_root, "lot_number_info.json")
+            
+            if os.path.exists(lot_number_info_path):
+                try:
+                    with open(lot_number_info_path, 'r', encoding='utf-8') as f:
+                        lot_number_info = json.load(f)
+                except (json.JSONDecodeError, Exception):
+                    lot_number_info = {}
+            else:
+                lot_number_info = {}
+            
+            # ロット番号情報を更新
+            lot_number_info.update(lot_number_dict)
+            
+            with open(lot_number_info_path, 'w', encoding='utf-8') as f:
+                json.dump(lot_number_info, f, ensure_ascii=False, indent=2)
+            
+            print(f"ロット番号情報を保存しました: {lot_number} -> {save_dir}")
+            return True
+            
+        except Exception as e:
+            print(f"ロット番号情報の保存エラー: {e}")
+            return False
+    
+    def get_lot_number_directory(self, lot_number: str) -> Optional[str]:
+        """ロット番号からディレクトリパスを取得
+        
+        Args:
+            lot_number: ロット番号
+            
+        Returns:
+            Optional[str]: ディレクトリパス（見つからない場合はNone）
+        """
+        try:
+            # プロジェクトのルートディレクトリからlot_number_info.jsonを読み込み
+            project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            lot_number_info_path = os.path.join(project_root, "lot_number_info.json")
+            
+            if not os.path.exists(lot_number_info_path):
+                print(f"ロット番号情報ファイルが存在しません: {lot_number_info_path}")
+                return None
+            
+            try:
+                with open(lot_number_info_path, 'r', encoding='utf-8') as f:
+                    lot_number_info = json.load(f)
+            except (json.JSONDecodeError, Exception) as e:
+                print(f"ロット番号情報ファイルの読み込みエラー: {e}")
+                return None
+            
+            # ロット番号に対応するディレクトリパスを取得
+            directory_path = lot_number_info.get(lot_number)
+            
+            if directory_path:
+                # ディレクトリが実際に存在するかチェック
+                if os.path.exists(directory_path):
+                    print(f"ロット番号 '{lot_number}' のディレクトリパスを取得しました: {directory_path}")
+                    return directory_path
+                else:
+                    print(f"ロット番号 '{lot_number}' のディレクトリが存在しません: {directory_path}")
+                    return None
+            else:
+                print(f"ロット番号 '{lot_number}' の情報が見つかりません")
+                return None
+                
+        except Exception as e:
+            print(f"ロット番号ディレクトリ取得エラー: {e}")
+            return None
+    
     def setup_json_save_dir(self, current_date, model_name: str, lot_number: str) -> Optional[str]:
         """
         JSONファイルの保存先ディレクトリを作成 
@@ -299,21 +383,8 @@ class FileController:
             # ディレクトリを作成（存在しない場合）
             os.makedirs(save_dir, exist_ok=True)
             
-            # {lot_number: file_path}の辞書を作成
-            lot_number_dict = {lot_number: save_dir}
-            # プロジェクトのルートディレクトリにlot_number_info.jsonが存在しなければ作成、存在すれば追加する
-            project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-            lot_number_info_path = os.path.join(project_root, "lot_number_info.json")
-            if os.path.exists(lot_number_info_path):
-                with open(lot_number_info_path, 'r', encoding='utf-8') as f:
-                    lot_number_info = json.load(f)
-            else:
-                lot_number_info = {}
-            # ロット番号情報を更新
-            lot_number_info.update(lot_number_dict)
-            with open(lot_number_info_path, 'w', encoding='utf-8') as f:
-                json.dump(lot_number_info, f, ensure_ascii=False, indent=2)
-            print(f"自動保存パスを生成しました: {save_dir}")
+            # ロット番号情報をJSONファイルに保存
+            self.save_lot_number_info(lot_number, save_dir)
 
             print(f"保存ディレクトリを作成/確認しました: {save_dir}")
             return save_dir

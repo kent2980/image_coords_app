@@ -574,9 +574,11 @@ class MainController:
         except Exception as e:
             self.file_controller.show_error_message(f"画像読み込みエラー: {e}")
     
-    def load_json(self):
+    def load_json(self,file_path = None):
         """JSONファイルを読み込み"""
-        file_path = self.file_controller.select_json_file()
+
+        if file_path is None:
+            file_path = self.file_controller.select_json_file()
         
         if not file_path:
             return
@@ -855,16 +857,17 @@ class MainController:
                 
                 elif mode == "閲覧":
                     lot_number = result
-                    print(f"[閲覧モード指図切り替え] 指図: {lot_number}")
-                    
-                    # 現在のロット番号を更新
-                    self.current_lot_number = lot_number
-                    
-                    # サイドバーの指図番号を更新
-                    if hasattr(self, 'sidebar_view') and self.sidebar_view:
-                        self.sidebar_view.set_lot_number(lot_number)
-                        print(f"[DEBUG] サイドバーに指図番号を設定しました: 指図={lot_number}")
-
+                    # 対応するディレクトリパスを取得
+                    dir_path = self.file_controller.get_lot_number_directory(lot_number)
+                    if dir_path:
+                        print(f"[DEBUG] ロット番号 '{lot_number}' に対応するディレクトリ: {dir_path}")
+                        # JSONファイルを自動的に読み込む
+                        file_path = os.path.join(dir_path, "0001.json")
+                        try:
+                            self.load_json(file_path=file_path)
+                        except Exception as e:
+                            print(f"[DEBUG] JSONファイル読み込みエラー: {e}")
+                            self.main_view.show_error(f"JSONファイルの読み込みに失敗しました:\n{str(e)}")
             else:
                 print("[DEBUG] ダイアログがキャンセルされました")
             
