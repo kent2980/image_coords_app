@@ -4,6 +4,7 @@
 """
 import os
 import tkinter as tk
+from tkinter import messagebox
 from datetime import date, datetime
 from typing import Dict, Any, List, Tuple, Optional
 
@@ -816,28 +817,54 @@ class MainController:
         """現品票で切り替えボタンが押された時の処理"""
         print("[DEBUG] 現品票切り替えボタンがクリックされました")
         try:
+            # 現在のモードを取得
+            mode = self.main_view.get_current_mode()
+            
             # 現品票切り替えダイアログを表示
             print("[DEBUG] ダイアログを表示しようとしています...")
-            result = self.main_view.show_item_tag_switch_dialog()
+            result = None
+            
+            if mode == "編集":
+                # 編集モード：製番と指図を入力するダイアログ
+                result = self.main_view.show_item_tag_switch_dialog()
+            elif mode == "閲覧":
+                # 閲覧モード：指図入力のみのダイアログを表示
+                result = self._show_lot_number_input_dialog()
+            else:
+                result = None
+            
             print(f"[DEBUG] ダイアログの結果: {result}")
             
             if result:
-                product_number, lot_number = result
-                print(f"[現品票切り替え] 製番: {product_number}, 指図: {lot_number}")
+                if mode == "編集":
+                    product_number, lot_number = result
+                    print(f"[現品票切り替え] 製番: {product_number}, 指図: {lot_number}")
+                    
+                    # 現在のロット番号を更新
+                    self.current_lot_number = lot_number
+                    
+                    # 製番に基づいてモデル切り替え処理を実行
+                    print(f"[DEBUG] 製番 '{product_number}' でモデル検索を開始")
+                    self._switch_model_by_product_number(product_number)
+                    
+                    # サイドバーの製番と指図番号を更新
+                    if hasattr(self, 'sidebar_view') and self.sidebar_view:
+                        self.sidebar_view.set_product_number(product_number)
+                        self.sidebar_view.set_lot_number(lot_number)
+                        print(f"[DEBUG] サイドバーに製番と指図番号を設定しました: 製番={product_number}, 指図={lot_number}")
                 
-                # 現在のロット番号を更新
-                self.current_lot_number = lot_number
-                
-                # 製番に基づいてモデル切り替え処理を実行
-                print(f"[DEBUG] 製番 '{product_number}' でモデル検索を開始")
-                self._switch_model_by_product_number(product_number)
-                
-                # サイドバーの製番と指図番号を更新
-                if hasattr(self, 'sidebar_view') and self.sidebar_view:
-                    self.sidebar_view.set_product_number(product_number)
-                    self.sidebar_view.set_lot_number(lot_number)
-                    print(f"[DEBUG] サイドバーに製番と指図番号を設定しました: 製番={product_number}, 指図={lot_number}")
-                
+                elif mode == "閲覧":
+                    lot_number = result
+                    print(f"[閲覧モード指図切り替え] 指図: {lot_number}")
+                    
+                    # 現在のロット番号を更新
+                    self.current_lot_number = lot_number
+                    
+                    # サイドバーの指図番号を更新
+                    if hasattr(self, 'sidebar_view') and self.sidebar_view:
+                        self.sidebar_view.set_lot_number(lot_number)
+                        print(f"[DEBUG] サイドバーに指図番号を設定しました: 指図={lot_number}")
+
             else:
                 print("[DEBUG] ダイアログがキャンセルされました")
             
@@ -847,6 +874,105 @@ class MainController:
             traceback.print_exc()
             self.main_view.show_error(f"現品票切り替え中にエラーが発生しました:\n{str(e)}")
     
+    def _show_lot_number_input_dialog(self):
+        """閲覧モード用の指図入力ダイアログを表示"""
+        import tkinter as tk
+        from tkinter import ttk
+        import re
+        
+        class LotNumberInputDialog:
+            def __init__(self, parent):
+                self.result = None
+                self.dialog = tk.Toplevel(parent)
+                self.dialog.title("指図番号入力")
+                self.dialog.geometry("350x200")
+                self.dialog.resizable(False, False)
+                self.dialog.transient(parent)
+                self.dialog.grab_set()
+                
+                # ダイアログを中央に配置
+                self.dialog.update_idletasks()
+                x = (self.dialog.winfo_screenwidth() - self.dialog.winfo_width()) // 2
+                y = (self.dialog.winfo_screenheight() - self.dialog.winfo_height()) // 2
+                self.dialog.geometry(f"+{x}+{y}")
+                
+                self._create_widgets()
+                
+                # Enterキーでの確定
+                self.dialog.bind('<Return>', lambda e: self._on_ok())
+                
+                # 初期フォーカス
+                self.lot_number_entry.focus_set()
+            
+            def _create_widgets(self):
+                # メインフレーム
+                main_frame = ttk.Frame(self.dialog, padding="20")
+                main_frame.pack(fill=tk.BOTH, expand=True)
+                
+                # タイトルラベル
+                title_label = ttk.Label(main_frame, text="指図番号を入力してください", font=("", 12, "bold"))
+                title_label.pack(pady=(0, 20))
+                
+                # 指図入力フレーム
+                lot_frame = ttk.LabelFrame(main_frame, text="指図番号", padding="10")
+                lot_frame.pack(fill=tk.X, pady=(0, 20))
+                
+                self.lot_number_entry = ttk.Entry(lot_frame, font=("", 11), width=30)
+                self.lot_number_entry.pack(fill=tk.X)
+                
+                # 形式説明ラベル
+                format_label = ttk.Label(lot_frame, text="形式: 1234567-10 または 1234567-20", 
+                                       font=("", 9), foreground="gray")
+                format_label.pack(pady=(5, 0))
+                
+                # ボタンフレーム
+                button_frame = ttk.Frame(main_frame)
+                button_frame.pack(fill=tk.X)
+                
+                # OKボタン
+                ok_button = ttk.Button(button_frame, text="OK", command=self._on_ok, width=10)
+                ok_button.pack(side=tk.RIGHT, padx=(5, 0))
+                
+                # キャンセルボタン
+                cancel_button = ttk.Button(button_frame, text="キャンセル", command=self._on_cancel, width=10)
+                cancel_button.pack(side=tk.RIGHT)
+            
+            def _on_ok(self):
+                lot_number = self.lot_number_entry.get().strip()
+                
+                if not lot_number:
+                    tk.messagebox.showerror("入力エラー", "指図番号を入力してください。", parent=self.dialog)
+                    return
+                
+                # 形式チェック
+                lot_pattern = r'^\d{7}-10$|^\d{7}-20$'
+                if not re.match(lot_pattern, lot_number):
+                    tk.messagebox.showerror(
+                        "入力エラー",
+                        "指図番号の形式が正しくありません。\n形式: 1234567-10 または 1234567-20 (7桁-10または7桁-20)",
+                        parent=self.dialog
+                    )
+                    return
+                
+                self.result = lot_number
+                self.dialog.destroy()
+            
+            def _on_cancel(self):
+                self.result = None
+                self.dialog.destroy()
+            
+            def show(self):
+                self.dialog.wait_window()
+                return self.result
+        
+        try:
+            dialog = LotNumberInputDialog(self.main_view.root)
+            return dialog.show()
+        except Exception as e:
+            print(f"指図入力ダイアログエラー: {e}")
+            self.main_view.show_error(f"指図入力ダイアログでエラーが発生しました:\n{str(e)}")
+            return None
+
     def _switch_model_by_product_number(self, product_number: str):
         """製番に基づいてモデルを切り替え"""
         try:

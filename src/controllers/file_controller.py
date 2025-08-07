@@ -299,6 +299,22 @@ class FileController:
             # ディレクトリを作成（存在しない場合）
             os.makedirs(save_dir, exist_ok=True)
             
+            # {lot_number: file_path}の辞書を作成
+            lot_number_dict = {lot_number: save_dir}
+            # プロジェクトのルートディレクトリにlot_number_info.jsonが存在しなければ作成、存在すれば追加する
+            project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            lot_number_info_path = os.path.join(project_root, "lot_number_info.json")
+            if os.path.exists(lot_number_info_path):
+                with open(lot_number_info_path, 'r', encoding='utf-8') as f:
+                    lot_number_info = json.load(f)
+            else:
+                lot_number_info = {}
+            # ロット番号情報を更新
+            lot_number_info.update(lot_number_dict)
+            with open(lot_number_info_path, 'w', encoding='utf-8') as f:
+                json.dump(lot_number_info, f, ensure_ascii=False, indent=2)
+            print(f"自動保存パスを生成しました: {save_dir}")
+
             print(f"保存ディレクトリを作成/確認しました: {save_dir}")
             return save_dir
             
