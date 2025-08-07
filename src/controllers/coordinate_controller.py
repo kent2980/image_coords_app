@@ -2,6 +2,7 @@
 座標コントローラー
 座標の管理と操作を制御
 """
+import os
 from typing import Tuple, Optional, List, Dict, Any
 
 
@@ -168,3 +169,94 @@ class CoordinateController:
     def get_all_coordinate_details(self) -> List[Dict[str, Any]]:
         """全座標詳細を取得"""
         return self.coordinate_model.coordinate_details
+    
+    def load_models_from_file(self, settings_model) -> List[Dict[str, str]]:
+        """設定で指定された画像ディレクトリから画像ファイル名を読み込み
+        
+        Args:
+            settings_model: 設定モデル
+            
+        Returns:
+            List[Dict[str, str]]: [{"filename": "フルパス"}, ...] 形式のリスト
+        """
+        try:
+            image_directory = settings_model.image_directory
+            
+            if image_directory and image_directory != "未選択":
+                # 画像ディレクトリから画像ファイル名とフルパスを取得
+                image_files_dict = self._get_image_files_with_paths(image_directory)
+                
+                if image_files_dict:
+                    return image_files_dict
+                else:
+                    # 画像ファイルが見つからない場合
+                    return [{"画像なし": f"画像なし（{os.path.basename(image_directory)}）"}]
+            else:
+                # 画像ディレクトリが設定されていない場合
+                return [{"画像ディレクトリが未設定": "画像ディレクトリが未設定"}]
+                
+        except Exception as e:
+            # エラーが発生した場合はデフォルト値を返す
+            print(f"画像ファイル読み込みエラー: {e}")
+            return [{"設定エラー": "設定エラー"}]
+    
+    def _get_image_files_with_paths(self, directory: str) -> List[Dict[str, str]]:
+        """指定されたディレクトリから画像ファイル名とフルパスの辞書リストを取得
+        
+        Args:
+            directory: 検索対象のディレクトリパス
+            
+        Returns:
+            List[Dict[str, str]]: [{"filename": "フルパス"}, ...] 形式のリスト
+        """
+        if not directory or not os.path.exists(directory):
+            return []
+        
+        # サポートする画像拡張子
+        supported_extensions = {'.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tiff'}
+        
+        image_files = []
+        try:
+            for filename in os.listdir(directory):
+                if os.path.isfile(os.path.join(directory, filename)):
+                    # ファイルの拡張子をチェック
+                    name_without_ext, ext = os.path.splitext(filename)
+                    if ext.lower() in supported_extensions:
+                        # フルパスを作成
+                        full_path = os.path.join(directory, filename)
+                        # 拡張子なしのファイル名をキーとして使用
+                        image_files.append({name_without_ext: full_path})
+            
+            return image_files
+            
+        except Exception as e:
+            print(f"画像ファイル取得エラー: {e}")
+            return []
+    
+    def delete_coordinate(self, index: int) -> bool:
+        """指定されたインデックスの座標を削除
+        
+        Args:
+            index: 削除する座標のインデックス
+            
+        Returns:
+            bool: 削除に成功した場合True
+        """
+        try:
+            coordinates = self.coordinate_model.get_coordinates()
+            if 0 <= index < len(coordinates):
+                # アンドゥ用に現在の状態を保存
+                self.coordinate_model.save_state_for_undo()
+                
+                # 座標を削除
+                self.coordinate_model.remove_coordinate(index)
+                
+                # 現在の座標インデックスをリセット
+                self.coordinate_model.set_current_coordinate(-1)
+                
+                return True
+            return False
+            
+        except Exception as e:
+            print(f"座標削除エラー: {e}")
+            return False

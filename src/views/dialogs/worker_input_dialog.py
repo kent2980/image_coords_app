@@ -38,10 +38,19 @@ class WorkerInputDialog:
         
         self._setup_ui()
         
+        # フォーカスを確実に入力フィールドに設定
+        self.dialog.after(100, self._set_focus)  # 少し遅延させてフォーカス設定
+        
         # ダイアログが閉じられるまで待機
         self.dialog.wait_window()
         
         return self.result
+    
+    def _set_focus(self):
+        """入力フィールドにフォーカスを設定"""
+        if hasattr(self, 'worker_entry') and self.worker_entry:
+            self.worker_entry.focus_set()
+            self.worker_entry.icursor(tk.END)  # カーソルを末尾に移動
     
     def _setup_ui(self):
         """UIを設定"""
@@ -79,6 +88,9 @@ class WorkerInputDialog:
         )
         self.worker_entry.pack(fill=tk.X, pady=5)
         self.worker_entry.focus_set()
+        
+        # Enterキーでも入力確定できるようにバインド
+        self.worker_entry.bind('<Return>', lambda event: self._on_ok())
         
         # 状態表示ラベル
         self.status_label = tk.Label(

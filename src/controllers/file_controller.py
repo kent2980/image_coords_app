@@ -248,6 +248,138 @@ class FileController:
     
     def show_info_message(self, message: str, title: str = "情報"):
         """情報メッセージを表示"""
+        from tkinter import messagebox
+        messagebox.showinfo(title, message)
+    
+    def setup_json_save_dir(self, current_date, model_name: str, lot_number: str) -> Optional[str]:
+        """
+        JSONファイルの保存先ディレクトリを作成 
+        \データディレクトリ\日付\モデル名\ロット番号\
+        
+        Args:
+            current_date: 現在の日付
+            model_name: モデル名
+            lot_number: ロット番号
+            
+        Returns:
+            str: 作成されたディレクトリのパス（作成できない場合はNone）
+        """
+        try:
+            # 設定を読み込み
+            settings = self.settings_model.get_all_settings()
+            data_directory = settings.get('data_directory', '')
+            
+            if not data_directory or data_directory == "未選択":
+                print("データディレクトリが設定されていません。")
+                return None
+            
+            # データディレクトリが存在するかチェック、存在しない場合は作成
+            if not os.path.exists(data_directory):
+                try:
+                    os.makedirs(data_directory, exist_ok=True)
+                    print(f"データディレクトリを作成しました: {data_directory}")
+                except Exception as e:
+                    print(f"データディレクトリの作成に失敗しました: {data_directory}, エラー: {e}")
+                    return None
+            
+            # 現在の日付を取得（YYYY-MM-DD形式）
+            current_date_str = current_date.strftime('%Y-%m-%d')
+            
+            if not model_name or model_name.startswith("画像") or model_name == "設定エラー":
+                print("有効なモデルが選択されていません。")
+                return None
+            
+            if not lot_number or lot_number.strip() == "":
+                print("ロット番号が設定されていません。")
+                return None
+            
+            # ディレクトリパスを構築: データディレクトリ\日付\モデル名\ロット番号
+            save_dir = os.path.join(data_directory, current_date_str, model_name, lot_number)
+            
+            # ディレクトリを作成（存在しない場合）
+            os.makedirs(save_dir, exist_ok=True)
+            
+            print(f"保存ディレクトリを作成/確認しました: {save_dir}")
+            return save_dir
+            
+        except Exception as e:
+            print(f"保存ディレクトリ作成エラー: {e}")
+            return None
+    
+    def get_next_sequential_number(self, directory: str) -> int:
+        """指定されたディレクトリ内の連番ファイル名の次の番号を取得
+        
+        Args:
+            directory: 検索対象のディレクトリパス
+            
+        Returns:
+            int: 次の連番（0001から開始）
+        """
+        if not directory or not os.path.exists(directory):
+            return 1
+        
+        try:
+            # ディレクトリ内のJSONファイルを検索
+            json_files = []
+            for filename in os.listdir(directory):
+                if filename.endswith('.json') and os.path.isfile(os.path.join(directory, filename)):
+                    # ファイル名から数字部分を抽出
+                    name_without_ext = os.path.splitext(filename)[0]
+                    
+                    # 4桁の数字のみのファイル名かチェック
+                    if name_without_ext.isdigit() and len(name_without_ext) == 4:
+                        json_files.append(int(name_without_ext))
+            
+            if not json_files:
+                # 連番ファイルが存在しない場合は1から開始
+                return 1
+            
+            # 最大値の次の番号を返す
+            return max(json_files) + 1
+            
+        except Exception as e:
+            print(f"連番取得エラー: {e}")
+            return 1
+    
+    def setup_save_name_entry(self, current_date, model_name: str, lot_number: str, current_save_name: str) -> str:
+        """保存名エントリに連番ファイル名を自動設定
+        
+        Args:
+            current_date: 現在の日付
+            model_name: モデル名
+            lot_number: ロット番号
+            current_save_name: 現在の保存名
+            
+        Returns:
+            str: 自動生成された保存名（空文字列の場合は変更なし）
+        """
+        try:
+            # 現在の保存名をチェック
+            if current_save_name and current_save_name.strip():
+                # 保存名が既に設定されている場合は変更しない
+                return current_save_name
+            
+            # 保存ディレクトリを取得
+            save_dir = self.setup_json_save_dir(current_date, model_name, lot_number)
+            
+            if save_dir:
+                # 次の連番を取得
+                next_number = self.get_next_sequential_number(save_dir)
+                
+                # 4桁ゼロパディングで保存名を設定
+                auto_save_name = f"{next_number:04d}"
+                print(f"保存名を自動設定しました: {auto_save_name}")
+                return auto_save_name
+            
+            return current_save_name
+                
+        except Exception as e:
+            print(f"保存名自動設定エラー: {e}")
+            return current_save_name
+    
+    def show_info_message(self, message: str, title: str = "情報"):
+        """情報メッセージを表示"""
+        from tkinter import messagebox
         messagebox.showinfo(title, message)
     
     def show_error_message(self, message: str, title: str = "エラー"):

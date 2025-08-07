@@ -20,14 +20,9 @@ class CoordinateCanvasView:
             parent_frame,
             width=self.canvas_width,
             height=self.canvas_height,
-            bg='white',
-            relief=tk.SUNKEN,
-            borderwidth=2
+            bg='white'
         )
         self.canvas.pack(fill=tk.BOTH, expand=True)
-        
-        # スクロールバー
-        self.setup_scrollbars()
         
         # イベントコールバック
         self.callbacks: Dict[str, Callable] = {}
@@ -36,18 +31,17 @@ class CoordinateCanvasView:
         self.current_image = None
         self.coordinate_markers = []
         self.highlight_marker = None
+        
+        # ウィンドウサイズ変更のイベントをバインド
+        self.canvas.bind('<Configure>', self._on_canvas_configure)
+        self.current_image = None
+        self.coordinate_markers = []
+        self.highlight_marker = None
     
     def setup_scrollbars(self):
-        """スクロールバーを設定"""
-        # 垂直スクロールバー
-        v_scrollbar = tk.Scrollbar(self.parent_frame, orient=tk.VERTICAL, command=self.canvas.yview)
-        v_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        self.canvas.configure(yscrollcommand=v_scrollbar.set)
-        
-        # 水平スクロールバー
-        h_scrollbar = tk.Scrollbar(self.parent_frame, orient=tk.HORIZONTAL, command=self.canvas.xview)
-        h_scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
-        self.canvas.configure(xscrollcommand=h_scrollbar.set)
+        """スクロールバーを設定 - 既存UIではスクロールバー無し"""
+        # 既存UIと一致させるためスクロールバーは設定しない
+        pass
     
     def bind_events(self, mode: str = "edit"):
         """イベントをバインド"""
@@ -78,6 +72,27 @@ class CoordinateCanvasView:
         if 'on_view_click' in self.callbacks:
             self.callbacks['on_view_click'](event)
     
+    def _on_canvas_configure(self, event):
+        """キャンバスサイズ変更時の処理"""
+        # キャンバス自体のサイズ変更イベントのみ処理
+        if event.widget == self.canvas:
+            new_width = event.width
+            new_height = event.height
+            
+            # サイズが実際に変更された場合のみ処理
+            if new_width != self.canvas_width or new_height != self.canvas_height:
+                print(f"[DEBUG] キャンバスサイズ変更: {self.canvas_width}x{self.canvas_height} → {new_width}x{new_height}")
+                
+                self.canvas_width = new_width
+                self.canvas_height = new_height
+                
+                # スクロール領域を更新
+                self.canvas.configure(scrollregion=(0, 0, new_width, new_height))
+                
+                # キャンバスサイズ変更のコールバックがある場合は呼び出し
+                if 'on_canvas_resize' in self.callbacks:
+                    self.callbacks['on_canvas_resize'](new_width, new_height)
+    
     def set_callbacks(self, callbacks: Dict[str, Callable]):
         """コールバック関数を設定"""
         self.callbacks.update(callbacks)
@@ -86,18 +101,21 @@ class CoordinateCanvasView:
         """画像を表示"""
         self.clear_canvas()
         
-        # 画像のサイズを取得
-        if width and height:
-            # 指定されたサイズでキャンバスを設定
-            self.canvas.config(width=width, height=height)
-            # スクロール領域を設定
-            self.canvas.configure(scrollregion=(0, 0, width, height))
+        # キャンバスサイズを取得
+        canvas_width = self.canvas.winfo_width() or self.canvas_width
+        canvas_height = self.canvas.winfo_height() or self.canvas_height
         
-        # 画像を描画
-        self.current_image = self.canvas.create_image(0, 0, anchor="nw", image=tk_image)
+        # 画像を中央に配置
+        center_x = canvas_width // 2
+        center_y = canvas_height // 2
+        
+        # 既存UIと同じように画像を表示（中央配置）
+        self.current_image = self.canvas.create_image(center_x, center_y, anchor="center", image=tk_image)
         
         # 画像参照を保持（ガベージコレクション防止）
         self.canvas.image = tk_image
+        
+        print(f"[DEBUG] 画像を表示: キャンバスサイズ {canvas_width}x{canvas_height}, 画像を中央({center_x}, {center_y})に配置")
     
     def add_coordinate_marker(self, x: int, y: int, number: int, color: str = "red") -> int:
         """座標マーカーを追加"""
@@ -200,3 +218,42 @@ class CoordinateCanvasView:
         self.canvas_height = height
         self.canvas.config(width=width, height=height)
         self.canvas.configure(scrollregion=(0, 0, width, height))
+        
+        # 画像が表示されている場合は再配置
+        self._reposition_image()
+    
+    def _reposition_image(self):
+        """画像を現在のキャンバスサイズに合わせて再配置"""
+        if self.current_image and self.canvas.image:
+            # キャンバスサイズを取得
+            canvas_width = self.canvas.winfo_width() or self.canvas_width
+            canvas_height = self.canvas.winfo_height() or self.canvas_height
+            
+            # 新しい中央位置を計算
+            center_x = canvas_width // 2
+            center_y = canvas_height // 2
+            
+            # 画像を新しい位置に移動
+            self.canvas.coords(self.current_image, center_x, center_y)
+            print(f"[DEBUG] 画像を再配置: 新しい中央位置({center_x}, {center_y})")
+    
+    def get_image_offset(self) -> Tuple[int, int]:
+        """画像の表示オフセットを取得（座標変換用）"""
+        if self.current_image:
+            canvas_width = self.canvas.winfo_width() or self.canvas_width
+            canvas_height = self.canvas.winfo_height() or self.canvas_height
+            
+            center_x = canvas_width // 2
+            center_y = canvas_height // 2
+            
+            # 画像サイズを取得してオフセットを計算
+            if hasattr(self.canvas, 'image') and self.canvas.image:
+                image_width = self.canvas.image.width()
+                image_height = self.canvas.image.height()
+                
+                offset_x = center_x - image_width // 2
+                offset_y = center_y - image_height // 2
+                
+                return (offset_x, offset_y)
+        
+        return (0, 0)

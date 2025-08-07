@@ -2,6 +2,7 @@
 メインコントローラー
 アプリケーション全体の制御と他のコントローラーとの連携を管理
 """
+import os
 import tkinter as tk
 from datetime import date, datetime
 from typing import Dict, Any, List, Tuple, Optional
@@ -33,6 +34,19 @@ class MainController:
         # 現在の日付
         self.current_date = date.today()
         
+        # 作業者情報
+        self.current_worker_no = None
+        self.current_worker_name = None
+        
+        # 現在のロット番号
+        self.current_lot_number = None
+        
+        # 前回選択されたモデル（変更検出用）
+        self.previous_model = None
+        
+        # モデルデータ
+        self.model_data = []
+        
         # 初期化フラグ
         self.is_initialized = False
     
@@ -46,6 +60,9 @@ class MainController:
         
         # コントローラー間の連携を設定
         self.coordinate_controller.set_canvas_view(self.canvas_view)
+        
+        # SidebarViewにMainViewの参照を設定
+        self.sidebar_view.set_main_view_reference(self.main_view)
         
         # ビューのコールバックを設定
         self._setup_view_callbacks()
@@ -71,8 +88,16 @@ class MainController:
             self.main_view.root.quit()
             return
         
-        # 作業者情報をサイドバーに設定
-        self.sidebar_view.worker_var.set(result['worker_no'])
+        # 作業者情報をサイドバーに設定（ラベル更新）
+        worker_text = f"作業者: {result['worker_name']}"
+        self.sidebar_view.update_worker_label(worker_text)
+        
+        # 現在の作業者情報を保持
+        self.current_worker_no = result['worker_no']
+        self.current_worker_name = result['worker_name']
+        
+        # SidebarViewにも作業者番号を設定
+        self.sidebar_view.set_worker_no(result['worker_no'])
     
     def _setup_view_callbacks(self):
         """ビューのコールバック関数を設定"""
@@ -86,15 +111,29 @@ class MainController:
             'select_image': self.select_image,
             'load_json': self.load_json,
             'save_coordinates': self.save_coordinates,
-            'clear_coordinates': self.clear_coordinates
+            'save_data': self.save_coordinates,  # 旧コード互換
+            'on_save_button_click': self.on_save_button_click,  # 保存ボタン処理
+            'clear_coordinates': self.clear_coordinates,
+            'on_model_selected': self.on_model_selected,
+            'load_models_from_file': self.load_models_from_file,  # 旧コード互換コールバック
+            'on_lot_number_save': self.on_lot_number_save,  # ロット番号保存
+            'setup_save_name_entry': self.setup_save_name_entry,  # 保存名自動設定
+            'on_item_tag_change': self.on_item_tag_change  # 現品票切り替え
         }
+        
+        # コールバック設定のデバッグ情報
+        print(f"[DEBUG] メインビューコールバック設定: {len(main_callbacks)}個")
+        for key in main_callbacks:
+            print(f"[DEBUG] コールバック '{key}': {main_callbacks[key]}")
+        
         self.main_view.set_callbacks(main_callbacks)
         
         # キャンバスビューのコールバック
         canvas_callbacks = {
             'on_left_click': self.on_canvas_left_click,
             'on_right_click': self.on_canvas_right_click,
-            'on_view_click': self.on_canvas_view_click
+            'on_view_click': self.on_canvas_view_click,
+            'on_canvas_resize': self.on_canvas_resize
         }
         self.canvas_view.set_callbacks(canvas_callbacks)
         
@@ -111,12 +150,21 @@ class MainController:
         current_mode = self.main_view.get_current_mode()
         mode = "edit" if current_mode == "編集" else "view"
         self.canvas_view.bind_events(mode)
+        
+        # キーイベントをバインド（削除キー）
+        self.main_view.root.bind("<Delete>", self.on_delete_key)
+        self.main_view.root.bind("<BackSpace>", self.on_delete_key)
+        
+        # フォーカスを設定してキーイベントを受け取れるようにする
+        self.main_view.root.focus_set()
     
     def _initialize_ui_elements(self):
         """UI要素を初期化"""
+        # メニューボタンを設定（旧コードと同じ位置）
+        self.main_view.setup_menu_buttons()
+        
         # トップコントロールを設定
         self.main_view.setup_top_controls()
-        self.main_view.setup_menu_buttons()
         
         # 日付表示を更新
         self.main_view.update_date_label(self.current_date.strftime('%Y-%m-%d'))
@@ -139,12 +187,15 @@ class MainController:
         self.on_mode_change()
     
     def _update_model_options(self):
-        """モデル選択肢を更新"""
-        image_files = self.image_model.load_image_files_from_directory(
-            self.settings_model.image_directory
-        )
+        """モデル選択肢を更新（旧コード互換機能）"""
+        # CoordinateControllerのload_models_from_fileメソッドを使用
+        model_data = self.coordinate_controller.load_models_from_file(self.settings_model)
         
-        model_names = self.image_model.get_image_names()
+        # MainViewのモデル選択肢を更新
+        self.main_view.update_model_options(model_data)
+        
+        # サイドバーには従来通りモデル名のみを渡す（互換性のため）
+        model_names = [list(item.keys())[0] for item in model_data if item]
         if not model_names:
             model_names = ["画像ディレクトリが未設定"]
         
@@ -187,6 +238,90 @@ class MainController:
         if current_mode == "編集":
             self.canvas_view.clear_highlight()
     
+    def on_delete_key(self, event):
+        """Deleteキーまたはbackspaceキーが押された時の処理"""
+        # 編集モードでない場合は何もしない
+        current_mode = self.main_view.get_current_mode()
+        if current_mode != "編集":
+            return
+        
+        # 選択中の座標を削除
+        current_index = self.coordinate_model.get_current_coordinate_index()
+        if current_index >= 0:
+            # 座標を削除
+            self.coordinate_controller.delete_coordinate(current_index)
+            
+            # 座標表示を更新
+            self.update_coordinate_display()
+            
+            # サイドバーをクリア
+            self.sidebar_view.clear_form()
+            
+            print(f"[削除] 座標 {current_index + 1} を削除しました")
+        else:
+            print("[削除] 削除する座標が選択されていません")
+    
+    def on_model_selected(self):
+        """モデル選択時の処理"""
+        selected_model = self.main_view.get_selected_model()
+        if selected_model and not selected_model.startswith("画像"):
+            # モデルが変更されたかチェック
+            model_changed = self.previous_model != selected_model
+            
+            if model_changed and self.previous_model is not None:
+                # モデルが変更された場合のみロット番号をリセット（初回選択は除く）
+                self.current_lot_number = None
+                self.sidebar_view.clear_lot_number()
+                print(f"モデルが変更されました: {self.previous_model} → {selected_model}（ロット番号をリセット）")
+            
+            # 前回のモデルを記録
+            self.previous_model = selected_model
+            
+            # 選択されたモデルの画像を表示
+            self._load_model_image(selected_model)
+            
+            # 保存名を自動設定
+            current_lot = self.current_lot_number or self.sidebar_view.get_lot_number()
+            auto_save_name = self.file_controller.setup_save_name_entry(
+                self.current_date,
+                selected_model,
+                current_lot or "",
+                "" if model_changed else self.main_view.get_save_name()  # モデル変更時は保存名もリセット
+            )
+            if auto_save_name:
+                self.main_view.set_save_name(auto_save_name)
+                
+            if not model_changed:
+                print(f"モデルを選択しました: {selected_model}")
+            
+    def _load_model_image(self, model_name: str):
+        """選択されたモデルの画像を読み込み"""
+        # MainViewから画像パスを取得
+        image_path = self.main_view.get_model_image_path(model_name)
+        
+        if image_path and os.path.exists(image_path):
+            # 画像を読み込み表示
+            tk_image = self.image_model.load_image(
+                image_path,
+                self.canvas_view.canvas_width,
+                self.canvas_view.canvas_height
+            )
+            
+            if tk_image:
+                self.canvas_view.display_image(
+                    tk_image,
+                    self.image_model.display_size[0],
+                    self.image_model.display_size[1]
+                )
+                
+                # 座標をクリア
+                self.coordinate_controller.clear_coordinates()
+                
+                print(f"モデル画像を読み込みました: {model_name}")
+            else:
+                print(f"画像の読み込みに失敗しました: {model_name}")
+        else:
+            print(f"画像ファイルが見つかりません: {model_name}")
     def on_canvas_left_click(self, event):
         """キャンバス左クリック（編集モード）"""
         x, y = int(event.x), int(event.y)
@@ -199,7 +334,9 @@ class MainController:
         
         # フォームをクリアして項目番号を設定
         self.sidebar_view.clear_form()
-        self.sidebar_view.item_number_var.set(str(index + 1))
+        # 項目番号を座標詳細として設定
+        detail = {'item_number': str(index + 1)}
+        self.sidebar_view.set_coordinate_detail(detail)
         
         # リファレンス入力フィールドにフォーカス
         self.sidebar_view.focus_reference_entry()
@@ -208,7 +345,7 @@ class MainController:
         self._update_undo_redo_state()
     
     def on_canvas_right_click(self, event):
-        """キャンバス右クリック（編集モード）"""
+        """キャンバス右クリック（編集モード）- 既存座標の選択"""
         x, y = int(event.x), int(event.y)
         
         # 最も近い座標を選択
@@ -218,8 +355,12 @@ class MainController:
             # フォームを選択した座標の詳細情報で更新
             detail = self.coordinate_controller.get_current_coordinate_detail()
             if detail:
+                detail['item_number'] = str(selected_index + 1)  # 項目番号を設定
                 self.sidebar_view.set_coordinate_detail(detail)
-                self.sidebar_view.item_number_var.set(str(selected_index + 1))
+            else:
+                # 詳細情報がない場合は項目番号のみ設定
+                detail = {'item_number': str(selected_index + 1)}
+                self.sidebar_view.set_coordinate_detail(detail)
             
             print(f"座標 {selected_index + 1} を選択しました")
     
@@ -229,6 +370,28 @@ class MainController:
         
         # 最も近い座標を選択
         selected_index = self.coordinate_controller.select_coordinate(x, y)
+        
+        if selected_index is not None:
+            # 選択した座標の詳細情報を表示
+            detail = self.coordinate_controller.get_current_coordinate_detail()
+            if detail:
+                detail['item_number'] = str(selected_index + 1)  # 項目番号を設定
+                self.sidebar_view.set_coordinate_detail(detail)
+            else:
+                # 詳細情報がない場合は項目番号のみ設定
+                detail = {'item_number': str(selected_index + 1)}
+                self.sidebar_view.set_coordinate_detail(detail)
+            
+            # 選択した座標をハイライト表示
+            self.canvas_view.highlight_coordinate(selected_index)
+            
+            print(f"[閲覧モード] 座標 {selected_index + 1} を選択しました")
+        else:
+            # 座標が選択されていない場合はフォームをクリア
+            self.coordinate_model.set_current_coordinate(-1)
+            self.sidebar_view.clear_form()
+            self.canvas_view.clear_highlight()
+            print("[閲覧モード] 座標の選択を解除しました")
         
         if selected_index is not None:
             # 選択した座標の詳細情報を表示
@@ -297,6 +460,82 @@ class MainController:
         """設定変更時のコールバック"""
         # モデル選択リストを更新
         self._update_model_options()
+    
+    def load_models_from_file(self):
+        """モデルデータをファイルから読み込む"""
+        return self.coordinate_controller.load_models_from_file(self.settings_model)
+    
+    def on_lot_number_save(self):
+        """ロット番号保存処理"""
+        import re
+        
+        # 作業者が設定されているかチェック
+        if not self.current_worker_no:
+            self.main_view.show_error("作業者が設定されていません。")
+            return
+        
+        # ロット番号を取得
+        lot_number = self.main_view.get_lot_number().strip()
+        if not lot_number:
+            self.main_view.show_error("ロット番号を入力してください。")
+            return
+        
+        # ロット番号の形式をチェック (7桁-2桁の形式)
+        lot_pattern = r'^\d{7}-10$|^\d{7}-20$'
+        if not re.match(lot_pattern, lot_number):
+            self.main_view.show_error(
+                "ロット番号の形式が正しくありません。\n形式: 1234567-10 または 1234567-20 (7桁-10または7桁-20)"
+            )
+            return
+        
+        # ロット番号を保存
+        self.current_lot_number = lot_number  # MainControllerのロット番号も更新
+        self.sidebar_view.set_lot_number(lot_number)
+        print(f"ロット番号を保存しました: {lot_number}")
+        
+        # ロット番号入力フィールドをクリア
+        self.main_view.clear_lot_number()
+        
+        # 保存名を自動更新（ロット番号変更時）
+        selected_model = self.main_view.get_selected_model()
+        if selected_model and not selected_model.startswith("画像"):
+            auto_save_name = self.file_controller.setup_save_name_entry(
+                self.current_date,
+                selected_model,
+                lot_number,
+                ""  # 新しいロット番号なので保存名をリセット
+            )
+            if auto_save_name:
+                self.main_view.set_save_name(auto_save_name)
+        
+        self.main_view.show_message(f"ロット番号を設定しました: {lot_number}")
+    
+    def setup_save_name_entry(self):
+        """保存名を自動設定"""
+        selected_model = self.main_view.get_selected_model()
+        current_lot_number = self.current_lot_number or self.sidebar_view.get_lot_number()
+        
+        if selected_model and not selected_model.startswith("画像") and current_lot_number:
+            auto_save_name = self.file_controller.setup_save_name_entry(
+                self.current_date,
+                selected_model,
+                current_lot_number,
+                ""  # 現在の保存名を空にして自動生成
+            )
+            if auto_save_name:
+                self.main_view.set_save_name(auto_save_name)
+                print(f"保存名を自動更新しました: {auto_save_name}")
+    
+    def on_save_button_click(self):
+        """保存ボタンクリック時の処理（ロット番号処理＋座標保存）"""
+        # 最初にロット番号が入力されているかチェック
+        lot_number = self.main_view.get_lot_number().strip()
+        if lot_number:
+            # ロット番号が入力されている場合はロット番号保存処理を実行
+            self.on_lot_number_save()
+        else:
+            # ロット番号が入力されていない場合は座標保存処理を実行
+            self.save_coordinates()
     
     def select_image(self):
         """画像を選択"""
@@ -373,12 +612,20 @@ class MainController:
                     parsed_data['coordinate_details']
                 )
                 
-                # サイドバーに基本情報を設定
+        # サイドバーに基本情報を設定
                 form_data = {
                     'lot_number': parsed_data['lot_number'],
                     'worker_no': parsed_data['worker_no']
                 }
                 self.sidebar_view.set_form_data(form_data)
+                
+                # モデルコンボボックスの情報をログ出力（デバッグ用）
+                model_values = self.main_view.get_model_values()
+                model_count = self.main_view.get_model_count()
+                current_model = self.main_view.get_selected_model()
+                print(f"[デバッグ] モデル選択肢: {model_values}")
+                print(f"[デバッグ] モデル数: {model_count}")
+                print(f"[デバッグ] 現在のモデル: {current_model}")
                 
                 # ファイルパスを記録
                 self.file_controller.current_json_path = file_path
@@ -406,7 +653,7 @@ class MainController:
             self.file_controller.show_error_message(f"JSON読み込みエラー: {e}")
     
     def save_coordinates(self):
-        """座標を保存"""
+        """座標を保存（旧コード互換の自動保存機能付き）"""
         coordinates = self.coordinate_controller.get_all_coordinates()
         
         if not coordinates:
@@ -414,34 +661,54 @@ class MainController:
             return
         
         try:
-            # フォームデータを取得
-            form_data = self.sidebar_view.get_form_data()
+            # MainViewとSidebarViewからフォームデータを取得
+            main_form_data = self.main_view.get_form_data()
             
-            # ロット番号をチェック
-            if not form_data['lot_number'].strip():
+            # ロット番号をチェック（MainControllerとSidebarViewの両方から確認）
+            lot_number = self.current_lot_number or self.sidebar_view.get_lot_number()
+            if not lot_number or not lot_number.strip():
                 self.file_controller.show_error_message(
                     "ロット番号が入力されていません。\nロット番号を入力してから保存してください。"
                 )
                 return
             
-            # 保存パスを生成または選択
+            # 現在のモデル名を取得
+            current_model = self.sidebar_view.get_selected_model()
+            
+            # 保存ディレクトリを作成
+            save_dir = self.file_controller.setup_json_save_dir(
+                self.current_date, current_model, lot_number
+            )
+            
             file_path = None
             
-            # 自動的なファイルパス生成を試行
-            if (form_data['save_name'] and 
-                self.settings_model.data_directory != "未選択" and
-                form_data.get('model')):
+            if save_dir:
+                # 自動的にファイルパスを生成
+                save_name = main_form_data.get('save_name', '').strip()
                 
-                file_path = self.file_controller.get_automatic_save_path(
-                    self.current_date.strftime('%Y-%m-%d'),
-                    form_data['model'],
-                    form_data['lot_number'],
-                    form_data['save_name']
-                )
-            
-            if not file_path:
-                # ファイル選択ダイアログを表示
-                default_filename = f"{form_data['save_name']}.json" if form_data['save_name'] else "coordinates.json"
+                if save_name:
+                    # 保存名が設定されている場合
+                    filename = f"{save_name}.json"
+                    file_path = os.path.join(save_dir, filename)
+                    
+                    # 同名ファイルが存在する場合は連番を付ける
+                    counter = 1
+                    while os.path.exists(file_path):
+                        name_part = os.path.splitext(filename)[0]
+                        file_path = os.path.join(save_dir, f"{name_part}_{counter:04d}.json")
+                        counter += 1
+                else:
+                    # 保存名が設定されていない場合は連番ファイル名を生成
+                    next_number = self.file_controller.get_next_sequential_number(save_dir)
+                    filename = f"{next_number:04d}.json"
+                    file_path = os.path.join(save_dir, filename)
+                    
+                    # 保存名フィールドに生成されたファイル名（拡張子なし）を設定
+                    self.sidebar_view.set_save_name(f"{next_number:04d}")
+            else:
+                # ディレクトリ作成に失敗した場合は従来の方法でファイル選択
+                save_name = main_form_data.get('save_name', '')
+                default_filename = f"{save_name}.json" if save_name else "coordinates.json"
                 file_path = self.file_controller.save_json_file(default_filename)
             
             if not file_path:
@@ -455,8 +722,8 @@ class MainController:
                 coordinates,
                 self.image_model.current_image_path,
                 coordinate_details,
-                form_data['lot_number'],
-                form_data['worker_no']
+                lot_number,
+                self.current_worker_no
             )
             
             # データを保存
@@ -464,7 +731,16 @@ class MainController:
                 self.file_controller.show_success_message(
                     f"座標をJSON形式で保存しました。\n保存先: {file_path}"
                 )
-                print(f"座標を保存しました: {file_path}")
+                
+                # 保存名エントリを次の連番に更新
+                if save_dir:
+                    auto_save_name = self.file_controller.setup_save_name_entry(
+                        self.current_date, current_model, lot_number, ""
+                    )
+                    if auto_save_name:
+                        self.sidebar_view.set_save_name(auto_save_name)
+            else:
+                self.file_controller.show_error_message("保存に失敗しました。")
             
         except Exception as e:
             self.file_controller.show_error_message(f"保存エラー: {e}")
@@ -489,3 +765,125 @@ class MainController:
         """座標検索機能（閲覧モード用）"""
         # TODO: 座標検索機能を実装
         print("検索機能は今後実装予定です。")
+    
+    def on_canvas_resize(self, new_width: int, new_height: int):
+        """キャンバスサイズ変更時の処理"""
+        print(f"[DEBUG] キャンバスサイズ変更コールバック: {new_width}x{new_height}")
+        
+        try:
+            # 現在画像が表示されている場合は再読み込み
+            if self.image_model._current_image_path and os.path.exists(self.image_model._current_image_path):
+                print(f"[DEBUG] 画像を新しいキャンバスサイズで再読み込み中...")
+                
+                # 新しいキャンバスサイズで画像を再読み込み
+                tk_image = self.image_model.reload_image_for_canvas_size(new_width, new_height)
+                
+                if tk_image:
+                    # キャンバスに再表示
+                    self.canvas_view.display_image(tk_image)
+                    
+                    # 座標マーカーを再描画（座標変換が必要な場合）
+                    self._redraw_coordinates_for_new_scale()
+                    
+                    print(f"[DEBUG] 画像とマーカーの再描画完了")
+                
+        except Exception as e:
+            print(f"キャンバスリサイズエラー: {e}")
+            import traceback
+            traceback.print_exc()
+    
+    def _redraw_coordinates_for_new_scale(self):
+        """新しいスケールに合わせて座標マーカーを再描画"""
+        try:
+            # 元画像座標を表示座標に変換して再描画
+            display_coordinates = []
+            for orig_x, orig_y in self.coordinate_model.coordinates:
+                display_x, display_y = self.image_model.convert_original_to_display_coords(orig_x, orig_y)
+                display_coordinates.append((display_x, display_y))
+            
+            if display_coordinates:
+                self.canvas_view.redraw_coordinate_markers(display_coordinates)
+                
+                # 現在選択中の座標をハイライト
+                current_index = self.coordinate_model.current_index
+                if current_index >= 0:
+                    self.canvas_view.highlight_coordinate(current_index)
+                    
+        except Exception as e:
+            print(f"座標再描画エラー: {e}")
+    
+    def on_item_tag_change(self):
+        """現品票で切り替えボタンが押された時の処理"""
+        print("[DEBUG] 現品票切り替えボタンがクリックされました")
+        try:
+            # 現品票切り替えダイアログを表示
+            print("[DEBUG] ダイアログを表示しようとしています...")
+            result = self.main_view.show_item_tag_switch_dialog()
+            print(f"[DEBUG] ダイアログの結果: {result}")
+            
+            if result:
+                product_number, lot_number = result
+                print(f"[現品票切り替え] 製番: {product_number}, 指図: {lot_number}")
+                
+                # 現在のロット番号を更新
+                self.current_lot_number = lot_number
+                
+                # 製番に基づいてモデル切り替え処理を実行
+                print(f"[DEBUG] 製番 '{product_number}' でモデル検索を開始")
+                self._switch_model_by_product_number(product_number)
+                
+                # サイドバーの製番と指図番号を更新
+                if hasattr(self, 'sidebar_view') and self.sidebar_view:
+                    self.sidebar_view.set_product_number(product_number)
+                    self.sidebar_view.set_lot_number(lot_number)
+                    print(f"[DEBUG] サイドバーに製番と指図番号を設定しました: 製番={product_number}, 指図={lot_number}")
+                
+            else:
+                print("[DEBUG] ダイアログがキャンセルされました")
+            
+        except Exception as e:
+            print(f"現品票切り替えエラー: {e}")
+            import traceback
+            traceback.print_exc()
+            self.main_view.show_error(f"現品票切り替え中にエラーが発生しました:\n{str(e)}")
+    
+    def _switch_model_by_product_number(self, product_number: str):
+        """製番に基づいてモデルを切り替え"""
+        try:
+            # 現在のモデル選択肢から製番に一致するモデルを検索
+            model_values = self.main_view.get_model_values()
+            print(f"[DEBUG] 利用可能なモデル: {model_values}")
+            
+            # 製番を含むモデルを検索（部分一致）
+            matching_models = [model for model in model_values if product_number in model]
+            print(f"[DEBUG] 製番 '{product_number}' に一致するモデル: {matching_models}")
+            
+            if matching_models:
+                # 最初にマッチしたモデルを選択
+                selected_model = matching_models[0]
+                
+                # 前回選択されたモデルを記録
+                self.previous_model = self.main_view.get_selected_model()
+                
+                # モデルコンボボックスで選択
+                self.main_view.set_model(selected_model)
+                
+                # モデル選択イベントをトリガー（画像切り替えのため）
+                self.on_model_selected()
+                
+                # キャンバス画像を強制的に更新
+                self._load_model_image(selected_model)
+                
+                print(f"[モデル切り替え] 製番 '{product_number}' に基づいて '{selected_model}' を選択し、画像を切り替えました")
+            else:
+                print(f"[モデル切り替え] 製番 '{product_number}' に一致するモデルが見つかりませんでした")
+                self.main_view.show_warning(
+                    f"製番 '{product_number}' に一致するモデルが見つかりませんでした。\n手動でモデルを選択してください。",
+                    "モデル未発見"
+                )
+                
+        except Exception as e:
+            print(f"モデル切り替えエラー: {e}")
+            import traceback
+            traceback.print_exc()
+            self.main_view.show_error(f"モデル切り替え中にエラーが発生しました:\n{str(e)}")

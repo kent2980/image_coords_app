@@ -31,10 +31,12 @@ class ImageModel:
             with Image.open(image_path) as pil_image:
                 self._original_size = pil_image.size
                 
-                # リサイズ計算
+                # リサイズ計算（キャンバスサイズに合わせる）
                 new_size, scale_factor = self._calculate_display_size(
                     self._original_size, (canvas_width, canvas_height)
                 )
+                
+                print(f"[DEBUG] 画像リサイズ: 元サイズ{self._original_size} → 表示サイズ{new_size} (倍率: {scale_factor:.3f})")
                 
                 # リサイズ実行
                 resized_image = pil_image.resize(new_size, Image.Resampling.LANCZOS)
@@ -50,6 +52,12 @@ class ImageModel:
         except Exception as e:
             print(f"画像読み込みエラー: {e}")
             return None
+    
+    def reload_image_for_canvas_size(self, canvas_width: int, canvas_height: int) -> Optional[ImageTk.PhotoImage]:
+        """現在の画像を新しいキャンバスサイズに合わせて再読み込み"""
+        if self._current_image_path:
+            return self.load_image(self._current_image_path, canvas_width, canvas_height)
+        return None
     
     def _calculate_display_size(self, original_size: Tuple[int, int], canvas_size: Tuple[int, int]) -> Tuple[Tuple[int, int], float]:
         """表示サイズとスケールファクターを計算"""

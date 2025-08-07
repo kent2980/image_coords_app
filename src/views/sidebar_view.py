@@ -15,23 +15,27 @@ class SidebarView:
         self.parent_frame = parent_frame
         
         # 変数
-        self.lot_number_var = tk.StringVar()
-        self.worker_var = tk.StringVar()
-        self.model_var = tk.StringVar()
         self.item_number_var = tk.StringVar()
         self.reference_var = tk.StringVar()
         self.defect_var = tk.StringVar()
-        self.save_name_var = tk.StringVar()
+        
+        # ロット番号（表示用）
+        self.current_lot_number = ""
+        
+        # 製番（表示用）
+        self.current_product_number = ""
+        
+        # 作業者番号（表示用）
+        self.current_worker_no = ""
         
         # UI要素の参照
-        self.lot_entry = None
-        self.worker_entry = None
-        self.model_combobox = None
         self.item_entry = None
         self.reference_entry = None
         self.defect_combobox = None
-        self.save_name_entry = None
-        self.info_text = None
+        self.comment_text = None
+        self.worker_label = None
+        self.lot_label = None
+        self.product_label = None
         
         # コールバック関数
         self.callbacks: Dict[str, Callable] = {}
@@ -49,132 +53,246 @@ class SidebarView:
     
     def _setup_sidebar(self):
         """サイドバーUIを設定"""
+        # サイドバーのスタイル設定（旧コードと一致）
+        self.parent_frame.config(bg='#f5f5f5', relief='ridge', bd=1)
+        
         # タイトル
         title_label = tk.Label(
-            self.parent_frame, 
-            text="座標詳細情報", 
-            font=("Arial", 12, "bold")
+            self.parent_frame,
+            text="不良詳細情報",
+            font=("Arial", 14, "bold"),
+            bg='#f5f5f5',
+            fg='#333333'
         )
-        title_label.pack(pady=5)
-        
-        # 基本情報フレーム
-        self._setup_basic_info_frame()
-        
-        # 座標詳細フレーム
-        self._setup_coordinate_detail_frame()
-        
-        # 保存情報フレーム
-        self._setup_save_info_frame()
-        
-        # 情報表示フレーム
-        self._setup_info_frame()
-        
-        # アクションボタンフレーム
-        self._setup_action_buttons()
-    
-    def _setup_basic_info_frame(self):
-        """基本情報フレームを設定"""
-        basic_frame = tk.LabelFrame(self.parent_frame, text="基本情報", font=("Arial", 10))
-        basic_frame.pack(fill=tk.X, padx=5, pady=5)
-        
-        # ロット番号
-        tk.Label(basic_frame, text="ロット番号:", font=("Arial", 9)).pack(anchor="w", padx=5)
-        self.lot_entry = tk.Entry(basic_frame, textvariable=self.lot_number_var, font=("Arial", 9))
-        self.lot_entry.pack(fill=tk.X, padx=5, pady=2)
-        
-        # 作業者No
-        tk.Label(basic_frame, text="作業者No:", font=("Arial", 9)).pack(anchor="w", padx=5)
-        self.worker_entry = tk.Entry(basic_frame, textvariable=self.worker_var, font=("Arial", 9))
-        self.worker_entry.pack(fill=tk.X, padx=5, pady=2)
-        
-        # モデル選択
-        tk.Label(basic_frame, text="モデル:", font=("Arial", 9)).pack(anchor="w", padx=5)
-        self.model_combobox = ttk.Combobox(
-            basic_frame, 
-            textvariable=self.model_var, 
-            font=("Arial", 9),
-            state="readonly"
+        title_label.pack(pady=(15, 20))
+
+        # 区切り線
+        separator5 = tk.Frame(self.parent_frame, height=1, bg='#cccccc')
+        separator5.pack(fill=tk.X, padx=15, pady=(0, 15))
+
+        # 作業者ラベル
+        self.worker_label = tk.Label(
+            self.parent_frame,
+            text="作業者: 未設定",
+            font=("Arial", 10, "bold"),
+            bg='#f5f5f5',
+            fg='#555555',
+            anchor='w'
         )
-        self.model_combobox.pack(fill=tk.X, padx=5, pady=2)
-    
-    def _setup_coordinate_detail_frame(self):
-        """座標詳細フレームを設定"""
-        detail_frame = tk.LabelFrame(self.parent_frame, text="座標詳細", font=("Arial", 10))
-        detail_frame.pack(fill=tk.X, padx=5, pady=5)
+        self.worker_label.pack(fill=tk.X, padx=15, pady=(0, 5))
         
-        # 項目番号
-        tk.Label(detail_frame, text="項目番号:", font=("Arial", 9)).pack(anchor="w", padx=5)
-        self.item_entry = tk.Entry(detail_frame, textvariable=self.item_number_var, font=("Arial", 9))
-        self.item_entry.pack(fill=tk.X, padx=5, pady=2)
+        # 区切り線
+        separator1 = tk.Frame(self.parent_frame, height=1, bg='#cccccc')
+        separator1.pack(fill=tk.X, padx=15, pady=(0, 15))
+
+        # 製番ラベル
+        self.product_label = tk.Label(
+            self.parent_frame,
+            text="製番: 未設定",
+            font=("Arial", 10, "bold"),
+            bg='#f5f5f5',
+            fg='#555555',
+            anchor='w'
+        )
+        self.product_label.pack(fill=tk.X, padx=15, pady=(0, 5))
+
+        # ロット番号ラベル
+        self.lot_label = tk.Label(
+            self.parent_frame,
+            text="指図番号: 未設定",
+            font=("Arial", 10, "bold"),
+            bg='#f5f5f5',
+            fg='#555555',
+            anchor='w'
+        )
+        self.lot_label.pack(fill=tk.X, padx=15, pady=(0, 5))
+
+        # 区切り線
+        separator4 = tk.Frame(self.parent_frame, height=1, bg='#cccccc')
+        separator4.pack(fill=tk.X, padx=15, pady=(0, 15))
+
+        # アイテム番号（読み取り専用）
+        self.item_entry = self._create_styled_input_field(
+            "項目番号", self.item_number_var, width=12, readonly=True
+        )
         
         # リファレンス
-        tk.Label(detail_frame, text="リファレンス:", font=("Arial", 9)).pack(anchor="w", padx=5)
-        self.reference_entry = tk.Entry(detail_frame, textvariable=self.reference_var, font=("Arial", 9))
-        self.reference_entry.pack(fill=tk.X, padx=5, pady=2)
+        self.reference_entry = self._create_styled_input_field(
+            "リファレンス", self.reference_var, width=15
+        )
+        
+        # 区切り線
+        separator2 = tk.Frame(self.parent_frame, height=1, bg='#cccccc')
+        separator2.pack(fill=tk.X, padx=15, pady=(15, 10))
         
         # 不良名
-        tk.Label(detail_frame, text="不良名:", font=("Arial", 9)).pack(anchor="w", padx=5)
-        self.defect_combobox = ttk.Combobox(
-            detail_frame, 
-            textvariable=self.defect_var, 
-            values=self.defect_items,
-            font=("Arial", 9)
-        )
-        self.defect_combobox.pack(fill=tk.X, padx=5, pady=2)
+        self._create_defect_selection()
         
+        # 修理済み
+        self._create_repaired_selection()
+        
+        # 区切り線
+        separator3 = tk.Frame(self.parent_frame, height=1, bg='#cccccc')
+        separator3.pack(fill=tk.X, padx=15, pady=(15, 10))
+        
+        # コメント
+        self._create_comment_field()
+    
+    def _create_styled_input_field(self, label_text, variable, width=15, readonly=False):
+        """スタイル付きの入力フィールドを作成"""
+        # メインフレーム
+        main_frame = tk.Frame(self.parent_frame, bg='#f5f5f5')
+        main_frame.pack(fill=tk.X, padx=15, pady=8)
+        
+        # ラベル
+        label = tk.Label(
+            main_frame, 
+            text=label_text, 
+            font=("Arial", 10, "bold"),
+            bg='#f5f5f5',
+            fg='#555555',
+            anchor='w'
+        )
+        label.pack(fill=tk.X, pady=(0, 3))
+        
+        # 入力フィールド
+        entry_state = "readonly" if readonly else "normal"
+        entry_bg = '#f0f0f0' if readonly else 'white'
+        
+        entry = tk.Entry(
+            main_frame, 
+            textvariable=variable, 
+            width=width,
+            font=("Arial", 10),
+            relief='solid',
+            bd=1,
+            highlightthickness=1,
+            highlightcolor='#4CAF50',
+            bg=entry_bg,
+            state=entry_state
+        )
+        entry.pack(fill=tk.X)
+        
+        return entry
+    
+    def _create_defect_selection(self):
+        """不良名選択フィールドを作成"""
+        # メインフレーム
+        defect_frame = tk.Frame(self.parent_frame, bg='#f5f5f5')
+        defect_frame.pack(fill=tk.X, padx=15, pady=8)
+        
+        # ラベル
+        label = tk.Label(
+            defect_frame, 
+            text="不良名", 
+            font=("Arial", 10, "bold"),
+            bg='#f5f5f5',
+            fg='#555555',
+            anchor='w'
+        )
+        label.pack(fill=tk.X, pady=(0, 3))
+        
+        self.defect_combobox = ttk.Combobox(
+            defect_frame,
+            textvariable=self.defect_var,
+            values=self.defect_items,
+            state="readonly",
+            font=("Arial", 10)
+        )
+        self.defect_combobox.pack(fill=tk.X)
+        
+        # 初期値は空に設定
+        self.defect_var.set("")
+    
+    def _create_repaired_selection(self):
+        """修理済み選択フィールドを作成"""
+        self.repaired_var = tk.StringVar(value="いいえ")
+        
+        # メインフレーム
+        repaired_frame = tk.Frame(self.parent_frame, bg='#f5f5f5')
+        repaired_frame.pack(fill=tk.X, padx=15, pady=8)
+        
+        # ラベル
+        label = tk.Label(
+            repaired_frame, 
+            text="修理済み", 
+            font=("Arial", 10, "bold"),
+            bg='#f5f5f5',
+            fg='#555555',
+            anchor='w'
+        )
+        label.pack(fill=tk.X, pady=(0, 5))
+        
+        # ラジオボタンフレーム
+        radio_frame = tk.Frame(repaired_frame, bg='#f5f5f5')
+        radio_frame.pack(fill=tk.X)
+        
+        self.repaired_yes = tk.Radiobutton(
+            radio_frame,
+            text="はい",
+            variable=self.repaired_var,
+            value="はい",
+            font=("Arial", 10),
+        )
+        self.repaired_yes.pack(side=tk.LEFT, padx=(10, 20))
+        
+        self.repaired_no = tk.Radiobutton(
+            radio_frame,
+            text="いいえ",
+            variable=self.repaired_var,
+            value="いいえ",
+            font=("Arial", 10),
+        )
+        self.repaired_no.pack(side=tk.LEFT, padx=10)
+    
+    def _create_comment_field(self):
+        """コメントフィールドを作成"""
+        # メインフレーム
+        comment_frame = tk.Frame(self.parent_frame, bg='#f5f5f5')
+        comment_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=8)
+        
+        # ラベル
+        label = tk.Label(
+            comment_frame, 
+            text="コメント", 
+            font=("Arial", 10, "bold"),
+            bg='#f5f5f5',
+            fg='#555555',
+            anchor='w'
+        )
+        label.pack(fill=tk.X, pady=(0, 3))
+        
+        # テキストフィールドとスクロールバーのフレーム
+        text_frame = tk.Frame(comment_frame, bg='#f5f5f5')
+        text_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # テキストフィールド
+        self.comment_text = tk.Text(
+            text_frame, 
+            height=8, 
+            font=("Arial", 9),
+            relief='solid',
+            bd=1,
+            highlightthickness=1,
+            highlightcolor='#4CAF50',
+            bg='white',
+            wrap=tk.WORD
+        )
+        self.comment_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        # スクロールバー
+        scrollbar = tk.Scrollbar(text_frame, command=self.comment_text.yview)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         # 変更イベントバインド
         self._bind_change_events()
-    
-    def _setup_save_info_frame(self):
-        """保存情報フレームを設定"""
-        save_frame = tk.LabelFrame(self.parent_frame, text="保存設定", font=("Arial", 10))
-        save_frame.pack(fill=tk.X, padx=5, pady=5)
-        
-        # 保存名
-        tk.Label(save_frame, text="保存名:", font=("Arial", 9)).pack(anchor="w", padx=5)
-        self.save_name_entry = tk.Entry(save_frame, textvariable=self.save_name_var, font=("Arial", 9))
-        self.save_name_entry.pack(fill=tk.X, padx=5, pady=2)
-    
-    def _setup_info_frame(self):
-        """情報表示フレームを設定"""
-        info_frame = tk.LabelFrame(self.parent_frame, text="情報", font=("Arial", 10))
-        info_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
-        
-        # スクロール付きテキストエリア
-        text_frame = tk.Frame(info_frame)
-        text_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
-        
-        self.info_text = tk.Text(text_frame, height=8, font=("Arial", 9), wrap=tk.WORD)
-        info_scrollbar = tk.Scrollbar(text_frame, orient=tk.VERTICAL, command=self.info_text.yview)
-        self.info_text.configure(yscrollcommand=info_scrollbar.set)
-        
-        self.info_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        info_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-    
-    def _setup_action_buttons(self):
-        """アクションボタンを設定"""
-        button_frame = tk.Frame(self.parent_frame)
-        button_frame.pack(fill=tk.X, padx=5, pady=5)
-        
-        # 検索ボタン（閲覧モード時のみ表示）
-        self.search_button = tk.Button(
-            button_frame,
-            text="座標検索",
-            command=self.callbacks.get('search_coordinates'),
-            font=("Arial", 9)
-        )
-        self.search_button.pack(side=tk.LEFT, padx=2)
-        self.search_button.pack_forget()  # 初期は非表示
     
     def _bind_change_events(self):
         """変更イベントをバインド"""
         # 各入力フィールドの変更を監視
-        self.lot_number_var.trace_add("write", self._on_data_changed)
-        self.worker_var.trace_add("write", self._on_data_changed)
-        self.model_var.trace_add("write", self._on_data_changed)
-        self.item_number_var.trace_add("write", self._on_data_changed)
         self.reference_var.trace_add("write", self._on_data_changed)
         self.defect_var.trace_add("write", self._on_data_changed)
+        if hasattr(self, 'repaired_var'):
+            self.repaired_var.trace_add("write", self._on_data_changed)
     
     def _on_data_changed(self, *args):
         """データ変更時のコールバック"""
@@ -191,46 +309,33 @@ class SidebarView:
         
         state = tk.DISABLED if readonly else tk.NORMAL
         
-        # 基本情報の入力フィールド
-        if self.lot_entry:
-            self.lot_entry.config(state=state)
-        if self.worker_entry:
-            self.worker_entry.config(state=state)
-        
-        # 座標詳細の入力フィールド
-        if self.item_entry:
-            self.item_entry.config(state=state)
-        if self.reference_entry:
+        # 入力フィールドの状態を設定
+        if hasattr(self, 'reference_entry') and self.reference_entry:
             self.reference_entry.config(state=state)
         
         # コンボボックス
         combo_state = "disabled" if readonly else "readonly"
-        if self.model_combobox:
-            self.model_combobox.config(state=combo_state)
+        if hasattr(self, 'defect_combobox') and self.defect_combobox:
+            self.defect_combobox.config(state=combo_state)
         
-        defect_state = "disabled" if readonly else "normal"
-        if self.defect_combobox:
-            self.defect_combobox.config(state=defect_state)
+        # ラジオボタンの状態を設定
+        if hasattr(self, 'repaired_yes') and hasattr(self, 'repaired_no'):
+            radio_state = tk.DISABLED if readonly else tk.NORMAL
+            self.repaired_yes.config(state=radio_state)
+            self.repaired_no.config(state=radio_state)
         
-        # 保存設定
-        if self.save_name_entry:
-            self.save_name_entry.config(state=state)
-        
-        # 検索ボタンの表示/非表示
-        if readonly:
-            self.search_button.pack(side=tk.LEFT, padx=2)
-        else:
-            self.search_button.pack_forget()
+        # コメントフィールドの状態を設定
+        if hasattr(self, 'comment_text') and self.comment_text:
+            self.comment_text.config(state=state)
     
     def update_model_options(self, models: List[str]):
-        """モデル選択肢を更新"""
-        if self.model_combobox:
-            self.model_combobox['values'] = models
+        """モデル選択肢を更新 - MVCでは使用しない"""
+        pass
     
     def update_defect_options(self, defects: List[str]):
         """不良項目選択肢を更新"""
         self.defect_items = defects
-        if self.defect_combobox:
+        if hasattr(self, 'defect_combobox') and self.defect_combobox:
             self.defect_combobox['values'] = defects
     
     def clear_form(self):
@@ -238,85 +343,125 @@ class SidebarView:
         self.item_number_var.set("")
         self.reference_var.set("")
         self.defect_var.set("")
+        if hasattr(self, 'repaired_var'):
+            self.repaired_var.set("いいえ")
+        
+        # コメントフィールドをクリア
+        if hasattr(self, 'comment_text') and self.comment_text:
+            self.comment_text.delete("1.0", tk.END)
     
     def set_coordinate_detail(self, detail: Dict[str, Any]):
         """座標詳細情報を設定"""
         self.item_number_var.set(detail.get('item_number', ''))
         self.reference_var.set(detail.get('reference', ''))
         self.defect_var.set(detail.get('defect', ''))
+        
+        # 修理済み情報を設定
+        if hasattr(self, 'repaired_var'):
+            self.repaired_var.set(detail.get('repaired', 'いいえ'))
+        
+        # コメント情報を設定
+        if hasattr(self, 'comment_text') and self.comment_text:
+            self.comment_text.delete("1.0", tk.END)
+            self.comment_text.insert("1.0", detail.get('comment', ''))
     
     def get_coordinate_detail(self) -> Dict[str, Any]:
         """座標詳細情報を取得"""
-        return {
+        detail = {
             'item_number': self.item_number_var.get(),
             'reference': self.reference_var.get(),
             'defect': self.defect_var.get()
         }
+        
+        # 修理済み情報を追加
+        if hasattr(self, 'repaired_var'):
+            detail['repaired'] = self.repaired_var.get()
+        
+        # コメント情報を追加
+        if hasattr(self, 'comment_text') and self.comment_text:
+            detail['comment'] = self.comment_text.get("1.0", tk.END).strip()
+        
+        return detail
     
     def get_form_data(self) -> Dict[str, Any]:
-        """全フォームデータを取得"""
-        return {
-            'lot_number': self.lot_number_var.get(),
-            'worker_no': self.worker_var.get(),
-            'model': self.model_var.get(),
-            'save_name': self.save_name_var.get(),
-            'coordinate_detail': self.get_coordinate_detail()
-        }
+        """全フォームデータを取得（MVCでは座標詳細のみ）"""
+        return self.get_coordinate_detail()
     
     def set_form_data(self, data: Dict[str, Any]):
-        """フォームデータを設定"""
-        self.lot_number_var.set(data.get('lot_number', ''))
-        self.worker_var.set(data.get('worker_no', ''))
-        self.model_var.set(data.get('model', ''))
-        self.save_name_var.set(data.get('save_name', ''))
-        
-        if 'coordinate_detail' in data:
-            self.set_coordinate_detail(data['coordinate_detail'])
-    
-    def display_info_text(self, text: str):
-        """情報テキストを表示"""
-        if self.info_text:
-            self.info_text.delete(1.0, tk.END)
-            self.info_text.insert(tk.END, text)
-    
-    def append_info_text(self, text: str):
-        """情報テキストに追記"""
-        if self.info_text:
-            self.info_text.insert(tk.END, text)
-            self.info_text.see(tk.END)
-    
-    def display_coordinate_summary(self, summary: Dict[str, Any]):
-        """座標概要を表示（閲覧モード用）"""
-        text = f"総座標数: {summary.get('total_count', 0)}個\n"
-        text += f"画像: {summary.get('image_path', 'なし')}\n"
-        text += "="*30 + "\n"
-        
-        coordinates = summary.get('coordinates', [])
-        details = summary.get('details', [])
-        
-        for i, (x, y) in enumerate(coordinates):
-            text += f"座標 {i+1}: ({x}, {y})\n"
-            if i < len(details) and details[i]:
-                detail = details[i]
-                if detail.get('reference'):
-                    text += f"  リファレンス: {detail['reference']}\n"
-                if detail.get('defect'):
-                    text += f"  不良名: {detail['defect']}\n"
-            text += "\n"
-        
-        self.display_info_text(text)
-    
-    def display_coordinate_info(self, detail: Dict[str, Any], index: int):
-        """特定座標の詳細情報を表示（閲覧モード用）"""
-        text = f"■ 座標 {index + 1} の詳細情報\n"
-        text += "="*30 + "\n"
-        text += f"項目番号: {detail.get('item_number', 'なし')}\n"
-        text += f"リファレンス: {detail.get('reference', 'なし')}\n"
-        text += f"不良名: {detail.get('defect', 'なし')}\n"
-        
-        self.display_info_text(text)
+        """フォームデータを設定（MVCでは座標詳細のみ）"""
+        self.set_coordinate_detail(data)
     
     def focus_reference_entry(self):
         """リファレンス入力フィールドにフォーカス"""
-        if self.reference_entry and not self.readonly_mode:
+        if hasattr(self, 'reference_entry') and self.reference_entry and not self.readonly_mode:
             self.reference_entry.focus_set()
+    
+    def update_worker_label(self, worker_text: str):
+        """作業者ラベルを更新"""
+        if hasattr(self, 'worker_label') and self.worker_label:
+            self.worker_label.config(text=worker_text)
+    
+    def get_selected_model(self) -> str:
+        """選択されているモデル名を取得"""
+        # MVCではメインビューのモデル選択から取得
+        if hasattr(self, 'main_view_ref') and self.main_view_ref:
+            return self.main_view_ref.get_selected_model()
+        return ""
+    
+    def set_main_view_reference(self, main_view):
+        """MainViewの参照を設定"""
+        self.main_view_ref = main_view
+    
+    def set_save_name(self, save_name: str):
+        """保存名を設定"""
+        # MVCではメインビューの保存名フィールドに設定
+        if hasattr(self, 'main_view_ref') and self.main_view_ref:
+            self.main_view_ref.set_save_name(save_name)
+    
+    def get_save_name(self) -> str:
+        """保存名を取得"""
+        # MVCではメインビューの保存名フィールドから取得
+        if hasattr(self, 'main_view_ref') and self.main_view_ref:
+            return self.main_view_ref.get_save_name()
+        return ""
+    
+    def update_lot_label(self, lot_text: str):
+        """ロット番号ラベルを更新"""
+        if hasattr(self, 'lot_label') and self.lot_label:
+            self.lot_label.config(text=lot_text)
+    
+    def set_lot_number(self, lot_number: str):
+        """ロット番号を設定"""
+        self.current_lot_number = lot_number
+        if hasattr(self, 'lot_label') and self.lot_label:
+            self.lot_label.config(text=f"指図番号: {lot_number}")
+    
+    def set_product_number(self, product_number: str):
+        """製番を設定"""
+        self.current_product_number = product_number
+        if hasattr(self, 'product_label') and self.product_label:
+            self.product_label.config(text=f"製番: {product_number}")
+    
+    def get_product_number(self) -> str:
+        """製番を取得"""
+        return self.current_product_number
+    
+    def get_lot_number(self) -> str:
+        """ロット番号を取得"""
+        return self.current_lot_number
+    
+    def clear_lot_number(self):
+        """ロット番号をクリア（モデル変更時用）"""
+        self.current_lot_number = ""
+        if hasattr(self, 'lot_label') and self.lot_label:
+            self.lot_label.config(text="指図番号: 未設定")
+    
+    def get_worker_no(self) -> str:
+        """作業者番号を取得"""
+        return self.current_worker_no
+    
+    def set_worker_no(self, worker_no: str):
+        """作業者番号を設定"""
+        self.current_worker_no = worker_no
+        if hasattr(self, 'worker_label') and self.worker_label:
+            self.worker_label.config(text=f"作業者: {worker_no}")
