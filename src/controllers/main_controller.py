@@ -6,15 +6,34 @@ import os
 import tkinter as tk
 from tkinter import messagebox
 from datetime import date, datetime
-from typing import Dict, Any, List, Tuple, Optional
+from typing import Dict, Any, List, Tuple, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..models.coordinate_model import CoordinateModel
+    from ..models.app_settings_model import AppSettingsModel
+    from ..models.worker_model import WorkerModel
+    from ..models.image_model import ImageModel
+    from ..views.main_view import MainView
+    from ..views.coordinate_canvas_view import CoordinateCanvasView
+    from ..views.sidebar_view import SidebarView
+    from ..controllers.coordinate_controller import CoordinateController
+    from ..controllers.file_controller import FileController
 
 
 class MainController:
     """メインアプリケーションコントローラー"""
     
-    def __init__(self, coordinate_model, settings_model, worker_model, image_model,
-                 main_view, canvas_view, sidebar_view, dialogs,
-                 coordinate_controller, file_controller):
+    def __init__(self, 
+                 coordinate_model: 'CoordinateModel', 
+                 settings_model: 'AppSettingsModel', 
+                 worker_model: 'WorkerModel', 
+                 image_model: 'ImageModel',
+                 main_view: 'MainView', 
+                 canvas_view: 'CoordinateCanvasView', 
+                 sidebar_view: 'SidebarView', 
+                 dialogs: Dict[str, Any],
+                 coordinate_controller: 'CoordinateController', 
+                 file_controller: 'FileController'):
         
         # モデル
         self.coordinate_model = coordinate_model
@@ -36,20 +55,20 @@ class MainController:
         self.current_date = date.today()
         
         # 作業者情報
-        self.current_worker_no = None
-        self.current_worker_name = None
+        self.current_worker_no: Optional[str] = None
+        self.current_worker_name: Optional[str] = None
         
         # 現在のロット番号
-        self.current_lot_number = None
+        self.current_lot_number: Optional[str] = None
         
         # 前回選択されたモデル（変更検出用）
-        self.previous_model = None
+        self.previous_model: Optional[str] = None
         
         # モデルデータ
-        self.model_data = []
+        self.model_data: List[Any] = []
         
         # 初期化フラグ
-        self.is_initialized = False
+        self.is_initialized: bool = False
     
     def initialize_application(self):
         """アプリケーションを初期化"""
@@ -161,8 +180,6 @@ class MainController:
     
     def _initialize_ui_elements(self):
         """UI要素を初期化"""
-        # メニューボタンを設定（旧コードと同じ位置）
-        self.main_view.setup_menu_buttons()
         
         # トップコントロールを設定
         self.main_view.setup_top_controls()

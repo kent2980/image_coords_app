@@ -463,5 +463,3 @@ class SidebarView:
     def set_worker_no(self, worker_no: str):
         """作業者番号を設定"""
         self.current_worker_no = worker_no
-        if hasattr(self, 'worker_label') and self.worker_label:
-            self.worker_label.config(text=f"作業者: {worker_no}")

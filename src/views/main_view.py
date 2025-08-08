@@ -44,6 +44,8 @@ class MainView:
         self.canvas_frame = None
         
         self._setup_layout()
+
+        self.setup_menu_buttons()
     
     def _setup_layout(self):
         """レイアウトを設定 - 既存UIと同じ構造"""
@@ -83,50 +85,6 @@ class MainView:
 
     def setup_top_controls(self):
         """トップコントロールを設定 - 既存UIと同じスタイル"""
-        # 日付表示フレーム
-        date_frame = tk.Frame(self.content_header_frame)
-        date_frame.pack(side=tk.LEFT, padx=5, pady=5)
-        
-        # 日付ラベル
-        self.date_label = tk.Label(
-            date_frame,
-            text=f"日付: {self.selected_date.strftime('%Y年%m月%d日')}",
-            font=("Arial", 12)
-        )
-        self.date_label.pack(side=tk.LEFT, padx=10, pady=5)
-        
-        # 日付選択ボタン
-        date_select_button = tk.Button(
-            date_frame,
-            text="日付を選択",
-            command=self.callbacks.get('select_date'),
-            font=("Arial", 10)
-        )
-        date_select_button.pack(side=tk.LEFT, padx=10, pady=5)
-        
-        # Undo/Redoボタン
-        undo_redo_frame = tk.Frame(self.content_header_frame)
-        undo_redo_frame.pack(side=tk.LEFT, padx=15, pady=5)
-        
-        self.undo_button = tk.Button(
-            undo_redo_frame,
-            text="↶ 元に戻す",
-            command=self.callbacks.get('undo'),
-            font=("Arial", 10),
-            relief='raised',
-            padx=8
-        )
-        self.undo_button.pack(side=tk.LEFT, padx=2)
-        
-        self.redo_button = tk.Button(
-            undo_redo_frame,
-            text="↷ 進む",
-            command=self.callbacks.get('redo'),
-            font=("Arial", 10),
-            relief='raised',
-            padx=8
-        )
-        self.redo_button.pack(side=tk.LEFT, padx=2)
         
         # 設定ボタン
         settings_frame = tk.Frame(self.content_header_frame)
@@ -171,83 +129,54 @@ class MainView:
     def _setup_canvas_top_controls(self):
         """キャンバス上段エリアをセットアップ（編集モード用）"""
         # グリッドレイアウトの設定
-        self.canvas_top_frame.grid_columnconfigure(0, weight=0)  # モデル選択
-        self.canvas_top_frame.grid_columnconfigure(1, weight=1)  # 保存名（拡張可能）
+        self.canvas_top_frame.grid_columnconfigure(0, weight=0)  
+        self.canvas_top_frame.grid_columnconfigure(1, weight=0)  
+        self.canvas_top_frame.grid_columnconfigure(2,weight=0)
+        self.canvas_top_frame.grid_columnconfigure(3, weight=0)
+        self.canvas_top_frame.grid_columnconfigure(4, weight=0)  # 「現品票で切り替え」ボタンのために最後の列を広げる
         self.canvas_top_frame.grid_rowconfigure(0, weight=1)
-        self.canvas_top_frame.grid_rowconfigure(1, weight=1)  # ロット番号用の行
         
         # モデル選択フレーム
-        model_frame = tk.Frame(self.canvas_top_frame)
-        model_frame.grid(row=0, column=0, padx=10, pady=5, sticky="w")
-        
-        tk.Label(model_frame, text="モデル:", font=("Arial", 10)).pack(side=tk.LEFT)
+        tk.Label(self.canvas_top_frame, text="モデル:", font=("Arial", 10)).grid(row=0, column=0, padx=5, pady=5, sticky="w")   
         
         self.model_var = tk.StringVar()
         self.model_combobox = ttk.Combobox(
-            model_frame,
+            self.canvas_top_frame,
             textvariable=self.model_var,
             state="readonly",
             width=50  # 画像ファイル名が長い場合があるので幅を広げる
         )
-        self.model_combobox.pack(side=tk.LEFT, padx=5)
+        self.model_combobox.grid(row=0,column=1, padx=5, pady=5, sticky="ew")
         # モデル選択時のイベントをバインド
         self.model_combobox.bind('<<ComboboxSelected>>', self._on_model_selected)
         
-        # 保存名フレーム
-        save_frame = tk.Frame(self.canvas_top_frame)
-        save_frame.grid(row=0, column=1, padx=10, pady=5, sticky="ew")
-        
-        tk.Label(save_frame, text="保存名:", font=("Arial", 10)).pack(side=tk.LEFT)
-        
-        self.save_name_var = tk.StringVar()
-        self.save_name_entry = tk.Entry(
-            save_frame,
-            textvariable=self.save_name_var,
-            width=50,  # 幅を広げて長い名前に対応    
-        )
-        self.save_name_entry.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
-
         # ロット番号入力エリア（1段下の行に配置）
-        lot_frame = tk.Frame(self.canvas_top_frame)
-        lot_frame.grid(row=1, column=0, padx=10, pady=5, sticky="w", columnspan=2)
-        
-        tk.Label(lot_frame, text="指図:", font=("Arial", 10)).pack(side=tk.LEFT)
+        tk.Label(self.canvas_top_frame, text="指図:", font=("Arial", 10)).grid(row=0,column=2, padx=5, pady=5, sticky="w")
         self.lot_number_var = tk.StringVar()
         self.lot_number_entry = tk.Entry(   
-            lot_frame,
+            self.canvas_top_frame,
             textvariable=self.lot_number_var,
             width=20,  # ロット番号は短いので幅を狭く設定
         )
-        self.lot_number_entry.pack(side=tk.LEFT, padx=5)
+        self.lot_number_entry.grid(row=0,column=3, padx=5, pady=5, sticky="ew")
 
         # Enterキーで保存処理を実行
         self.lot_number_entry.bind('<Return>', self._on_lot_number_enter)
         
-        # 保存ボタン（ロット番号の右隣）
-        self.save_button = tk.Button(
-            lot_frame,
-            text="保存",
-            command=self.callbacks.get('on_save_button_click'),
-            font=("Arial", 10),
-            relief='raised',
-            padx=15,
-        )
-        self.save_button.pack(side=tk.LEFT, padx=10)
-    
         # 「現品票で切り替え」ボタン
         print(f"[DEBUG] 現品票切り替えボタンを作成中...")
         print(f"[DEBUG] コールバック 'on_item_tag_change': {self.callbacks.get('on_item_tag_change')}")
         
         self.item_tag_change_button = tk.Button(
-            lot_frame,
+            self.canvas_top_frame,
             text="現品票で切り替え",
             command=self.callbacks.get('on_item_tag_change'),
             font=("Arial", 10),
             relief='raised',
             padx=10,
         )
-        self.item_tag_change_button.pack(side=tk.LEFT, padx=10)
-        
+        self.item_tag_change_button.grid(row=0,column=4, padx=5, pady=5, sticky="ew")
+
         print(f"[DEBUG] 現品票切り替えボタンが作成されました: {self.item_tag_change_button}")
         
         # ボタンのコマンドをテスト
@@ -436,19 +365,15 @@ class MainView:
     
     def setup_menu_buttons(self):
         """メニューボタンを設定（旧コードと同じ配置）"""
-        # 画像選択ボタン
-        select_button = tk.Button(
-            self.menu_frame,
-            text="画像を選択",
-            command=self.callbacks.get('select_image'),
-            font=("Arial", 10)
-        )
-        select_button.pack(side=tk.LEFT, padx=5)
         
+        # データラベル
+        self.data_label = tk.Label(self.menu_frame, text="データ:", font=("Arial", 10))
+        self.data_label.pack(side=tk.LEFT, padx=5)
+
         # JSON読み込みボタン
         load_button = tk.Button(
             self.menu_frame,
-            text="JSONを読み込みだ",
+            text="読み込み",
             command=self.callbacks.get('load_json'),
             font=("Arial", 10)
         )
@@ -457,12 +382,16 @@ class MainView:
         # 保存ボタン
         save_button = tk.Button(
             self.menu_frame,
-            text="座標を保存",
+            text="保存",
             command=self.callbacks.get('save_coordinates'),
             font=("Arial", 10)
         )
         save_button.pack(side=tk.LEFT, padx=5)
-        
+
+        # 座標ラベル
+        self.coordinate_label = tk.Label(self.menu_frame, text="座標操作:", font=("Arial", 10))
+        self.coordinate_label.pack(side=tk.LEFT, padx=5)
+
         # クリアボタン
         clear_button = tk.Button(
             self.menu_frame,
@@ -470,8 +399,54 @@ class MainView:
             command=self.callbacks.get('clear_coordinates'),
             font=("Arial", 10)
         )
-        clear_button.pack(side=tk.LEFT, padx=5)
+        clear_button.pack(side=tk.LEFT, padx=2)
     
+        # Undo/Redoボタン
+        undo_redo_frame = tk.Frame(self.menu_frame)
+        undo_redo_frame.pack(side=tk.LEFT, padx=2, pady=5)
+        
+        self.undo_button = tk.Button(
+            undo_redo_frame,
+            text="↶ 元に戻す",
+            command=self.callbacks.get('undo'),
+            font=("Arial", 10),
+            relief='raised',
+            padx=8
+        )
+        self.undo_button.pack(side=tk.LEFT, padx=2)
+        
+        self.redo_button = tk.Button(
+            undo_redo_frame,
+            text="↷ 進む",
+            command=self.callbacks.get('redo'),
+            font=("Arial", 10),
+            relief='raised',
+            padx=8
+        )
+        self.redo_button.pack(side=tk.LEFT, padx=2)
+
+        # 基板選択ラベル
+        self.board_label = tk.Label(self.menu_frame, text="基板選択:", font=("Arial", 10))
+        self.board_label.pack(side=tk.LEFT, padx=5)
+
+        # 基板選択「前へ」ボタン
+        prev_button = tk.Button(
+            self.menu_frame,
+            text="前へ",
+            command=self.callbacks.get('prev_board'),
+            font=("Arial", 10)
+        )
+        prev_button.pack(side=tk.LEFT, padx=5)
+
+        # 基板選択「次へ」ボタン
+        next_button = tk.Button(
+            self.menu_frame,
+            text="次へ",
+            command=self.callbacks.get('next_board'),
+            font=("Arial", 10)
+        )
+        next_button.pack(side=tk.LEFT, padx=5)
+
     def get_form_data(self) -> Dict[str, Any]:
         """フォームデータを取得（旧コード互換）"""
         return {
