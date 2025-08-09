@@ -1,0 +1,116 @@
+name: Create Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release tag name (e.g., v1.0.0)'
+        required: true
+        type: string
+      prerelease:
+        description: 'Mark as prerelease'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Set tag name
+        id: set_tag
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "tag_name=${{ github.event.inputs.tag_name }}" >> $GITHUB_OUTPUT
+            echo "prerelease=${{ github.event.inputs.prerelease }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag_name=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+            echo "prerelease=false" >> $GITHUB_OUTPUT
+          fi
+          
+      - name: Create tag (if workflow_dispatch)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag ${{ steps.set_tag.outputs.tag_name }}
+          git push origin ${{ steps.set_tag.outputs.tag_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Wait for build workflow
+        run: |
+          echo "Waiting for build workflow to complete..."
+          sleep 30
+          
+      - name: Check build workflow status
+        id: build_status
+        run: |
+          # Get the latest workflow run for the tag
+          RUN_ID=$(gh api repos/${{ github.repository }}/actions/workflows/build-executables.yml/runs \
+            --jq '.workflow_runs[] | select(.head_sha == "${{ github.sha }}") | .id' | head -1)
+          
+          if [ -z "$RUN_ID" ]; then
+            echo "No build workflow found"
+            exit 1
+          fi
+          
+          echo "build_run_id=$RUN_ID" >> $GITHUB_OUTPUT
+          
+          # Wait for workflow to complete
+          for i in {1..30}; do
+            STATUS=$(gh api repos/${{ github.repository }}/actions/runs/$RUN_ID --jq '.status')
+            CONCLUSION=$(gh api repos/${{ github.repository }}/actions/runs/$RUN_ID --jq '.conclusion')
+            
+            echo "Build status: $STATUS, conclusion: $CONCLUSION"
+            
+            if [ "$STATUS" == "completed" ]; then
+              if [ "$CONCLUSION" == "success" ]; then
+                echo "Build completed successfully"
+                break
+              else
+                echo "Build failed with conclusion: $CONCLUSION"
+                exit 1
+              fi
+            fi
+            
+            echo "Waiting for build to complete... (attempt $i/30)"
+            sleep 60
+          done
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Download build artifacts
+        run: |
+          # Download artifacts from the build workflow
+          gh api repos/${{ github.repository }}/actions/runs/${{ steps.build_status.outputs.build_run_id }}/artifacts \
+            --jq '.artifacts[] | "\(.name) \(.archive_download_url)"' | \
+          while read name url; do
+            echo "Downloading $name from $url"
+            gh api $url > "$name.zip"
+            unzip "$name.zip"
+            rm "$name.zip"
+          done
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.set_tag.outputs.tag_name }}
+          name: Release ${{ steps.set_tag.outputs.tag_name }}
+          files: |
+            *.zip
+            *.tar.gz
+          draft: false
+          prerelease: ${{ steps.set_tag.outputs.prerelease == 'true' }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

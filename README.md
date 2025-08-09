@@ -1,5 +1,31 @@
 # 💪 Python GUI アプリのビルド手順（macOS & Windows）
 
+## 📥 実行ファイルのダウンロード
+
+最新版の実行ファイルは以下のリンクからダウンロードできます：
+
+### 🚀 最新リリース
+
+[![最新リリース](https://img.shields.io/github/v/release/kent2980/image_coords_app?label=最新版)](https://github.com/kent2980/image_coords_app/releases/latest)
+
+**対応プラットフォーム:**
+
+- 🪟 **Windows x86** - [ダウンロード](https://github.com/kent2980/image_coords_app/releases/latest/download/image-coords-app-windows-x86.zip)
+- 🪟 **Windows x64** - [ダウンロード](https://github.com/kent2980/image_coords_app/releases/latest/download/image-coords-app-windows-x64.zip)
+- 🍎 **macOS (Apple Silicon)** - [ダウンロード](https://github.com/kent2980/image_coords_app/releases/latest/download/image-coords-app-macos-silicon.tar.gz)
+
+### 📋 インストール手順
+
+1. **Windows**: ZIPファイルをダウンロードして解凍後、`image_coords_app.exe`を実行
+2. **macOS**: TAR.GZファイルをダウンロードして解凍後、`image_coords_app`を実行
+   - 初回実行時はセキュリティ設定の解除が必要な場合があります: `xattr -d com.apple.quarantine image_coords_app`
+
+### 🔄 開発版ビルド
+
+タグなしの最新コミットから自動ビルドされた開発版は、[GitHub Actions](https://github.com/kent2980/image_coords_app/actions)のArtifactsからダウンロード可能です。
+
+---
+
 ## 🏗️ アーキテクチャ
 
 このプロジェクトは **MVCアーキテクチャ** に基づいて設計されています。
