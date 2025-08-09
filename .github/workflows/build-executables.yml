@@ -29,6 +29,9 @@ jobs:
 
     runs-on: ${{ matrix.os }}
 
+    env:
+      ENABLE_CODE_SIGNING: false # コード署名を無効化（テスト用）
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -136,47 +139,68 @@ jobs:
         run: |
           pyinstaller image_coords_app.spec --clean --noconfirm
 
-      - name: Install Windows SDK for signtool (Windows)
+      - name: Code signing status
         if: runner.os == 'Windows'
         run: |
-          # まず既存のsigntoolを探す
-          Write-Host "Checking for existing signtool.exe..."
-          $existingSigntool = Get-Command signtool.exe -ErrorAction SilentlyContinue
-          if ($existingSigntool) {
-            Write-Host "✅ signtool.exe already available at: $($existingSigntool.Source)"
-            exit 0
+          if ($env:ENABLE_CODE_SIGNING -eq 'true') {
+            Write-Host "✅ Code signing is ENABLED"
+          } else {
+            Write-Host "⚠️  Code signing is DISABLED"
+            Write-Host "📝 The executable will not be digitally signed"
+            Write-Host "🔧 Set ENABLE_CODE_SIGNING=true to enable signing"
           }
 
-          # Windows SDK をインストール
-          Write-Host "Installing Windows 10 SDK..."
-          try {
-            # 軽量なSDKパッケージを試す
-            choco install windows-sdk-10.1 --force --no-progress --timeout 1800
-          } catch {
-            Write-Host "First SDK installation failed, trying alternative..."
-            try {
-              choco install windowssdk-10-version-2004-all --force --no-progress --timeout 1800
-            } catch {
-              Write-Host "Second SDK installation failed, trying winget..."
-              try {
-                winget install "Windows SDK" --silent --accept-package-agreements --accept-source-agreements
-              } catch {
-                Write-Warning "All SDK installation methods failed. Will proceed with search..."
+      - name: Setup Windows SDK for signtool (Windows)
+        if: runner.os == 'Windows' && env.ENABLE_CODE_SIGNING == 'true'
+        run: |
+          # GitHub Actions Windows runners には既にWindows SDKがインストールされている
+          Write-Host "🔍 Locating signtool.exe on GitHub Actions runner..."
+
+          # GitHub Actions runners で利用可能なパスを検索
+          $searchPaths = @(
+            # Windows 11 SDK paths (GitHub Actions runners typically have these)
+            "${env:ProgramFiles(x86)}\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe",
+            "${env:ProgramFiles(x86)}\Windows Kits\10\bin\10.0.20348.0\x64\signtool.exe",
+            "${env:ProgramFiles(x86)}\Windows Kits\10\bin\10.0.19041.0\x64\signtool.exe",
+            "${env:ProgramFiles(x86)}\Windows Kits\10\bin\10.0.18362.0\x64\signtool.exe"
+          )
+
+          $foundSigntool = $null
+          foreach ($path in $searchPaths) {
+            if (Test-Path $path) {
+              $foundSigntool = $path
+              Write-Host "✅ Found signtool.exe at: $path"
+              break
+            }
+          }
+
+          if (-not $foundSigntool) {
+            # 利用可能なSDKバージョンを確認
+            Write-Host "Available Windows SDK versions:"
+            if (Test-Path "${env:ProgramFiles(x86)}\Windows Kits\10\bin\") {
+              Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin\" | ForEach-Object {
+                $signtoolPath = Join-Path $_.FullName "x64\signtool.exe"
+                if (Test-Path $signtoolPath) {
+                  Write-Host "  Found signtool at: $signtoolPath"
+                  if (-not $foundSigntool) { $foundSigntool = $signtoolPath }
+                }
               }
             }
           }
 
-          # インストール後の確認
-          Start-Sleep -Seconds 10
-          $postInstallCheck = Get-Command signtool.exe -ErrorAction SilentlyContinue
-          if ($postInstallCheck) {
-            Write-Host "✅ signtool.exe now available at: $($postInstallCheck.Source)"
-          } else {
-            Write-Host "⚠️  signtool.exe not in PATH, will search manually in next step"
+          if (-not $foundSigntool) {
+            Write-Error "❌ No signtool.exe found on this runner"
+            Write-Host "Available directories in Windows Kits:"
+            Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\" -ErrorAction SilentlyContinue
+            exit 1
           }
 
+          # signtoolパスを環境変数に保存
+          "SIGNTOOL_PATH=$foundSigntool" | Out-File -FilePath $env:GITHUB_ENV -Append
+          Write-Host "✅ signtool.exe located and ready for use"
+
       - name: Create self-signed certificate for code signing (Windows)
-        if: runner.os == 'Windows'
+        if: runner.os == 'Windows' && env.ENABLE_CODE_SIGNING == 'true'
         run: |
           # GitHub Secretsに証明書がある場合はそれを使用、なければ自己署名証明書を作成
           try {
@@ -227,80 +251,17 @@ jobs:
           CODE_SIGN_PASSWORD: ${{ secrets.CODE_SIGN_PASSWORD }}
 
       - name: Sign executable with signtool (Windows)
-        if: runner.os == 'Windows'
+        if: runner.os == 'Windows' && env.ENABLE_CODE_SIGNING == 'true'
         run: |
-          # signtool.exeの包括的な検索
-          Write-Host "🔍 Searching for signtool.exe..."
+          Write-Host "� Starting code signing process..."
 
-          $signtoolPath = $null
-
-          # 1. パスから直接検索
-          $pathSigntool = Get-Command signtool.exe -ErrorAction SilentlyContinue
-          if ($pathSigntool) {
-            $signtoolPath = $pathSigntool.Source
-            Write-Host "Found signtool.exe in PATH: $signtoolPath"
-          }
-
-          # 2. 一般的なWindows SDK の場所を検索
-          if (-not $signtoolPath) {
-            $possiblePaths = @(
-              "${env:ProgramFiles(x86)}\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe",
-              "${env:ProgramFiles(x86)}\Windows Kits\10\bin\10.0.20348.0\x64\signtool.exe",
-              "${env:ProgramFiles(x86)}\Windows Kits\10\bin\10.0.19041.0\x64\signtool.exe",
-              "${env:ProgramFiles}\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe"
-            )
-
-            foreach ($path in $possiblePaths) {
-              if (Test-Path $path) {
-                $signtoolPath = $path
-                Write-Host "Found signtool.exe at predefined path: $signtoolPath"
-                break
-              }
-            }
-          }
-
-          # 3. Windows Kits ディレクトリ全体を再帰検索
-          if (-not $signtoolPath) {
-            Write-Host "Performing recursive search in Windows Kits directory..."
-            $kitsPath = "${env:ProgramFiles(x86)}\Windows Kits"
-            if (Test-Path $kitsPath) {
-              $foundSigntools = Get-ChildItem -Path $kitsPath -Recurse -Name "signtool.exe" -ErrorAction SilentlyContinue
-              if ($foundSigntools) {
-                Write-Host "Found signtool.exe files:"
-                $foundSigntools | ForEach-Object { Write-Host "  $_" }
-                $signtoolPath = Join-Path $kitsPath $foundSigntools[0]
-                Write-Host "Using: $signtoolPath"
-              }
-            }
-          }
-
-          # 4. Visual Studio インストールでの検索
-          if (-not $signtoolPath) {
-            Write-Host "Searching in Visual Studio directories..."
-            $vsPaths = @(
-              "${env:ProgramFiles}\Microsoft Visual Studio\2022\Enterprise\VC\Tools\MSVC\*\bin\Hostx64\x64\signtool.exe",
-              "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2019\Enterprise\VC\Tools\MSVC\*\bin\Hostx64\x64\signtool.exe"
-            )
-
-            foreach ($pattern in $vsPaths) {
-              $found = Get-ChildItem -Path $pattern -ErrorAction SilentlyContinue | Select-Object -First 1
-              if ($found) {
-                $signtoolPath = $found.FullName
-                Write-Host "Found signtool.exe in Visual Studio: $signtoolPath"
-                break
-              }
-            }
-          }
-
-          # 最終確認
+          # 環境変数からsigntoolパスを取得
+          $signtoolPath = $env:SIGNTOOL_PATH
           if (-not $signtoolPath -or -not (Test-Path $signtoolPath)) {
-            Write-Error "❌ signtool.exe not found anywhere on system"
-            Write-Host "Available Windows SDK components:"
-            Get-ChildItem -Path "${env:ProgramFiles(x86)}\Windows Kits\" -ErrorAction SilentlyContinue | Select-Object Name
+            Write-Error "❌ signtool.exe path not found in environment variables"
             exit 1
           }
 
-          Write-Host "🔐 Starting code signing process..."
           Write-Host "Using signtool at: $signtoolPath"
           Write-Host "Target executable: dist\image_coords_app.exe"
 
@@ -309,6 +270,12 @@ jobs:
             Write-Error "❌ Target executable not found: dist\image_coords_app.exe"
             Write-Host "Contents of dist directory:"
             Get-ChildItem -Path "dist" -ErrorAction SilentlyContinue
+            exit 1
+          }
+
+          # 証明書ファイルの存在確認
+          if (-not (Test-Path "codesign.pfx")) {
+            Write-Error "❌ Certificate file not found: codesign.pfx"
             exit 1
           }
 
@@ -324,7 +291,7 @@ jobs:
             "dist\image_coords_app.exe"
           )
 
-          Write-Host "Signing executable..."
+          Write-Host "Executing: signtool $($signArgs -join ' ')"
           try {
             & $signtoolPath @signArgs
 
@@ -417,7 +384,7 @@ jobs:
           }
 
       - name: Cleanup signing materials (Windows)
-        if: runner.os == 'Windows' && always()
+        if: runner.os == 'Windows' && env.ENABLE_CODE_SIGNING == 'true' && always()
         run: |
           # セキュリティのため、証明書ファイルを削除
           if (Test-Path "codesign.pfx") {
