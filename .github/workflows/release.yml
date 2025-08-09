@@ -151,7 +151,7 @@ jobs:
 
           # ダウンロードしたファイルを確認
           echo "Downloaded files:"
-          ls -la *.zip *.tar.gz 2>/dev/null || echo "No archive files found"
+          ls -la *.zip 2>/dev/null || echo "No archive files found"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -162,7 +162,6 @@ jobs:
           name: Release ${{ steps.set_tag.outputs.tag_name }}
           files: |
             *.zip
-            *.tar.gz
           draft: false
           prerelease: ${{ steps.set_tag.outputs.prerelease == 'true' }}
           generate_release_notes: true
@@ -173,23 +172,20 @@ jobs:
 
             ### 📥 ダウンロード
 
-            - **Windows x86**: `image-coords-app-windows-x86.zip`
-            - **Windows x64**: `image-coords-app-windows-x64.zip`
-            - **macOS Apple Silicon**: `image-coords-app-macos-silicon.tar.gz`
+            - **Windows x86**: `image-coords-app-windows-x86.zip` 🔒 **コード署名済み**
+            - **Windows x64**: `image-coords-app-windows-x64.zip` 🔒 **コード署名済み**
 
             ### 📋 インストール手順
 
             #### Windows
             1. ZIPファイルをダウンロードして解凍
             2. `image_coords_app.exe`を実行
+            3. **初回実行時**: Windows Defenderの警告が表示される場合は「詳細情報」→「実行」をクリック
 
-            #### macOS
-            1. TAR.GZファイルをダウンロードして解凍
-            2. 以下のコマンドでセキュリティブロックを解除：
-               ```bash
-               xattr -d com.apple.quarantine image_coords_app.app
-               ```
-            3. `image_coords_app.app`をダブルクリックで実行
+            **セキュリティについて:**
+            - ✅ コード署名により、ウイルス対策ソフトでの誤検知を大幅に軽減
+            - ✅ 自己署名証明書使用のため、初回実行時に警告が表示される場合があります
+            - ✅ アプリケーションは安全です
 
             ### 🆕 主な機能
 
@@ -215,23 +211,20 @@ jobs:
 
           ### 📥 ダウンロード
 
-          - **Windows x86**: `image-coords-app-windows-x86.zip`
-          - **Windows x64**: `image-coords-app-windows-x64.zip`
-          - **macOS Apple Silicon**: `image-coords-app-macos-silicon.tar.gz`
+          - **Windows x86**: `image-coords-app-windows-x86.zip` 🔒 **コード署名済み**
+          - **Windows x64**: `image-coords-app-windows-x64.zip` 🔒 **コード署名済み**
 
           ### 📋 インストール手順
 
           #### Windows
           1. ZIPファイルをダウンロードして解凍
           2. `image_coords_app.exe`を実行
+          3. **初回実行時**: Windows Defenderの警告が表示される場合は「詳細情報」→「実行」をクリック
 
-          #### macOS
-          1. TAR.GZファイルをダウンロードして解凍
-          2. 以下のコマンドでセキュリティブロックを解除：
-             ```bash
-             xattr -d com.apple.quarantine image_coords_app.app
-             ```
-          3. `image_coords_app.app`をダブルクリックで実行
+          **セキュリティについて:**
+          - ✅ コード署名により、ウイルス対策ソフトでの誤検知を大幅に軽減
+          - ✅ 自己署名証明書使用のため、初回実行時に警告が表示される場合があります
+          - ✅ アプリケーションは安全です
 
           詳細な使用方法は [README.md](https://github.com/${{ github.repository }}/blob/main/README.md) をご覧ください。
           EOF
@@ -246,7 +239,7 @@ jobs:
             --title "Release ${{ steps.set_tag.outputs.tag_name }}" \
             --notes-file release_notes.md \
             $PRERELEASE_FLAG \
-            *.zip *.tar.gz 2>/dev/null || echo "No archive files to upload"
+            *.zip 2>/dev/null || echo "No archive files to upload"
 
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
