@@ -1,0 +1,245 @@
+name: Build Executables
+
+on:
+  push:
+    branches: [main, develop]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          # Windows x86
+          - os: windows-latest
+            arch: x86
+            python-arch: x86
+            artifact-name: image-coords-app-windows-x86
+            executable-name: image_coords_app.exe
+
+          # Windows x64
+          - os: windows-latest
+            arch: x64
+            python-arch: x64
+            artifact-name: image-coords-app-windows-x64
+            executable-name: image_coords_app.exe
+
+          # macOS Apple Silicon (M1/M2)
+          - os: macos-latest
+            arch: arm64
+            python-arch: x64 # Python universal binary
+            artifact-name: image-coords-app-macos-silicon
+            executable-name: image_coords_app
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+          architecture: ${{ matrix.python-arch }}
+
+      - name: Install system dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          # macOS用の追加依存関係があれば追加
+          brew install --cask xquartz
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt || pip install pillow
+          pip install pyinstaller
+
+      - name: Verify Python architecture (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          python -c "import platform; print(f'Python architecture: {platform.architecture()}')"
+          python -c "import platform; print(f'Machine: {platform.machine()}')"
+
+      - name: Verify Python architecture (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          python -c "import platform; print(f'Python architecture: {platform.architecture()}')"
+          python -c "import platform; print(f'Machine: {platform.machine()}')"
+          system_profiler SPHardwareDataType | grep "Chip"
+
+      - name: Test import dependencies
+        run: |
+          python -c "import tkinter; print('tkinter OK')"
+          python -c "from PIL import Image; print('PIL OK')"
+          python -c "import sys; print(f'Python path: {sys.executable}')"
+
+      - name: Create spec file for PyInstaller
+        run: |
+          cat > image_coords_app.spec << 'EOF'
+          # -*- mode: python ; coding: utf-8 -*-
+
+          block_cipher = None
+
+          a = Analysis(
+              ['main.py'],
+              pathex=['.'],
+              binaries=[],
+              datas=[
+                  ('src', 'src'),
+                  ('*.txt', '.'),
+                  ('*.ini', '.'),
+                  ('*.json', '.'),
+                  ('*.csv', '.'),
+                  ('*.md', '.'),
+              ],
+              hiddenimports=[
+                  'PIL._tkinter_finder',
+                  'tkinter',
+                  'tkinter.ttk',
+                  'tkinter.messagebox',
+                  'tkinter.filedialog',
+              ],
+              hookspath=[],
+              hooksconfig={},
+              runtime_hooks=[],
+              excludes=[],
+              win_no_prefer_redirects=False,
+              win_private_assemblies=False,
+              cipher=block_cipher,
+              noarchive=False,
+          )
+
+          pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+
+          exe = EXE(
+              pyz,
+              a.scripts,
+              a.binaries,
+              a.zipfiles,
+              a.datas,
+              [],
+              name='image_coords_app',
+              debug=False,
+              bootloader_ignore_signals=False,
+              strip=False,
+              upx=True,
+              upx_exclude=[],
+              runtime_tmpdir=None,
+              console=False,
+              disable_windowed_traceback=False,
+              argv_emulation=False,
+              target_arch='${{ matrix.arch }}',
+              codesign_identity=None,
+              entitlements_file=None,
+          )
+          EOF
+
+      - name: Build with PyInstaller
+        run: |
+          pyinstaller image_coords_app.spec --clean --noconfirm
+
+      - name: Verify executable (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          dir dist
+          if (Test-Path "dist/image_coords_app.exe") {
+            Write-Host "Executable created successfully"
+            Get-Item "dist/image_coords_app.exe" | Select-Object Name, Length, CreationTime
+          } else {
+            Write-Host "Executable not found!"
+            exit 1
+          }
+
+      - name: Verify executable (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          ls -la dist/
+          if [ -f "dist/image_coords_app" ]; then
+            echo "Executable created successfully"
+            ls -lh "dist/image_coords_app"
+            file "dist/image_coords_app"
+          else
+            echo "Executable not found!"
+            exit 1
+          fi
+
+      - name: Create distribution directory
+        run: |
+          mkdir -p release/${{ matrix.artifact-name }}
+
+      - name: Copy executable and resources (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          copy dist\image_coords_app.exe release\${{ matrix.artifact-name }}\
+          if (Test-Path "README.md") { copy README.md release\${{ matrix.artifact-name }}\ }
+          if (Test-Path "*.ini") { copy *.ini release\${{ matrix.artifact-name }}\ }
+          if (Test-Path "*.txt") { copy *.txt release\${{ matrix.artifact-name }}\ }
+
+      - name: Copy executable and resources (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          cp dist/image_coords_app release/${{ matrix.artifact-name }}/
+          [ -f "README.md" ] && cp README.md release/${{ matrix.artifact-name }}/
+          [ -f "*.ini" ] && cp *.ini release/${{ matrix.artifact-name }}/ || true
+          [ -f "*.txt" ] && cp *.txt release/${{ matrix.artifact-name }}/ || true
+          chmod +x release/${{ matrix.artifact-name }}/image_coords_app
+
+      - name: Create archive (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          Compress-Archive -Path "release\${{ matrix.artifact-name }}\*" -DestinationPath "${{ matrix.artifact-name }}.zip"
+
+      - name: Create archive (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          cd release && tar -czf ../${{ matrix.artifact-name }}.tar.gz ${{ matrix.artifact-name }}
+
+      - name: Upload Windows artifact
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: ${{ matrix.artifact-name }}.zip
+          retention-days: 30
+
+      - name: Upload macOS artifact
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: ${{ matrix.artifact-name }}.tar.gz
+          retention-days: 30
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+
+      - name: Display structure of downloaded files
+        run: ls -R artifacts/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            artifacts/image-coords-app-windows-x86/*.zip
+            artifacts/image-coords-app-windows-x64/*.zip
+            artifacts/image-coords-app-macos-silicon/*.tar.gz
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,33 @@
+{
+  // IntelliSense を使用して利用可能な属性を学べます。
+  // 既存の属性の説明をホバーして表示します。
+  // 詳細情報は次を確認してください: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python デバッガー: 通常モード",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "main",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Python デバッガー: デバッグモード (作業者入力スキップ)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "main",
+      "args": ["--debug"],
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Python デバッガー: 環境変数デバッグモード",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "main",
+      "env": {
+        "DEBUG": "1"
+      },
+      "console": "integratedTerminal"
+    }
+  ]
+}

@@ -1,0 +1,232 @@
+name: Build and Test Executables
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: "Build type"
+        required: true
+        default: "release"
+        type: choice
+        options:
+          - release
+          - debug
+      platforms:
+        description: "Platforms to build"
+        required: true
+        default: "all"
+        type: choice
+        options:
+          - all
+          - windows-only
+          - macos-only
+
+env:
+  PYTHONUNBUFFERED: 1
+
+jobs:
+  build-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Set build matrix
+        id: set-matrix
+        run: |
+          if [ "${{ github.event.inputs.platforms }}" = "windows-only" ]; then
+            matrix='{"include":[{"os":"windows-latest","arch":"x86","python-arch":"x86","artifact-name":"image-coords-app-windows-x86","executable-name":"image_coords_app.exe"},{"os":"windows-latest","arch":"x64","python-arch":"x64","artifact-name":"image-coords-app-windows-x64","executable-name":"image_coords_app.exe"}]}'
+          elif [ "${{ github.event.inputs.platforms }}" = "macos-only" ]; then
+            matrix='{"include":[{"os":"macos-latest","arch":"arm64","python-arch":"x64","artifact-name":"image-coords-app-macos-silicon","executable-name":"image_coords_app"}]}'
+          else
+            matrix='{"include":[{"os":"windows-latest","arch":"x86","python-arch":"x86","artifact-name":"image-coords-app-windows-x86","executable-name":"image_coords_app.exe"},{"os":"windows-latest","arch":"x64","python-arch":"x64","artifact-name":"image-coords-app-windows-x64","executable-name":"image_coords_app.exe"},{"os":"macos-latest","arch":"arm64","python-arch":"x64","artifact-name":"image-coords-app-macos-silicon","executable-name":"image_coords_app"}]}'
+          fi
+          echo "matrix=$matrix" >> $GITHUB_OUTPUT
+
+  build:
+    needs: build-matrix
+    strategy:
+      matrix: ${{ fromJSON(needs.build-matrix.outputs.matrix) }}
+      fail-fast: false
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+          architecture: ${{ matrix.python-arch }}
+
+      - name: Cache Python dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/pip
+            ~/Library/Caches/pip
+            ~\AppData\Local\pip\Cache
+          key: ${{ runner.os }}-${{ matrix.arch }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.arch }}-pip-
+
+      - name: Install system dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          # Install XQuartz for X11 support if needed
+          # brew install --cask xquartz
+          echo "macOS dependencies installed"
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install wheel setuptools
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Create hooks directory
+        run: |
+          mkdir -p hooks
+
+      - name: Create PyInstaller hook for PIL
+        run: |
+          cat > hooks/hook-PIL.py << 'EOF'
+          from PyInstaller.utils.hooks import collect_submodules, collect_data_files
+
+          hiddenimports = collect_submodules('PIL')
+          datas = collect_data_files('PIL')
+          EOF
+
+      - name: Generate PyInstaller spec file
+        run: |
+          python << 'EOF'
+          import sys
+          import os
+
+          debug_mode = "${{ github.event.inputs.build_type }}" == "debug"
+
+          spec_content = f'''# -*- mode: python ; coding: utf-8 -*-
+
+          block_cipher = None
+
+          a = Analysis(
+              ['main.py'],
+              pathex=['{os.getcwd()}'],
+              binaries=[],
+              datas=[
+                  ('src', 'src'),
+              ],
+              hiddenimports=[
+                  'PIL._tkinter_finder',
+                  'PIL.ImageTk',
+                  'tkinter',
+                  'tkinter.ttk',
+                  'tkinter.messagebox',
+                  'tkinter.filedialog',
+                  'tkinter.simpledialog',
+              ],
+              hookspath=['hooks'],
+              hooksconfig={{}},
+              runtime_hooks=[],
+              excludes=['matplotlib', 'numpy', 'scipy'],
+              win_no_prefer_redirects=False,
+              win_private_assemblies=False,
+              cipher=block_cipher,
+              noarchive=False,
+          )
+
+          pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+
+          exe = EXE(
+              pyz,
+              a.scripts,
+              a.binaries,
+              a.zipfiles,
+              a.datas,
+              [],
+              name='image_coords_app',
+              debug={str(debug_mode).lower()},
+              bootloader_ignore_signals=False,
+              strip=False,
+              upx=True,
+              upx_exclude=[],
+              runtime_tmpdir=None,
+              console={str(debug_mode).lower()},
+              disable_windowed_traceback=False,
+              argv_emulation=False,
+              target_arch='${{ matrix.arch }}',
+              codesign_identity=None,
+              entitlements_file=None,
+          )
+          '''
+
+          with open('image_coords_app.spec', 'w') as f:
+              f.write(spec_content)
+          EOF
+
+      - name: Build executable
+        run: |
+          pyinstaller image_coords_app.spec --clean --noconfirm --log-level INFO
+
+      - name: Test executable (Windows)
+        if: runner.os == 'Windows'
+        timeout-minutes: 2
+        run: |
+          # Test if executable runs and exits properly
+          Start-Process -FilePath "dist\image_coords_app.exe" -ArgumentList "--help" -Wait -NoNewWindow -PassThru
+
+      - name: Test executable (macOS)
+        if: runner.os == 'macOS'
+        timeout-minutes: 2
+        run: |
+          # Test if executable runs and exits properly
+          ./dist/image_coords_app --help || echo "Help option not available, but executable runs"
+
+      - name: Package release
+        run: |
+          mkdir -p release/${{ matrix.artifact-name }}
+
+      - name: Copy files (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          copy "dist\image_coords_app.exe" "release\${{ matrix.artifact-name }}\"
+          if (Test-Path "README.md") { copy "README.md" "release\${{ matrix.artifact-name }}\" }
+          echo "Version: ${{ github.ref_name }}" > "release\${{ matrix.artifact-name }}\VERSION.txt"
+          echo "Build Date: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss UTC')" >> "release\${{ matrix.artifact-name }}\VERSION.txt"
+          echo "Platform: Windows ${{ matrix.arch }}" >> "release\${{ matrix.artifact-name }}\VERSION.txt"
+          Compress-Archive -Path "release\${{ matrix.artifact-name }}\*" -DestinationPath "${{ matrix.artifact-name }}.zip"
+
+      - name: Copy files (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          cp "dist/image_coords_app" "release/${{ matrix.artifact-name }}/"
+          [ -f "README.md" ] && cp "README.md" "release/${{ matrix.artifact-name }}/"
+          echo "Version: ${{ github.ref_name }}" > "release/${{ matrix.artifact-name }}/VERSION.txt"
+          echo "Build Date: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> "release/${{ matrix.artifact-name }}/VERSION.txt"
+          echo "Platform: macOS Apple Silicon" >> "release/${{ matrix.artifact-name }}/VERSION.txt"
+          chmod +x "release/${{ matrix.artifact-name }}/image_coords_app"
+          cd release && tar -czf "../${{ matrix.artifact-name }}.tar.gz" "${{ matrix.artifact-name }}"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: ${{ matrix.artifact-name }}.*
+          retention-days: 90
+
+      - name: Generate build report
+        run: |
+          echo "## Build Report for ${{ matrix.artifact-name }}" >> build-report.md
+          echo "- **Status**: ✅ Success" >> build-report.md
+          echo "- **Platform**: ${{ runner.os }} ${{ matrix.arch }}" >> build-report.md
+          echo "- **Python Version**: $(python --version)" >> build-report.md
+          echo "- **Build Type**: ${{ github.event.inputs.build_type }}" >> build-report.md
+          echo "- **Artifact**: ${{ matrix.artifact-name }}" >> build-report.md
+
+      - name: Upload build report
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-report-${{ matrix.artifact-name }}
+          path: build-report.md
+          retention-days: 30

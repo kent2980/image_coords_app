@@ -44,6 +44,487 @@
         "documentation": {}
     },
     {
+        "label": "TYPE_CHECKING",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Any",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Dict",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "List",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Optional",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Tuple",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Dict",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Any",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "List",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Tuple",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Optional",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "TYPE_CHECKING",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Any",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Dict",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "List",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Optional",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Tuple",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Dict",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Any",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Optional",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "List",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Dict",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Any",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Optional",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Tuple",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Dict",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "List",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Optional",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Tuple",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Any",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Dict",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "List",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Optional",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Optional",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Optional",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Tuple",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Optional",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Dict",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Any",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Callable",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Any",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Dict",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Optional",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Callable",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Optional",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "List",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Tuple",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Dict",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Any",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Any",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Callable",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Dict",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "List",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Optional",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Any",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Callable",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Dict",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "List",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Optional",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "json",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "json",
+        "description": "json",
+        "detail": "json",
+        "documentation": {}
+    },
+    {
         "label": "tkinter",
         "kind": 6,
         "isExtraImport": true,
@@ -69,6 +550,167 @@
         "documentation": {}
     },
     {
+        "label": "messagebox",
+        "importPath": "tkinter",
+        "description": "tkinter",
+        "isExtraImport": true,
+        "detail": "tkinter",
+        "documentation": {}
+    },
+    {
+        "label": "ttk",
+        "importPath": "tkinter",
+        "description": "tkinter",
+        "isExtraImport": true,
+        "detail": "tkinter",
+        "documentation": {}
+    },
+    {
+        "label": "ttk",
+        "importPath": "tkinter",
+        "description": "tkinter",
+        "isExtraImport": true,
+        "detail": "tkinter",
+        "documentation": {}
+    },
+    {
+        "label": "messagebox",
+        "importPath": "tkinter",
+        "description": "tkinter",
+        "isExtraImport": true,
+        "detail": "tkinter",
+        "documentation": {}
+    },
+    {
+        "label": "ttk",
+        "importPath": "tkinter",
+        "description": "tkinter",
+        "isExtraImport": true,
+        "detail": "tkinter",
+        "documentation": {}
+    },
+    {
+        "label": "filedialog",
+        "importPath": "tkinter",
+        "description": "tkinter",
+        "isExtraImport": true,
+        "detail": "tkinter",
+        "documentation": {}
+    },
+    {
+        "label": "messagebox",
+        "importPath": "tkinter",
+        "description": "tkinter",
+        "isExtraImport": true,
+        "detail": "tkinter",
+        "documentation": {}
+    },
+    {
+        "label": "messagebox",
+        "importPath": "tkinter",
+        "description": "tkinter",
+        "isExtraImport": true,
+        "detail": "tkinter",
+        "documentation": {}
+    },
+    {
+        "label": "ttk",
+        "importPath": "tkinter",
+        "description": "tkinter",
+        "isExtraImport": true,
+        "detail": "tkinter",
+        "documentation": {}
+    },
+    {
+        "label": "ttk",
+        "importPath": "tkinter",
+        "description": "tkinter",
+        "isExtraImport": true,
+        "detail": "tkinter",
+        "documentation": {}
+    },
+    {
+        "label": "ttk",
+        "importPath": "tkinter",
+        "description": "tkinter",
+        "isExtraImport": true,
+        "detail": "tkinter",
+        "documentation": {}
+    },
+    {
+        "label": "messagebox",
+        "importPath": "tkinter",
+        "description": "tkinter",
+        "isExtraImport": true,
+        "detail": "tkinter",
+        "documentation": {}
+    },
+    {
+        "label": "datetime",
+        "importPath": "datetime",
+        "description": "datetime",
+        "isExtraImport": true,
+        "detail": "datetime",
+        "documentation": {}
+    },
+    {
+        "label": "date",
+        "importPath": "datetime",
+        "description": "datetime",
+        "isExtraImport": true,
+        "detail": "datetime",
+        "documentation": {}
+    },
+    {
+        "label": "datetime",
+        "importPath": "datetime",
+        "description": "datetime",
+        "isExtraImport": true,
+        "detail": "datetime",
+        "documentation": {}
+    },
+    {
+        "label": "datetime",
+        "importPath": "datetime",
+        "description": "datetime",
+        "isExtraImport": true,
+        "detail": "datetime",
+        "documentation": {}
+    },
+    {
+        "label": "date",
+        "importPath": "datetime",
+        "description": "datetime",
+        "isExtraImport": true,
+        "detail": "datetime",
+        "documentation": {}
+    },
+    {
+        "label": "datetime",
+        "importPath": "datetime",
+        "description": "datetime",
+        "isExtraImport": true,
+        "detail": "datetime",
+        "documentation": {}
+    },
+    {
+        "label": "datetime",
+        "importPath": "datetime",
+        "description": "datetime",
+        "isExtraImport": true,
+        "detail": "datetime",
+        "documentation": {}
+    },
+    {
+        "label": "configparser",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "configparser",
+        "description": "configparser",
+        "detail": "configparser",
+        "documentation": {}
+    },
+    {
         "label": "Image",
         "importPath": "PIL",
         "description": "PIL",
@@ -85,11 +727,124 @@
         "documentation": {}
     },
     {
-        "label": "CoordinateApp",
-        "importPath": "src.image_coords_app",
-        "description": "src.image_coords_app",
+        "label": "ImageTk",
+        "importPath": "PIL",
+        "description": "PIL",
         "isExtraImport": true,
-        "detail": "src.image_coords_app",
+        "detail": "PIL",
+        "documentation": {}
+    },
+    {
+        "label": "csv",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "csv",
+        "description": "csv",
+        "detail": "csv",
+        "documentation": {}
+    },
+    {
+        "label": "CoordinateController",
+        "importPath": "src.controllers",
+        "description": "src.controllers",
+        "isExtraImport": true,
+        "detail": "src.controllers",
+        "documentation": {}
+    },
+    {
+        "label": "FileController",
+        "importPath": "src.controllers",
+        "description": "src.controllers",
+        "isExtraImport": true,
+        "detail": "src.controllers",
+        "documentation": {}
+    },
+    {
+        "label": "MainController",
+        "importPath": "src.controllers",
+        "description": "src.controllers",
+        "isExtraImport": true,
+        "detail": "src.controllers",
+        "documentation": {}
+    },
+    {
+        "label": "AppSettingsModel",
+        "importPath": "src.models",
+        "description": "src.models",
+        "isExtraImport": true,
+        "detail": "src.models",
+        "documentation": {}
+    },
+    {
+        "label": "CoordinateModel",
+        "importPath": "src.models",
+        "description": "src.models",
+        "isExtraImport": true,
+        "detail": "src.models",
+        "documentation": {}
+    },
+    {
+        "label": "ImageModel",
+        "importPath": "src.models",
+        "description": "src.models",
+        "isExtraImport": true,
+        "detail": "src.models",
+        "documentation": {}
+    },
+    {
+        "label": "WorkerModel",
+        "importPath": "src.models",
+        "description": "src.models",
+        "isExtraImport": true,
+        "detail": "src.models",
+        "documentation": {}
+    },
+    {
+        "label": "CoordinateCanvasView",
+        "importPath": "src.views",
+        "description": "src.views",
+        "isExtraImport": true,
+        "detail": "src.views",
+        "documentation": {}
+    },
+    {
+        "label": "MainView",
+        "importPath": "src.views",
+        "description": "src.views",
+        "isExtraImport": true,
+        "detail": "src.views",
+        "documentation": {}
+    },
+    {
+        "label": "SidebarView",
+        "importPath": "src.views",
+        "description": "src.views",
+        "isExtraImport": true,
+        "detail": "src.views",
+        "documentation": {}
+    },
+    {
+        "label": "DateSelectDialog",
+        "importPath": "src.views.dialogs",
+        "description": "src.views.dialogs",
+        "isExtraImport": true,
+        "detail": "src.views.dialogs",
+        "documentation": {}
+    },
+    {
+        "label": "SettingsDialog",
+        "importPath": "src.views.dialogs",
+        "description": "src.views.dialogs",
+        "isExtraImport": true,
+        "detail": "src.views.dialogs",
+        "documentation": {}
+    },
+    {
+        "label": "WorkerInputDialog",
+        "importPath": "src.views.dialogs",
+        "description": "src.views.dialogs",
+        "isExtraImport": true,
+        "detail": "src.views.dialogs",
         "documentation": {}
     },
     {
@@ -174,39 +929,156 @@
         "documentation": {}
     },
     {
-        "label": "load_coordinates",
-        "kind": 2,
-        "importPath": "src.utils.coords_loader",
-        "description": "src.utils.coords_loader",
-        "peekOfCode": "def load_coordinates(file_path):\n    coordinates = []\n    try:\n        with open(file_path, 'r') as f:\n            for line in f:\n                x, y = map(float, line.strip().split(','))\n                coordinates.append((x, y))\n    except FileNotFoundError:\n        print(f\"Error: The file {file_path} was not found.\")\n    except ValueError:",
-        "detail": "src.utils.coords_loader",
-        "documentation": {}
-    },
-    {
-        "label": "CoordinateApp",
+        "label": "CoordinateController",
         "kind": 6,
-        "importPath": "src.image_coords_app",
-        "description": "src.image_coords_app",
-        "peekOfCode": "class CoordinateApp:\n    def __init__(self):\n        self.root = tk.Tk()\n        self.root.title(\"Image Coordinate App\")\n        self.canvas = tk.Canvas(self.root, width=CANVAS_WIDTH, height=CANVAS_HEIGHT)\n        self.canvas.pack()\n        self.btn_select = tk.Button(\n            self.root, text=\"Select Image\", command=self.select_image\n        )\n        self.btn_select.pack(side=\"left\", padx=5, pady=5)",
-        "detail": "src.image_coords_app",
+        "importPath": "src.controllers.coordinate_controller",
+        "description": "src.controllers.coordinate_controller",
+        "peekOfCode": "class CoordinateController:\n    \"\"\"座標操作を管理するコントローラー\"\"\"\n    def __init__(self, coordinate_model: \"CoordinateModel\", image_model: \"ImageModel\"):\n        self.coordinate_model = coordinate_model\n        self.image_model = image_model\n        # ビューへの参照（後で設定）\n        self.canvas_view: Optional[\"CoordinateCanvasView\"] = None\n        self.sidebar_view: Optional[\"SidebarView\"] = None\n    def set_canvas_view(self, canvas_view: \"CoordinateCanvasView\") -> None:\n        \"\"\"キャンバスビューを設定\"\"\"",
+        "detail": "src.controllers.coordinate_controller",
         "documentation": {}
     },
     {
-        "label": "CANVAS_WIDTH",
-        "kind": 5,
-        "importPath": "src.image_coords_app",
-        "description": "src.image_coords_app",
-        "peekOfCode": "CANVAS_WIDTH = 800\nCANVAS_HEIGHT = 600\nclass CoordinateApp:\n    def __init__(self):\n        self.root = tk.Tk()\n        self.root.title(\"Image Coordinate App\")\n        self.canvas = tk.Canvas(self.root, width=CANVAS_WIDTH, height=CANVAS_HEIGHT)\n        self.canvas.pack()\n        self.btn_select = tk.Button(\n            self.root, text=\"Select Image\", command=self.select_image",
-        "detail": "src.image_coords_app",
+        "label": "FileController",
+        "kind": 6,
+        "importPath": "src.controllers.file_controller",
+        "description": "src.controllers.file_controller",
+        "peekOfCode": "class FileController:\n    \"\"\"ファイル操作を管理するコントローラー\"\"\"\n    def __init__(self, coordinate_model, settings_model, worker_model):\n        self.coordinate_model = coordinate_model\n        self.settings_model = settings_model\n        self.worker_model = worker_model\n        # 現在のJSONファイルパス\n        self.current_json_path = None\n        # デフォルトの不良項目\n        self.default_defects = [",
+        "detail": "src.controllers.file_controller",
         "documentation": {}
     },
     {
-        "label": "CANVAS_HEIGHT",
-        "kind": 5,
-        "importPath": "src.image_coords_app",
-        "description": "src.image_coords_app",
-        "peekOfCode": "CANVAS_HEIGHT = 600\nclass CoordinateApp:\n    def __init__(self):\n        self.root = tk.Tk()\n        self.root.title(\"Image Coordinate App\")\n        self.canvas = tk.Canvas(self.root, width=CANVAS_WIDTH, height=CANVAS_HEIGHT)\n        self.canvas.pack()\n        self.btn_select = tk.Button(\n            self.root, text=\"Select Image\", command=self.select_image\n        )",
-        "detail": "src.image_coords_app",
+        "label": "MainController",
+        "kind": 6,
+        "importPath": "src.controllers.main_controller",
+        "description": "src.controllers.main_controller",
+        "peekOfCode": "class MainController:\n    \"\"\"メインアプリケーションコントローラー\"\"\"\n    def __init__(\n        self,\n        coordinate_model: \"CoordinateModel\",\n        settings_model: \"AppSettingsModel\",\n        worker_model: \"WorkerModel\",\n        image_model: \"ImageModel\",\n        main_view: \"MainView\",\n        canvas_view: \"CoordinateCanvasView\",",
+        "detail": "src.controllers.main_controller",
+        "documentation": {}
+    },
+    {
+        "label": "AppSettingsModel",
+        "kind": 6,
+        "importPath": "src.models.app_settings_model",
+        "description": "src.models.app_settings_model",
+        "peekOfCode": "class AppSettingsModel:\n    \"\"\"アプリケーション設定を管理するモデル\"\"\"\n    def __init__(self):\n        self._config = configparser.ConfigParser()\n        self._settings_file = os.path.join(os.path.expanduser('~'), 'image_coords_settings.ini')\n        self._default_settings = {\n            'image_directory': '未選択',\n            'data_directory': '未選択',\n            'default_mode': '編集'\n        }",
+        "detail": "src.models.app_settings_model",
+        "documentation": {}
+    },
+    {
+        "label": "CoordinateModel",
+        "kind": 6,
+        "importPath": "src.models.coordinate_model",
+        "description": "src.models.coordinate_model",
+        "peekOfCode": "class CoordinateModel:\n    \"\"\"座標データを管理するモデル\"\"\"\n    def __init__(self):\n        self._coordinates: List[Tuple[int, int]] = []\n        self._coordinate_details: List[Dict[str, Any]] = []\n        self._current_index: int = -1\n        self._image_path: str = \"\"\n        self._undo_stack: List[List[Tuple[int, int]]] = []\n        self._redo_stack: List[List[Tuple[int, int]]] = []\n    @property",
+        "detail": "src.models.coordinate_model",
+        "documentation": {}
+    },
+    {
+        "label": "ImageModel",
+        "kind": 6,
+        "importPath": "src.models.image_model",
+        "description": "src.models.image_model",
+        "peekOfCode": "class ImageModel:\n    \"\"\"画像データを管理するモデル\"\"\"\n    def __init__(self):\n        self._current_image_path: str = \"\"\n        self._original_size: Tuple[int, int] = (0, 0)\n        self._display_size: Tuple[int, int] = (0, 0)\n        self._scale_factor: float = 1.0\n        self._tk_image: Optional[ImageTk.PhotoImage] = None\n        self._image_files: List[Dict[str, str]] = []\n        # サポートする画像形式",
+        "detail": "src.models.image_model",
+        "documentation": {}
+    },
+    {
+        "label": "WorkerModel",
+        "kind": 6,
+        "importPath": "src.models.worker_model",
+        "description": "src.models.worker_model",
+        "peekOfCode": "class WorkerModel:\n    \"\"\"作業者データを管理するモデル\"\"\"\n    def __init__(self):\n        self._worker_file = \"worker.csv\"\n        self._current_worker_no: str = \"\"\n        self._workers: Dict[str, str] = {}  # worker_no: worker_name\n        self._load_workers()\n    def _load_workers(self):\n        \"\"\"作業者データを読み込み\"\"\"\n        try:",
+        "detail": "src.models.worker_model",
+        "documentation": {}
+    },
+    {
+        "label": "DateSelectDialog",
+        "kind": 6,
+        "importPath": "src.views.dialogs.date_select_dialog",
+        "description": "src.views.dialogs.date_select_dialog",
+        "peekOfCode": "class DateSelectDialog:\n    \"\"\"日付選択ダイアログ\"\"\"\n    def __init__(self, parent: tk.Tk, current_date: Optional[date] = None):\n        self.parent = parent\n        self.current_date = current_date or date.today()\n        self.selected_date = self.current_date\n        self.result = None\n        self.dialog = None\n        # 年月日変数\n        self.year_var = tk.StringVar()",
+        "detail": "src.views.dialogs.date_select_dialog",
+        "documentation": {}
+    },
+    {
+        "label": "ItemTagSwitchDialog",
+        "kind": 6,
+        "importPath": "src.views.dialogs.item_tag_switch_dialog",
+        "description": "src.views.dialogs.item_tag_switch_dialog",
+        "peekOfCode": "class ItemTagSwitchDialog:\n    \"\"\"現品票切り替えダイアログクラス\"\"\"\n    def __init__(self, parent: tk.Tk):\n        self.parent = parent\n        self.result = None\n        # ダイアログウィンドウを作成\n        self.dialog = tk.Toplevel(parent)\n        self.dialog.title(\"現品票で切り替え\")\n        self.dialog.geometry(\"400x200\")\n        self.dialog.resizable(False, False)",
+        "detail": "src.views.dialogs.item_tag_switch_dialog",
+        "documentation": {}
+    },
+    {
+        "label": "show_item_tag_switch_dialog",
+        "kind": 2,
+        "importPath": "src.views.dialogs.item_tag_switch_dialog",
+        "description": "src.views.dialogs.item_tag_switch_dialog",
+        "peekOfCode": "def show_item_tag_switch_dialog(parent: tk.Tk) -> Optional[Tuple[str, str]]:\n    \"\"\"現品票切り替えダイアログを表示する便利関数\n    Args:\n        parent: 親ウィンドウ\n    Returns:\n        Optional[Tuple[str, str]]: (製番, 指図) のタプル。キャンセル時はNone\n    \"\"\"\n    dialog = ItemTagSwitchDialog(parent)\n    return dialog.show()",
+        "detail": "src.views.dialogs.item_tag_switch_dialog",
+        "documentation": {}
+    },
+    {
+        "label": "SettingsDialog",
+        "kind": 6,
+        "importPath": "src.views.dialogs.settings_dialog",
+        "description": "src.views.dialogs.settings_dialog",
+        "peekOfCode": "class SettingsDialog:\n    \"\"\"設定ダイアログ\"\"\"\n    def __init__(self, parent: tk.Tk, settings_model=None, callback: Optional[Callable] = None):\n        self.parent = parent\n        self.settings_model = settings_model\n        self.callback = callback\n        self.dialog = None\n        # 設定変数\n        self.image_directory_var = tk.StringVar()\n        self.data_directory_var = tk.StringVar()",
+        "detail": "src.views.dialogs.settings_dialog",
+        "documentation": {}
+    },
+    {
+        "label": "WorkerInputDialog",
+        "kind": 6,
+        "importPath": "src.views.dialogs.worker_input_dialog",
+        "description": "src.views.dialogs.worker_input_dialog",
+        "peekOfCode": "class WorkerInputDialog:\n    \"\"\"作業者入力ダイアログ\"\"\"\n    def __init__(self, parent: tk.Tk, worker_model=None):\n        self.parent = parent\n        self.worker_model = worker_model\n        self.result = None\n        self.dialog = None\n        # 入力変数\n        self.worker_input_var = tk.StringVar()\n    def show(self) -> Optional[Dict[str, Any]]:",
+        "detail": "src.views.dialogs.worker_input_dialog",
+        "documentation": {}
+    },
+    {
+        "label": "CoordinateCanvasView",
+        "kind": 6,
+        "importPath": "src.views.coordinate_canvas_view",
+        "description": "src.views.coordinate_canvas_view",
+        "peekOfCode": "class CoordinateCanvasView:\n    \"\"\"座標キャンバスを管理するビュー\"\"\"\n    def __init__(self, parent_frame: tk.Frame):\n        self.parent_frame = parent_frame\n        self.canvas_width = 800\n        self.canvas_height = 600\n        # キャンバス\n        self.canvas = tk.Canvas(\n            parent_frame,\n            width=self.canvas_width,",
+        "detail": "src.views.coordinate_canvas_view",
+        "documentation": {}
+    },
+    {
+        "label": "MainView",
+        "kind": 6,
+        "importPath": "src.views.main_view",
+        "description": "src.views.main_view",
+        "peekOfCode": "class MainView:\n    \"\"\"メインビューを管理するクラス\"\"\"\n    def __init__(self, root: tk.Tk):\n        self.root = root\n        self.root.title(\"Image Coordinate App\")\n        self.root.geometry(\"1400x900\")\n        # ウィンドウを最大化\n        self.root.state(\"zoomed\")  # Windows用の最大化\n        # 定数 - 既存UIと同じサイズ\n        self.SIDEBAR_WIDTH = 250",
+        "detail": "src.views.main_view",
+        "documentation": {}
+    },
+    {
+        "label": "SidebarView",
+        "kind": 6,
+        "importPath": "src.views.sidebar_view",
+        "description": "src.views.sidebar_view",
+        "peekOfCode": "class SidebarView:\n    \"\"\"サイドバーを管理するビュー\"\"\"\n    def __init__(self, parent_frame: tk.Frame):\n        self.parent_frame = parent_frame\n        # 変数\n        self.item_number_var = tk.StringVar()\n        self.reference_var = tk.StringVar()\n        self.defect_var = tk.StringVar()\n        # ロット番号（表示用）\n        self.current_lot_number = \"\"",
+        "detail": "src.views.sidebar_view",
+        "documentation": {}
+    },
+    {
+        "label": "ImageCoordsApp",
+        "kind": 6,
+        "importPath": "main",
+        "description": "main",
+        "peekOfCode": "class ImageCoordsApp:\n    \"\"\"MVCアーキテクチャによる画像座標アプリケーション\"\"\"\n    def __init__(self):\n        self.root = tk.Tk()\n        self.root.title(\"画像座標アプリケーション (MVC)\")\n        self.root.geometry(\"1400x900\")\n        # アプリケーションのセットアップ\n        self._setup_application()\n    def _setup_application(self):\n        \"\"\"アプリケーションのセットアップ\"\"\"",
+        "detail": "main",
+        "documentation": {}
+    },
+    {
+        "label": "main",
+        "kind": 2,
+        "importPath": "main",
+        "description": "main",
+        "peekOfCode": "def main():\n    \"\"\"メイン関数\"\"\"\n    try:\n        app = ImageCoordsApp()\n        app.run()\n    except KeyboardInterrupt:\n        print(\"アプリケーションが中断されました。\")\n    except Exception as e:\n        print(f\"予期しないエラーが発生しました: {e}\")\n        messagebox.showerror(\"エラー\", f\"予期しないエラーが発生しました: {e}\")",
+        "detail": "main",
         "documentation": {}
     }
 ]
