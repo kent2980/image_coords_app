@@ -21,12 +21,12 @@ jobs:
     runs-on: ubuntu-latest
     # ジョブが確実に実行されるように条件を明確に設定
     if: always()
-    
+
     # GitHub Releases作成に必要な権限を追加
     permissions:
       contents: write
       actions: read
-      
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -154,21 +154,21 @@ jobs:
           generate_release_notes: true
           body: |
             ## 🚀 自動ビルドリリース ${{ steps.set_tag.outputs.tag_name }}
-            
+
             このリリースは自動ビルドシステムによって生成されました。
-            
+
             ### 📥 ダウンロード
-            
+
             - **Windows x86**: `image-coords-app-windows-x86.zip`
             - **Windows x64**: `image-coords-app-windows-x64.zip`
             - **macOS Apple Silicon**: `image-coords-app-macos-silicon.tar.gz`
-            
+
             ### 📋 インストール手順
-            
+
             #### Windows
             1. ZIPファイルをダウンロードして解凍
             2. `image_coords_app.exe`を実行
-            
+
             #### macOS
             1. TAR.GZファイルをダウンロードして解凍
             2. 以下のコマンドでセキュリティブロックを解除：
@@ -176,14 +176,14 @@ jobs:
                xattr -d com.apple.quarantine image_coords_app.app
                ```
             3. `image_coords_app.app`をダブルクリックで実行
-            
+
             ### 🆕 主な機能
-            
+
             - 画像上での座標入力
             - 不良検出ポイントのマーキング
             - 座標データの保存・読み込み
             - カスタマイズ可能な設定
-            
+
             詳細な使用方法は [README.md](https://github.com/${{ github.repository }}/blob/main/README.md) をご覧ください。
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
