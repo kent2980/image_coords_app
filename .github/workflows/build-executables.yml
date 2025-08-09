@@ -50,7 +50,7 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           # macOS用の追加依存関係があれば追加
-          brew install --cask xquartz
+          echo "macOS dependencies setup complete"
 
       - name: Install Python dependencies
         run: |
@@ -79,8 +79,8 @@ jobs:
 
       - name: Create spec file for PyInstaller
         run: |
-          cat > image_coords_app.spec << 'EOF'
-          # -*- mode: python ; coding: utf-8 -*-
+          python -c "
+          spec_content = '''# -*- mode: python ; coding: utf-8 -*-
 
           block_cipher = None
 
@@ -90,14 +90,10 @@ jobs:
               binaries=[],
               datas=[
                   ('src', 'src'),
-                  ('*.txt', '.'),
-                  ('*.ini', '.'),
-                  ('*.json', '.'),
-                  ('*.csv', '.'),
-                  ('*.md', '.'),
               ],
               hiddenimports=[
                   'PIL._tkinter_finder',
+                  'PIL.ImageTk',
                   'tkinter',
                   'tkinter.ttk',
                   'tkinter.messagebox',
@@ -122,7 +118,7 @@ jobs:
               a.zipfiles,
               a.datas,
               [],
-              name='image_coords_app',
+              name="image_coords_app",
               debug=False,
               bootloader_ignore_signals=False,
               strip=False,
@@ -132,11 +128,15 @@ jobs:
               console=False,
               disable_windowed_traceback=False,
               argv_emulation=False,
-              target_arch='${{ matrix.arch }}',
+              target_arch="${{ matrix.arch }}",
               codesign_identity=None,
               entitlements_file=None,
           )
-          EOF
+          '''
+
+          with open('image_coords_app.spec', 'w') as f:
+              f.write(spec_content)
+          "
 
       - name: Build with PyInstaller
         run: |
@@ -174,7 +174,7 @@ jobs:
       - name: Copy executable and resources (Windows)
         if: runner.os == 'Windows'
         run: |
-          copy dist\image_coords_app.exe release\${{ matrix.artifact-name }}\
+          copy dist\image_coords_app.exe release\${{ matrix.artifact-name }}
           if (Test-Path "README.md") { copy README.md release\${{ matrix.artifact-name }}\ }
           if (Test-Path "*.ini") { copy *.ini release\${{ matrix.artifact-name }}\ }
           if (Test-Path "*.txt") { copy *.txt release\${{ matrix.artifact-name }}\ }
