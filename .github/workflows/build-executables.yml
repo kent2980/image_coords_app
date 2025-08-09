@@ -161,7 +161,69 @@ jobs:
           EOL
         if: runner.os == 'macOS'
 
-      - name: Create spec file script (Windows/Linux)
+      - name: Create spec file script (Windows)
+        run: |
+          @'
+          spec_content = """# -*- mode: python ; coding: utf-8 -*-
+
+          block_cipher = None
+
+          a = Analysis(
+              ['main.py'],
+              pathex=['.'],
+              binaries=[],
+              datas=[
+                  ('src', 'src'),
+              ],
+              hiddenimports=[
+                  'PIL._tkinter_finder',
+                  'PIL.ImageTk',
+                  'tkinter',
+                  'tkinter.ttk',
+                  'tkinter.messagebox',
+                  'tkinter.filedialog',
+              ],
+              hookspath=[],
+              hooksconfig={},
+              runtime_hooks=[],
+              excludes=[],
+              win_no_prefer_redirects=False,
+              win_private_assemblies=False,
+              cipher=block_cipher,
+              noarchive=False,
+          )
+
+          pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+
+          exe = EXE(
+              pyz,
+              a.scripts,
+              a.binaries,
+              a.zipfiles,
+              a.datas,
+              [],
+              name="image_coords_app",
+              debug=False,
+              bootloader_ignore_signals=False,
+              strip=False,
+              upx=True,
+              upx_exclude=[],
+              runtime_tmpdir=None,
+              console=False,
+              disable_windowed_traceback=False,
+              argv_emulation=False,
+              target_arch="${{ matrix.arch }}",
+              codesign_identity=None,
+              entitlements_file=None,
+          )
+          """
+
+          with open('image_coords_app.spec', 'w') as f:
+              f.write(spec_content)
+          '@ | Out-File -FilePath "create_spec.py" -Encoding utf8
+        if: runner.os == 'Windows'
+
+      - name: Create spec file script (Linux)
         run: |
           cat > create_spec.py << 'EOL'
           spec_content = """# -*- mode: python ; coding: utf-8 -*-
@@ -221,7 +283,7 @@ jobs:
           with open('image_coords_app.spec', 'w') as f:
               f.write(spec_content)
           EOL
-        if: runner.os != 'macOS'
+        if: runner.os == 'Linux'
 
       - name: Create spec file script (Windows)
         run: |
