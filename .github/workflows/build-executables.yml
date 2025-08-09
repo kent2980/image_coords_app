@@ -120,6 +120,7 @@ jobs:
               target_arch="${{ matrix.arch }}",
               codesign_identity=None,
               entitlements_file=None,
+              icon="assets/icons/app_icon.ico",
           )
           """
 
@@ -138,39 +139,89 @@ jobs:
       - name: Install Windows SDK for signtool (Windows)
         if: runner.os == 'Windows'
         run: |
-          # Windows SDKをインストール（signtool.exeを含む）
-          choco install windows-sdk-10-version-2004-all
+          # まず既存のsigntoolを探す
+          Write-Host "Checking for existing signtool.exe..."
+          $existingSigntool = Get-Command signtool.exe -ErrorAction SilentlyContinue
+          if ($existingSigntool) {
+            Write-Host "✅ signtool.exe already available at: $($existingSigntool.Source)"
+            exit 0
+          }
+
+          # Windows SDK をインストール
+          Write-Host "Installing Windows 10 SDK..."
+          try {
+            # 軽量なSDKパッケージを試す
+            choco install windows-sdk-10.1 --force --no-progress --timeout 1800
+          } catch {
+            Write-Host "First SDK installation failed, trying alternative..."
+            try {
+              choco install windowssdk-10-version-2004-all --force --no-progress --timeout 1800
+            } catch {
+              Write-Host "Second SDK installation failed, trying winget..."
+              try {
+                winget install "Windows SDK" --silent --accept-package-agreements --accept-source-agreements
+              } catch {
+                Write-Warning "All SDK installation methods failed. Will proceed with search..."
+              }
+            }
+          }
+
+          # インストール後の確認
+          Start-Sleep -Seconds 10
+          $postInstallCheck = Get-Command signtool.exe -ErrorAction SilentlyContinue
+          if ($postInstallCheck) {
+            Write-Host "✅ signtool.exe now available at: $($postInstallCheck.Source)"
+          } else {
+            Write-Host "⚠️  signtool.exe not in PATH, will search manually in next step"
+          }
 
       - name: Create self-signed certificate for code signing (Windows)
         if: runner.os == 'Windows'
         run: |
           # GitHub Secretsに証明書がある場合はそれを使用、なければ自己署名証明書を作成
-          if ($env:CODE_SIGN_CERT -and $env:CODE_SIGN_PASSWORD) {
-            Write-Host "🔷 Using production certificate from GitHub Secrets"
-            [System.IO.File]::WriteAllBytes("codesign.pfx", [System.Convert]::FromBase64String($env:CODE_SIGN_CERT))
-            $certPassword = $env:CODE_SIGN_PASSWORD
-            Write-Host "✅ Production certificate loaded successfully"
-          } else {
-            Write-Host "🔶 Creating self-signed certificate for development"
-            Write-Host "📝 Note: Self-signed certificates will show security warnings to users"
+          try {
+            if ($env:CODE_SIGN_CERT -and $env:CODE_SIGN_PASSWORD) {
+              Write-Host "🔷 Using production certificate from GitHub Secrets"
+              [System.IO.File]::WriteAllBytes("codesign.pfx", [System.Convert]::FromBase64String($env:CODE_SIGN_CERT))
+              $certPassword = $env:CODE_SIGN_PASSWORD
+              Write-Host "✅ Production certificate loaded successfully"
+            } else {
+              Write-Host "🔶 Creating self-signed certificate for development"
+              Write-Host "📝 Note: Self-signed certificates will show security warnings to users"
 
-            # 自己署名証明書を作成（開発用）
-            $cert = New-SelfSignedCertificate -Subject "CN=ImageCoordsApp Developer" -Type CodeSigning -KeyUsage DigitalSignature -FriendlyName "ImageCoordsApp Code Signing Certificate" -CertStoreLocation Cert:\CurrentUser\My -KeyExportPolicy Exportable -KeySpec Signature -KeyLength 2048 -HashAlgorithm SHA256 -NotAfter (Get-Date).AddYears(3)
+              # 自己署名証明書を作成（開発用）
+              $cert = New-SelfSignedCertificate -Subject "CN=ImageCoordsApp Developer" -Type CodeSigning -KeyUsage DigitalSignature -FriendlyName "ImageCoordsApp Code Signing Certificate" -CertStoreLocation Cert:\CurrentUser\My -KeyExportPolicy Exportable -KeySpec Signature -KeyLength 2048 -HashAlgorithm SHA256 -NotAfter (Get-Date).AddYears(3)
 
-            # 証明書をファイルにエクスポート
-            $certPassword = "temp123"
-            $password = ConvertTo-SecureString -String $certPassword -Force -AsPlainText
-            Export-PfxCertificate -Cert $cert -FilePath "codesign.pfx" -Password $password
+              if (-not $cert) {
+                throw "Failed to create self-signed certificate"
+              }
 
-            # 証明書情報を表示
-            Write-Host "✅ Self-signed certificate created successfully"
-            Write-Host "   Subject: $($cert.Subject)"
-            Write-Host "   Thumbprint: $($cert.Thumbprint)"
-            Write-Host "   Valid until: $($cert.NotAfter)"
+              # 証明書をファイルにエクスポート
+              $certPassword = "temp123"
+              $password = ConvertTo-SecureString -String $certPassword -Force -AsPlainText
+              Export-PfxCertificate -Cert $cert -FilePath "codesign.pfx" -Password $password -ErrorAction Stop
+
+              # ファイルが作成されたか確認
+              if (-not (Test-Path "codesign.pfx")) {
+                throw "Failed to export certificate to PFX file"
+              }
+
+              # 証明書情報を表示
+              Write-Host "✅ Self-signed certificate created successfully"
+              Write-Host "   Subject: $($cert.Subject)"
+              Write-Host "   Thumbprint: $($cert.Thumbprint)"
+              Write-Host "   Valid until: $($cert.NotAfter)"
+            }
+
+            # 証明書パスワードを環境変数に保存（後続ステップで使用）
+            "CERT_PASSWORD=$certPassword" | Out-File -FilePath $env:GITHUB_ENV -Append
+            Write-Host "✅ Certificate setup completed"
+
+          } catch {
+            Write-Error "❌ Certificate setup failed: $($_.Exception.Message)"
+            Write-Host "Stack Trace: $($_.ScriptStackTrace)"
+            exit 1
           }
-
-          # 証明書パスワードを環境変数に保存（後続ステップで使用）
-          "CERT_PASSWORD=$certPassword" | Out-File -FilePath $env:GITHUB_ENV -Append
         env:
           CODE_SIGN_CERT: ${{ secrets.CODE_SIGN_CERT }}
           CODE_SIGN_PASSWORD: ${{ secrets.CODE_SIGN_PASSWORD }}
@@ -178,10 +229,20 @@ jobs:
       - name: Sign executable with signtool (Windows)
         if: runner.os == 'Windows'
         run: |
-          # signtool.exeのパスを確認
-          $signtoolPath = Get-Command signtool.exe -ErrorAction SilentlyContinue
+          # signtool.exeの包括的な検索
+          Write-Host "🔍 Searching for signtool.exe..."
+
+          $signtoolPath = $null
+
+          # 1. パスから直接検索
+          $pathSigntool = Get-Command signtool.exe -ErrorAction SilentlyContinue
+          if ($pathSigntool) {
+            $signtoolPath = $pathSigntool.Source
+            Write-Host "Found signtool.exe in PATH: $signtoolPath"
+          }
+
+          # 2. 一般的なWindows SDK の場所を検索
           if (-not $signtoolPath) {
-            # Windows SDK 10の一般的なパス
             $possiblePaths = @(
               "${env:ProgramFiles(x86)}\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe",
               "${env:ProgramFiles(x86)}\Windows Kits\10\bin\10.0.20348.0\x64\signtool.exe",
@@ -192,29 +253,64 @@ jobs:
             foreach ($path in $possiblePaths) {
               if (Test-Path $path) {
                 $signtoolPath = $path
+                Write-Host "Found signtool.exe at predefined path: $signtoolPath"
                 break
               }
             }
-          } else {
-            $signtoolPath = $signtoolPath.Source
           }
 
-          if (-not $signtoolPath -or -not (Test-Path $signtoolPath)) {
-            Write-Host "signtool.exe not found in common locations. Searching..."
-            $foundPaths = Get-ChildItem -Path "${env:ProgramFiles(x86)}\Windows Kits\" -Recurse -Name "signtool.exe" -ErrorAction SilentlyContinue
-            if ($foundPaths) {
-              Write-Host "Found signtool.exe at:"
-              $foundPaths | ForEach-Object { Write-Host "  $_" }
-              $signtoolPath = Join-Path "${env:ProgramFiles(x86)}\Windows Kits\" $foundPaths[0]
-            } else {
-              Write-Error "signtool.exe not found anywhere in Windows Kits directory"
-              exit 1
+          # 3. Windows Kits ディレクトリ全体を再帰検索
+          if (-not $signtoolPath) {
+            Write-Host "Performing recursive search in Windows Kits directory..."
+            $kitsPath = "${env:ProgramFiles(x86)}\Windows Kits"
+            if (Test-Path $kitsPath) {
+              $foundSigntools = Get-ChildItem -Path $kitsPath -Recurse -Name "signtool.exe" -ErrorAction SilentlyContinue
+              if ($foundSigntools) {
+                Write-Host "Found signtool.exe files:"
+                $foundSigntools | ForEach-Object { Write-Host "  $_" }
+                $signtoolPath = Join-Path $kitsPath $foundSigntools[0]
+                Write-Host "Using: $signtoolPath"
+              }
             }
+          }
+
+          # 4. Visual Studio インストールでの検索
+          if (-not $signtoolPath) {
+            Write-Host "Searching in Visual Studio directories..."
+            $vsPaths = @(
+              "${env:ProgramFiles}\Microsoft Visual Studio\2022\Enterprise\VC\Tools\MSVC\*\bin\Hostx64\x64\signtool.exe",
+              "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2019\Enterprise\VC\Tools\MSVC\*\bin\Hostx64\x64\signtool.exe"
+            )
+
+            foreach ($pattern in $vsPaths) {
+              $found = Get-ChildItem -Path $pattern -ErrorAction SilentlyContinue | Select-Object -First 1
+              if ($found) {
+                $signtoolPath = $found.FullName
+                Write-Host "Found signtool.exe in Visual Studio: $signtoolPath"
+                break
+              }
+            }
+          }
+
+          # 最終確認
+          if (-not $signtoolPath -or -not (Test-Path $signtoolPath)) {
+            Write-Error "❌ signtool.exe not found anywhere on system"
+            Write-Host "Available Windows SDK components:"
+            Get-ChildItem -Path "${env:ProgramFiles(x86)}\Windows Kits\" -ErrorAction SilentlyContinue | Select-Object Name
+            exit 1
           }
 
           Write-Host "🔐 Starting code signing process..."
           Write-Host "Using signtool at: $signtoolPath"
           Write-Host "Target executable: dist\image_coords_app.exe"
+
+          # 実行ファイルの存在確認
+          if (-not (Test-Path "dist\image_coords_app.exe")) {
+            Write-Error "❌ Target executable not found: dist\image_coords_app.exe"
+            Write-Host "Contents of dist directory:"
+            Get-ChildItem -Path "dist" -ErrorAction SilentlyContinue
+            exit 1
+          }
 
           # 実行ファイルに署名
           $signArgs = @(
@@ -229,28 +325,33 @@ jobs:
           )
 
           Write-Host "Signing executable..."
-          & $signtoolPath @signArgs
+          try {
+            & $signtoolPath @signArgs
 
-          if ($LASTEXITCODE -eq 0) {
-            Write-Host "Code signing completed successfully"
-
-            # 署名を検証（自己署名証明書の場合はエラーを無視）
-            Write-Host "Verifying signature..."
-            & $signtoolPath verify /pa /v "dist\image_coords_app.exe" 2>&1 | Tee-Object -Variable verifyOutput
-
-            # 検証結果に関係なく、署名プロセス自体は成功とみなす
             if ($LASTEXITCODE -eq 0) {
-              Write-Host "✅ Signature verification successful - Trusted certificate chain"
+              Write-Host "✅ Code signing completed successfully"
+
+              # 署名を検証（自己署名証明書の場合はエラーを無視）
+              Write-Host "Verifying signature..."
+              & $signtoolPath verify /pa /v "dist\image_coords_app.exe" 2>&1 | Tee-Object -Variable verifyOutput
+
+              # 検証結果に関係なく、署名プロセス自体は成功とみなす
+              if ($LASTEXITCODE -eq 0) {
+                Write-Host "✅ Signature verification successful - Trusted certificate chain"
+              } else {
+                Write-Host "⚠️  Signature verification returned warnings/errors:"
+                Write-Host $verifyOutput
+                Write-Host "📝 This is expected for self-signed certificates"
+                Write-Host "✅ Code signing process completed successfully"
+                # 自己署名証明書の場合は検証エラーを正常として扱う
+                $global:LASTEXITCODE = 0
+              }
             } else {
-              Write-Host "⚠️  Signature verification returned warnings/errors:"
-              Write-Host $verifyOutput
-              Write-Host "📝 This is expected for self-signed certificates"
-              Write-Host "✅ Code signing process completed successfully"
-              # 自己署名証明書の場合は検証エラーを正常として扱う
-              $global:LASTEXITCODE = 0
+              Write-Error "❌ Code signing failed with exit code: $LASTEXITCODE"
+              exit 1
             }
-          } else {
-            Write-Error "❌ Code signing failed with exit code: $LASTEXITCODE"
+          } catch {
+            Write-Error "❌ Exception during code signing: $($_.Exception.Message)"
             exit 1
           }
 
@@ -328,7 +429,11 @@ jobs:
 
       - name: Create distribution directory
         run: |
-          mkdir -p release/${{ matrix.artifact-name }}
+          if ('${{ runner.os }}' -eq 'Windows') {
+            New-Item -ItemType Directory -Path "release\${{ matrix.artifact-name }}" -Force
+          } else {
+            mkdir -p release/${{ matrix.artifact-name }}
+          }
 
       - name: Copy executable and resources (Windows)
         if: runner.os == 'Windows'
