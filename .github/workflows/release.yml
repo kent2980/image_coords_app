@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     # ジョブが確実に実行されるように条件を明確に設定
     if: always()
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -43,7 +43,7 @@ jobs:
             echo "tag_name=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
             echo "prerelease=false" >> $GITHUB_OUTPUT
           fi
-          
+
           # デバッグ出力
           echo "Set tag name: ${GITHUB_REF#refs/tags/}"
 
@@ -67,7 +67,7 @@ jobs:
         run: |
           # タグまたはコミットSHAで最新のビルドワークフロー実行を取得
           echo "Looking for build workflow runs..."
-          
+
           # 複数の条件で検索
           RUN_ID=$(gh api repos/${{ github.repository }}/actions/workflows/build-executables.yml/runs \
             --jq ".workflow_runs[] | select(.head_sha == \"${{ github.sha }}\" or .head_branch == \"${{ steps.set_tag.outputs.tag_name }}\" or .event == \"push\") | .id" | head -1)
@@ -109,18 +109,18 @@ jobs:
         run: |
           # Download artifacts from the build workflow
           echo "Downloading artifacts from build run: ${{ steps.build_status.outputs.build_run_id }}"
-          
+
           # アーティファクト一覧を取得
           ARTIFACTS=$(gh api repos/${{ github.repository }}/actions/runs/${{ steps.build_status.outputs.build_run_id }}/artifacts --jq '.artifacts[]')
-          
+
           if [ -z "$ARTIFACTS" ]; then
             echo "No artifacts found"
             exit 1
           fi
-          
+
           echo "Found artifacts:"
           echo "$ARTIFACTS" | jq -r '.name'
-          
+
           # 各アーティファクトをダウンロード
           echo "$ARTIFACTS" | jq -r '"artifact_name=" + .name + " artifact_url=" + .archive_download_url' | while read line; do
             eval $line
@@ -129,7 +129,7 @@ jobs:
             unzip "${artifact_name}.zip"
             rm "${artifact_name}.zip"
           done
-          
+
           # ダウンロードしたファイルを確認
           echo "Downloaded files:"
           ls -la *.zip *.tar.gz 2>/dev/null || echo "No archive files found"
