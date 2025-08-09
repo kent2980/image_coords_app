@@ -77,6 +77,11 @@ jobs:
           python -c "from PIL import Image; print('PIL OK')"
           python -c "import sys; print(f'Python path: {sys.executable}')"
 
+      - name: Generate application icons
+        run: |
+          python generate_icon.py
+          ls -la assets/icons/
+
       - name: Create spec file script (macOS)
         run: |
           cat > create_spec.py << 'EOL'
@@ -143,7 +148,7 @@ jobs:
           app = BUNDLE(
               coll,
               name='image_coords_app.app',
-              icon=None,
+              icon='assets/icons/app_icon.icns',
               bundle_identifier='com.kent2980.image_coords_app',
               version='1.0.0',
               info_plist={
@@ -277,6 +282,7 @@ jobs:
               target_arch="${{ matrix.arch }}",
               codesign_identity=None,
               entitlements_file=None,
+              icon="assets/icons/app_icon.ico",
           )
           """
 
@@ -339,6 +345,7 @@ jobs:
               target_arch="${{ matrix.arch }}",
               codesign_identity=None,
               entitlements_file=None,
+              icon="assets/icons/app_icon.ico",
           )
           """
 
@@ -379,6 +386,23 @@ jobs:
             exit 1
           fi
 
+      - name: Remove quarantine attributes (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          # GitHub Actions でビルドしたファイルは署名されていないため、
+          # 配布前に quarantine 属性を削除してユーザビリティを向上させる
+          echo "Removing quarantine attributes from app bundle..."
+          sudo xattr -r -d com.apple.quarantine "dist/image_coords_app.app" || echo "No quarantine attributes found"
+
+          # アプリケーションの実行可能性を確認
+          echo "Verifying app bundle structure..."
+          ls -la "dist/image_coords_app.app/Contents/MacOS/"
+
+          # 実行権限を確認・設定
+          chmod +x "dist/image_coords_app.app/Contents/MacOS/image_coords_app"
+
+          echo "App bundle prepared for distribution"
+
       - name: Create distribution directory
         run: |
           mkdir -p release/${{ matrix.artifact-name }}
@@ -404,6 +428,42 @@ jobs:
           [ -f "models.txt" ] && cp models.txt release/${{ matrix.artifact-name }}/ || true
           [ -f "worker.csv" ] && cp worker.csv release/${{ matrix.artifact-name }}/ || true
           [ -f "lot_number_info.json" ] && cp lot_number_info.json release/${{ matrix.artifact-name }}/ || true
+
+          # macOS用の説明ファイルを作成
+          cat > release/${{ matrix.artifact-name }}/MacOS_README.txt << 'EOF'
+          =============================================
+          Image Coords App - macOS版 インストール手順
+          =============================================
+
+          【重要】Gatekeeperエラーの解決方法
+
+          "Appleは、image_coords_app.appにMacに損害を与えたり、
+          プライバシーを侵害する可能性のあるマルウェアが含まれて
+          いないことを検証できませんでした。"
+
+          このエラーが表示された場合、以下の方法で解決できます：
+
+          ■方法1: ターミナルから一括解除（推奨）
+          1. ターミナルを開く
+          2. 以下のコマンドを実行：
+             xattr -d com.apple.quarantine image_coords_app.app
+          3. アプリケーションをダブルクリックで起動
+
+          ■方法2: 右クリックから実行
+          1. image_coords_app.appを右クリック
+          2. 「開く」を選択
+          3. 確認ダイアログで「開く」をクリック
+
+          ■方法3: システム環境設定から許可
+          1. アプリをダブルクリック（エラーが表示される）
+          2. システム環境設定 → セキュリティとプライバシー
+          3. 「このまま開く」ボタンをクリック
+
+          ※このアプリケーションは安全ですが、Apple Developer証明書
+          で署名されていないため、macOSが警告を表示します。
+
+          =============================================
+          EOF
 
       - name: Create archive (Windows)
         if: runner.os == 'Windows'
