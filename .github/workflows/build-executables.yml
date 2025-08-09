@@ -80,6 +80,15 @@ jobs:
       - name: Generate application icons
         run: |
           python generate_icon.py
+
+      - name: Verify generated icons (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          dir assets\icons\
+
+      - name: Verify generated icons (Unix)
+        if: runner.os != 'Windows'
+        run: |
           ls -la assets/icons/
 
       - name: Create spec file script (macOS)
