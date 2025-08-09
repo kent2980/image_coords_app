@@ -27,13 +27,6 @@ jobs:
             artifact-name: image-coords-app-windows-x64
             executable-name: image_coords_app.exe
 
-          # macOS Apple Silicon (M1/M2)
-          - os: macos-latest
-            arch: arm64
-            python-arch: x64 # Python universal binary
-            artifact-name: image-coords-app-macos-silicon
-            executable-name: image_coords_app.app
-
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -46,12 +39,6 @@ jobs:
           python-version: "3.12"
           architecture: ${{ matrix.python-arch }}
 
-      - name: Install system dependencies (macOS)
-        if: runner.os == 'macOS'
-        run: |
-          # macOS用の追加依存関係があれば追加
-          echo "macOS dependencies setup complete"
-
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
@@ -63,13 +50,6 @@ jobs:
         run: |
           python -c "import platform; print(f'Python architecture: {platform.architecture()}')"
           python -c "import platform; print(f'Machine: {platform.machine()}')"
-
-      - name: Verify Python architecture (macOS)
-        if: runner.os == 'macOS'
-        run: |
-          python -c "import platform; print(f'Python architecture: {platform.architecture()}')"
-          python -c "import platform; print(f'Machine: {platform.machine()}')"
-          system_profiler SPHardwareDataType | grep "Chip"
 
       - name: Test import dependencies
         run: |
@@ -86,95 +66,6 @@ jobs:
         run: |
           dir assets\icons\
 
-      - name: Verify generated icons (Unix)
-        if: runner.os != 'Windows'
-        run: |
-          ls -la assets/icons/
-
-      - name: Create spec file script (macOS)
-        run: |
-          cat > create_spec.py << 'EOL'
-          spec_content = """# -*- mode: python ; coding: utf-8 -*-
-
-          block_cipher = None
-
-          a = Analysis(
-              ['main.py'],
-              pathex=['.'],
-              binaries=[],
-              datas=[
-                  ('src', 'src'),
-              ],
-              hiddenimports=[
-                  'PIL._tkinter_finder',
-                  'PIL.ImageTk',
-                  'tkinter',
-                  'tkinter.ttk',
-                  'tkinter.messagebox',
-                  'tkinter.filedialog',
-              ],
-              hookspath=[],
-              hooksconfig={},
-              runtime_hooks=[],
-              excludes=[],
-              win_no_prefer_redirects=False,
-              win_private_assemblies=False,
-              cipher=block_cipher,
-              noarchive=False,
-          )
-
-          pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
-
-          exe = EXE(
-              pyz,
-              a.scripts,
-              [],
-              exclude_binaries=True,
-              name="image_coords_app",
-              debug=False,
-              bootloader_ignore_signals=False,
-              strip=False,
-              upx=False,
-              console=False,
-              disable_windowed_traceback=False,
-              argv_emulation=False,
-              target_arch="${{ matrix.arch }}",
-              codesign_identity=None,
-              entitlements_file=None,
-          )
-
-          coll = COLLECT(
-              exe,
-              a.binaries,
-              a.zipfiles,
-              a.datas,
-              strip=False,
-              upx=False,
-              upx_exclude=[],
-              name="image_coords_app"
-          )
-
-          app = BUNDLE(
-              coll,
-              name='image_coords_app.app',
-              icon='assets/icons/app_icon.icns',
-              bundle_identifier='com.kent2980.image_coords_app',
-              version='1.0.0',
-              info_plist={
-                  'CFBundleName': 'Image Coords App',
-                  'CFBundleDisplayName': 'Image Coords App',
-                  'CFBundleVersion': '1.0.0',
-                  'CFBundleShortVersionString': '1.0.0',
-                  'NSHighResolutionCapable': True,
-              }
-          )
-          """
-
-          with open('image_coords_app.spec', 'w') as f:
-              f.write(spec_content)
-          EOL
-        if: runner.os == 'macOS'
-
       - name: Create spec file script (Windows)
         run: |
           @'
@@ -229,132 +120,6 @@ jobs:
               target_arch="${{ matrix.arch }}",
               codesign_identity=None,
               entitlements_file=None,
-          )
-          """
-
-          with open('image_coords_app.spec', 'w') as f:
-              f.write(spec_content)
-          '@ | Out-File -FilePath "create_spec.py" -Encoding utf8
-        if: runner.os == 'Windows'
-
-      - name: Create spec file script (Linux)
-        run: |
-          cat > create_spec.py << 'EOL'
-          spec_content = """# -*- mode: python ; coding: utf-8 -*-
-
-          block_cipher = None
-
-          a = Analysis(
-              ['main.py'],
-              pathex=['.'],
-              binaries=[],
-              datas=[
-                  ('src', 'src'),
-              ],
-              hiddenimports=[
-                  'PIL._tkinter_finder',
-                  'PIL.ImageTk',
-                  'tkinter',
-                  'tkinter.ttk',
-                  'tkinter.messagebox',
-                  'tkinter.filedialog',
-              ],
-              hookspath=[],
-              hooksconfig={},
-              runtime_hooks=[],
-              excludes=[],
-              win_no_prefer_redirects=False,
-              win_private_assemblies=False,
-              cipher=block_cipher,
-              noarchive=False,
-          )
-
-          pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
-
-          exe = EXE(
-              pyz,
-              a.scripts,
-              a.binaries,
-              a.zipfiles,
-              a.datas,
-              [],
-              name="image_coords_app",
-              debug=False,
-              bootloader_ignore_signals=False,
-              strip=False,
-              upx=True,
-              upx_exclude=[],
-              runtime_tmpdir=None,
-              console=False,
-              disable_windowed_traceback=False,
-              argv_emulation=False,
-              target_arch="${{ matrix.arch }}",
-              codesign_identity=None,
-              entitlements_file=None,
-              icon="assets/icons/app_icon.ico",
-          )
-          """
-
-          with open('image_coords_app.spec', 'w') as f:
-              f.write(spec_content)
-          EOL
-        if: runner.os == 'Linux'
-
-      - name: Create spec file script (Windows)
-        run: |
-          @'
-          spec_content = """# -*- mode: python ; coding: utf-8 -*-
-
-          block_cipher = None
-
-          a = Analysis(
-              ['main.py'],
-              pathex=['.'],
-              binaries=[],
-              datas=[
-                  ('src', 'src'),
-              ],
-              hiddenimports=[
-                  'PIL._tkinter_finder',
-                  'PIL.ImageTk',
-                  'tkinter',
-                  'tkinter.ttk',
-                  'tkinter.messagebox',
-                  'tkinter.filedialog',
-              ],
-              hookspath=[],
-              hooksconfig={},
-              runtime_hooks=[],
-              excludes=[],
-              win_no_prefer_redirects=False,
-              win_private_assemblies=False,
-              cipher=block_cipher,
-              noarchive=False,
-          )
-
-          pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
-
-          exe = EXE(
-              pyz,
-              a.scripts,
-              a.binaries,
-              a.zipfiles,
-              a.datas,
-              [],
-              name="image_coords_app",
-              debug=False,
-              bootloader_ignore_signals=False,
-              strip=False,
-              upx=True,
-              upx_exclude=[],
-              runtime_tmpdir=None,
-              console=False,
-              disable_windowed_traceback=False,
-              argv_emulation=False,
-              target_arch="${{ matrix.arch }}",
-              codesign_identity=None,
-              entitlements_file=None,
-              icon="assets/icons/app_icon.ico",
           )
           """
 
@@ -370,6 +135,112 @@ jobs:
         run: |
           pyinstaller image_coords_app.spec --clean --noconfirm
 
+      - name: Install Windows SDK for signtool (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          # Windows SDKをインストール（signtool.exeを含む）
+          choco install windows-sdk-10-version-2004-all
+
+      - name: Create self-signed certificate for code signing (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          # GitHub Secretsに証明書がある場合はそれを使用、なければ自己署名証明書を作成
+          if ($env:CODE_SIGN_CERT -and $env:CODE_SIGN_PASSWORD) {
+            Write-Host "Using certificate from GitHub Secrets"
+            [System.IO.File]::WriteAllBytes("codesign.pfx", [System.Convert]::FromBase64String($env:CODE_SIGN_CERT))
+            $certPassword = $env:CODE_SIGN_PASSWORD
+          } else {
+            Write-Host "Creating self-signed certificate for development"
+            # 自己署名証明書を作成（開発用）
+            $cert = New-SelfSignedCertificate -Subject "CN=ImageCoordsApp Developer" -Type CodeSigning -KeyUsage DigitalSignature -FriendlyName "ImageCoordsApp Code Signing Certificate" -CertStoreLocation Cert:\CurrentUser\My -KeyExportPolicy Exportable -KeySpec Signature -KeyLength 2048 -HashAlgorithm SHA256 -NotAfter (Get-Date).AddYears(3)
+
+            # 証明書をファイルにエクスポート
+            $certPassword = "temp123"
+            $password = ConvertTo-SecureString -String $certPassword -Force -AsPlainText
+            Export-PfxCertificate -Cert $cert -FilePath "codesign.pfx" -Password $password
+
+            # 証明書情報を表示
+            Write-Host "Certificate created: $($cert.Subject)"
+            Write-Host "Certificate thumbprint: $($cert.Thumbprint)"
+          }
+
+          # 証明書パスワードを環境変数に保存（後続ステップで使用）
+          "CERT_PASSWORD=$certPassword" | Out-File -FilePath $env:GITHUB_ENV -Append
+        env:
+          CODE_SIGN_CERT: ${{ secrets.CODE_SIGN_CERT }}
+          CODE_SIGN_PASSWORD: ${{ secrets.CODE_SIGN_PASSWORD }}
+
+      - name: Sign executable with signtool (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          # signtool.exeのパスを確認
+          $signtoolPath = Get-Command signtool.exe -ErrorAction SilentlyContinue
+          if (-not $signtoolPath) {
+            # Windows SDK 10の一般的なパス
+            $possiblePaths = @(
+              "${env:ProgramFiles(x86)}\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe",
+              "${env:ProgramFiles(x86)}\Windows Kits\10\bin\10.0.20348.0\x64\signtool.exe",
+              "${env:ProgramFiles(x86)}\Windows Kits\10\bin\10.0.19041.0\x64\signtool.exe",
+              "${env:ProgramFiles}\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe"
+            )
+
+            foreach ($path in $possiblePaths) {
+              if (Test-Path $path) {
+                $signtoolPath = $path
+                break
+              }
+            }
+          } else {
+            $signtoolPath = $signtoolPath.Source
+          }
+
+          if (-not $signtoolPath -or -not (Test-Path $signtoolPath)) {
+            Write-Host "signtool.exe not found in common locations. Searching..."
+            $foundPaths = Get-ChildItem -Path "${env:ProgramFiles(x86)}\Windows Kits\" -Recurse -Name "signtool.exe" -ErrorAction SilentlyContinue
+            if ($foundPaths) {
+              Write-Host "Found signtool.exe at:"
+              $foundPaths | ForEach-Object { Write-Host "  $_" }
+              $signtoolPath = Join-Path "${env:ProgramFiles(x86)}\Windows Kits\" $foundPaths[0]
+            } else {
+              Write-Error "signtool.exe not found anywhere in Windows Kits directory"
+              exit 1
+            }
+          }
+
+          Write-Host "Using signtool at: $signtoolPath"
+
+          # 実行ファイルに署名
+          $signArgs = @(
+            "sign",
+            "/f", "codesign.pfx",
+            "/p", $env:CERT_PASSWORD,
+            "/fd", "SHA256",
+            "/tr", "http://timestamp.sectigo.com",
+            "/td", "SHA256",
+            "/as",
+            "dist\image_coords_app.exe"
+          )
+
+          Write-Host "Signing executable..."
+          & $signtoolPath @signArgs
+
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host "Code signing completed successfully"
+
+            # 署名を検証
+            Write-Host "Verifying signature..."
+            & $signtoolPath verify /pa /v "dist\image_coords_app.exe"
+
+            if ($LASTEXITCODE -eq 0) {
+              Write-Host "Signature verification successful"
+            } else {
+              Write-Warning "Signature verification failed, but this may be expected for self-signed certificates"
+            }
+          } else {
+            Write-Error "Code signing failed with exit code: $LASTEXITCODE"
+            exit 1
+          }
+
       - name: Verify executable (Windows)
         if: runner.os == 'Windows'
         run: |
@@ -377,40 +248,28 @@ jobs:
           if (Test-Path "dist/image_coords_app.exe") {
             Write-Host "Executable created successfully"
             Get-Item "dist/image_coords_app.exe" | Select-Object Name, Length, CreationTime
+
+            # 署名情報を確認
+            Write-Host "Checking code signature..."
+            $signature = Get-AuthenticodeSignature "dist/image_coords_app.exe"
+            Write-Host "Signature Status: $($signature.Status)"
+            Write-Host "Signature Certificate Subject: $($signature.SignerCertificate.Subject)"
+            Write-Host "Signature Certificate Issuer: $($signature.SignerCertificate.Issuer)"
+            Write-Host "Signature Certificate Valid From: $($signature.SignerCertificate.NotBefore)"
+            Write-Host "Signature Certificate Valid Until: $($signature.SignerCertificate.NotAfter)"
           } else {
             Write-Host "Executable not found!"
             exit 1
           }
 
-      - name: Verify executable (macOS)
-        if: runner.os == 'macOS'
+      - name: Cleanup signing materials (Windows)
+        if: runner.os == 'Windows' && always()
         run: |
-          ls -la dist/
-          if [ -d "dist/image_coords_app.app" ]; then
-            echo "App bundle created successfully"
-            ls -lh "dist/image_coords_app.app"
-            find "dist/image_coords_app.app" -name "image_coords_app" -type f -exec file {} \;
-          else
-            echo "App bundle not found!"
-            exit 1
-          fi
-
-      - name: Remove quarantine attributes (macOS)
-        if: runner.os == 'macOS'
-        run: |
-          # GitHub Actions でビルドしたファイルは署名されていないため、
-          # 配布前に quarantine 属性を削除してユーザビリティを向上させる
-          echo "Removing quarantine attributes from app bundle..."
-          sudo xattr -r -d com.apple.quarantine "dist/image_coords_app.app" || echo "No quarantine attributes found"
-
-          # アプリケーションの実行可能性を確認
-          echo "Verifying app bundle structure..."
-          ls -la "dist/image_coords_app.app/Contents/MacOS/"
-
-          # 実行権限を確認・設定
-          chmod +x "dist/image_coords_app.app/Contents/MacOS/image_coords_app"
-
-          echo "App bundle prepared for distribution"
+          # セキュリティのため、証明書ファイルを削除
+          if (Test-Path "codesign.pfx") {
+            Remove-Item "codesign.pfx" -Force
+            Write-Host "Certificate file cleaned up"
+          }
 
       - name: Create distribution directory
         run: |
@@ -427,62 +286,10 @@ jobs:
           if (Test-Path "worker.csv") { copy worker.csv release\${{ matrix.artifact-name }}\ }
           if (Test-Path "lot_number_info.json") { copy lot_number_info.json release\${{ matrix.artifact-name }}\ }
 
-      - name: Copy executable and resources (macOS)
-        if: runner.os == 'macOS'
-        run: |
-          cp -R dist/image_coords_app.app release/${{ matrix.artifact-name }}/
-          [ -f "*.ini" ] && cp *.ini release/${{ matrix.artifact-name }}/ || true
-          [ -f "coords.txt" ] && cp coords.txt release/${{ matrix.artifact-name }}/ || true
-          [ -f "defects.txt" ] && cp defects.txt release/${{ matrix.artifact-name }}/ || true
-          [ -f "models.txt" ] && cp models.txt release/${{ matrix.artifact-name }}/ || true
-          [ -f "worker.csv" ] && cp worker.csv release/${{ matrix.artifact-name }}/ || true
-          [ -f "lot_number_info.json" ] && cp lot_number_info.json release/${{ matrix.artifact-name }}/ || true
-
-          # macOS用の説明ファイルを作成
-          cat > release/${{ matrix.artifact-name }}/MacOS_README.txt << 'EOF'
-          =============================================
-          Image Coords App - macOS版 インストール手順
-          =============================================
-
-          【重要】Gatekeeperエラーの解決方法
-
-          "Appleは、image_coords_app.appにMacに損害を与えたり、
-          プライバシーを侵害する可能性のあるマルウェアが含まれて
-          いないことを検証できませんでした。"
-
-          このエラーが表示された場合、以下の方法で解決できます：
-
-          ■方法1: ターミナルから一括解除（推奨）
-          1. ターミナルを開く
-          2. 以下のコマンドを実行：
-             xattr -d com.apple.quarantine image_coords_app.app
-          3. アプリケーションをダブルクリックで起動
-
-          ■方法2: 右クリックから実行
-          1. image_coords_app.appを右クリック
-          2. 「開く」を選択
-          3. 確認ダイアログで「開く」をクリック
-
-          ■方法3: システム環境設定から許可
-          1. アプリをダブルクリック（エラーが表示される）
-          2. システム環境設定 → セキュリティとプライバシー
-          3. 「このまま開く」ボタンをクリック
-
-          ※このアプリケーションは安全ですが、Apple Developer証明書
-          で署名されていないため、macOSが警告を表示します。
-
-          =============================================
-          EOF
-
       - name: Create archive (Windows)
         if: runner.os == 'Windows'
         run: |
           Compress-Archive -Path "release\${{ matrix.artifact-name }}\*" -DestinationPath "${{ matrix.artifact-name }}.zip"
-
-      - name: Create archive (macOS)
-        if: runner.os == 'macOS'
-        run: |
-          cd release && tar -czf ../${{ matrix.artifact-name }}.tar.gz ${{ matrix.artifact-name }}
 
       - name: Upload Windows artifact
         if: runner.os == 'Windows'
@@ -490,14 +297,6 @@ jobs:
         with:
           name: ${{ matrix.artifact-name }}
           path: ${{ matrix.artifact-name }}.zip
-          retention-days: 30
-
-      - name: Upload macOS artifact
-        if: runner.os == 'macOS'
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.artifact-name }}
-          path: ${{ matrix.artifact-name }}.tar.gz
           retention-days: 30
 
   release:
@@ -523,7 +322,6 @@ jobs:
           files: |
             artifacts/image-coords-app-windows-x86/*.zip
             artifacts/image-coords-app-windows-x64/*.zip
-            artifacts/image-coords-app-macos-silicon/*.tar.gz
           draft: false
           prerelease: false
           generate_release_notes: true

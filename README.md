@@ -10,39 +10,32 @@
 
 **対応プラットフォーム:**
 
-- 🪟 **Windows x86** - [ダウンロード](https://github.com/kent2980/image_coords_app/releases/latest/download/image-coords-app-windows-x86.zip)
-- 🪟 **Windows x64** - [ダウンロード](https://github.com/kent2980/image_coords_app/releases/latest/download/image-coords-app-windows-x64.zip)
-- 🍎 **macOS (Apple Silicon)** - [ダウンロード](https://github.com/kent2980/image_coords_app/releases/latest/download/image-coords-app-macos-silicon.tar.gz)
+- 🪟 **Windows x86** - [ダウンロード](https://github.com/kent2980/image_coords_app/releases/latest/download/image-coords-app-windows-x86.zip) 🔒 **コード署名済み**
+- 🪟 **Windows x64** - [ダウンロード](https://github.com/kent2980/image_coords_app/releases/latest/download/image-coords-app-windows-x64.zip) 🔒 **コード署名済み**
+
+### 🔐 セキュリティについて
+
+**Windows版の改善点:**
+
+- ✅ **コード署名**: 実行ファイルにデジタル署名を適用
+- ✅ **セキュリティ警告の軽減**: Windows Defenderなどの誤検知を防止
+- ✅ **信頼性向上**: アプリケーションの真正性を保証
+
+*注意: 開発版では自己署名証明書を使用しています。本番環境では信頼できる証明書機関からの証明書使用を推奨します。*
 
 ### 📋 インストール手順
 
-1. **Windows**: ZIPファイルをダウンロードして解凍後、`image_coords_app.exe`を実行
+**Windows**:
 
-2. **macOS**: TAR.GZファイルをダウンロードして解凍後、以下の手順でセキュリティブロックを解除：
+1. ZIPファイルをダウンロードして解凍
+2. `image_coords_app.exe`を実行
+3. **初回実行時**: Windows Defenderの警告が表示される場合は「詳細情報」→「実行」をクリック
 
-   **方法1: ターミナルから一括解除（推奨）**
+**セキュリティについて:**
 
-   ```bash
-   # ダウンロードしたファイルを解凍後
-   xattr -d com.apple.quarantine image_coords_app.app
-   ```
-
-   **方法2: システム環境設定から個別許可**
-
-   ```
-   1. image_coords_app.appをダブルクリック
-   2. 「Appleは...検証できませんでした」エラーが表示される
-   3. システム環境設定 → セキュリティとプライバシー を開く
-   4. 「このまま開く」ボタンをクリック
-   ```
-
-   **方法3: 右クリックから強制実行**
-
-   ```
-   1. image_coords_app.appを右クリック
-   2. 「開く」を選択
-   3. 確認ダイアログで「開く」をクリック
-   ```
+- コード署名により、ウイルス対策ソフトでの誤検知を大幅に軽減
+- 自己署名証明書使用のため、初回実行時に警告が表示される場合があります
+- アプリケーションは安全です
 
    > ⚠️ **セキュリティについて**: このアプリケーションは開発者証明書で署名されていないため、macOSが警告を表示します。これは正常な動作であり、上記の方法で安全に実行できます。
 
