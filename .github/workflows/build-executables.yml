@@ -32,7 +32,7 @@ jobs:
             arch: arm64
             python-arch: x64 # Python universal binary
             artifact-name: image-coords-app-macos-silicon
-            executable-name: image_coords_app
+            executable-name: image_coords_app.app
 
     runs-on: ${{ matrix.os }}
 
@@ -77,7 +77,91 @@ jobs:
           python -c "from PIL import Image; print('PIL OK')"
           python -c "import sys; print(f'Python path: {sys.executable}')"
 
-      - name: Create spec file script
+      - name: Create spec file script (macOS)
+        run: |
+          cat > create_spec.py << 'EOL'
+          spec_content = """# -*- mode: python ; coding: utf-8 -*-
+
+          block_cipher = None
+
+          a = Analysis(
+              ['main.py'],
+              pathex=['.'],
+              binaries=[],
+              datas=[
+                  ('src', 'src'),
+              ],
+              hiddenimports=[
+                  'PIL._tkinter_finder',
+                  'PIL.ImageTk',
+                  'tkinter',
+                  'tkinter.ttk',
+                  'tkinter.messagebox',
+                  'tkinter.filedialog',
+              ],
+              hookspath=[],
+              hooksconfig={},
+              runtime_hooks=[],
+              excludes=[],
+              win_no_prefer_redirects=False,
+              win_private_assemblies=False,
+              cipher=block_cipher,
+              noarchive=False,
+          )
+
+          pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+
+          exe = EXE(
+              pyz,
+              a.scripts,
+              [],
+              exclude_binaries=True,
+              name="image_coords_app",
+              debug=False,
+              bootloader_ignore_signals=False,
+              strip=False,
+              upx=False,
+              console=False,
+              disable_windowed_traceback=False,
+              argv_emulation=False,
+              target_arch="${{ matrix.arch }}",
+              codesign_identity=None,
+              entitlements_file=None,
+          )
+
+          coll = COLLECT(
+              exe,
+              a.binaries,
+              a.zipfiles,
+              a.datas,
+              strip=False,
+              upx=False,
+              upx_exclude=[],
+              name="image_coords_app"
+          )
+
+          app = BUNDLE(
+              coll,
+              name='image_coords_app.app',
+              icon=None,
+              bundle_identifier='com.kent2980.image_coords_app',
+              version='1.0.0',
+              info_plist={
+                  'CFBundleName': 'Image Coords App',
+                  'CFBundleDisplayName': 'Image Coords App',
+                  'CFBundleVersion': '1.0.0',
+                  'CFBundleShortVersionString': '1.0.0',
+                  'NSHighResolutionCapable': True,
+              }
+          )
+          """
+
+          with open('image_coords_app.spec', 'w') as f:
+              f.write(spec_content)
+          EOL
+        if: runner.os == 'macOS'
+
+      - name: Create spec file script (Windows/Linux)
         run: |
           cat > create_spec.py << 'EOL'
           spec_content = """# -*- mode: python ; coding: utf-8 -*-
@@ -137,7 +221,7 @@ jobs:
           with open('image_coords_app.spec', 'w') as f:
               f.write(spec_content)
           EOL
-        if: runner.os != 'Windows'
+        if: runner.os != 'macOS'
 
       - name: Create spec file script (Windows)
         run: |
@@ -224,12 +308,12 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           ls -la dist/
-          if [ -f "dist/image_coords_app" ]; then
-            echo "Executable created successfully"
-            ls -lh "dist/image_coords_app"
-            file "dist/image_coords_app"
+          if [ -d "dist/image_coords_app.app" ]; then
+            echo "App bundle created successfully"
+            ls -lh "dist/image_coords_app.app"
+            find "dist/image_coords_app.app" -name "image_coords_app" -type f -exec file {} \;
           else
-            echo "Executable not found!"
+            echo "App bundle not found!"
             exit 1
           fi
 
@@ -241,18 +325,23 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           copy dist\image_coords_app.exe release\${{ matrix.artifact-name }}
-          if (Test-Path "README.md") { copy README.md release\${{ matrix.artifact-name }}\ }
           if (Test-Path "*.ini") { copy *.ini release\${{ matrix.artifact-name }}\ }
-          if (Test-Path "*.txt") { copy *.txt release\${{ matrix.artifact-name }}\ }
+          if (Test-Path "coords.txt") { copy coords.txt release\${{ matrix.artifact-name }}\ }
+          if (Test-Path "defects.txt") { copy defects.txt release\${{ matrix.artifact-name }}\ }
+          if (Test-Path "models.txt") { copy models.txt release\${{ matrix.artifact-name }}\ }
+          if (Test-Path "worker.csv") { copy worker.csv release\${{ matrix.artifact-name }}\ }
+          if (Test-Path "lot_number_info.json") { copy lot_number_info.json release\${{ matrix.artifact-name }}\ }
 
       - name: Copy executable and resources (macOS)
         if: runner.os == 'macOS'
         run: |
-          cp dist/image_coords_app release/${{ matrix.artifact-name }}/
-          [ -f "README.md" ] && cp README.md release/${{ matrix.artifact-name }}/
+          cp -R dist/image_coords_app.app release/${{ matrix.artifact-name }}/
           [ -f "*.ini" ] && cp *.ini release/${{ matrix.artifact-name }}/ || true
-          [ -f "*.txt" ] && cp *.txt release/${{ matrix.artifact-name }}/ || true
-          chmod +x release/${{ matrix.artifact-name }}/image_coords_app
+          [ -f "coords.txt" ] && cp coords.txt release/${{ matrix.artifact-name }}/ || true
+          [ -f "defects.txt" ] && cp defects.txt release/${{ matrix.artifact-name }}/ || true
+          [ -f "models.txt" ] && cp models.txt release/${{ matrix.artifact-name }}/ || true
+          [ -f "worker.csv" ] && cp worker.csv release/${{ matrix.artifact-name }}/ || true
+          [ -f "lot_number_info.json" ] && cp lot_number_info.json release/${{ matrix.artifact-name }}/ || true
 
       - name: Create archive (Windows)
         if: runner.os == 'Windows'

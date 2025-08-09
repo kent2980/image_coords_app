@@ -3,15 +3,15 @@ name: Create Release
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
   workflow_dispatch:
     inputs:
       tag_name:
-        description: 'Release tag name (e.g., v1.0.0)'
+        description: "Release tag name (e.g., v1.0.0)"
         required: true
         type: string
       prerelease:
-        description: 'Mark as prerelease'
+        description: "Mark as prerelease"
         required: false
         type: boolean
         default: false
@@ -19,11 +19,11 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        
+
       - name: Set tag name
         id: set_tag
         run: |
@@ -34,7 +34,7 @@ jobs:
             echo "tag_name=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
             echo "prerelease=false" >> $GITHUB_OUTPUT
           fi
-          
+
       - name: Create tag (if workflow_dispatch)
         if: github.event_name == 'workflow_dispatch'
         run: |
@@ -44,33 +44,33 @@ jobs:
           git push origin ${{ steps.set_tag.outputs.tag_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          
+
       - name: Wait for build workflow
         run: |
           echo "Waiting for build workflow to complete..."
           sleep 30
-          
+
       - name: Check build workflow status
         id: build_status
         run: |
           # Get the latest workflow run for the tag
           RUN_ID=$(gh api repos/${{ github.repository }}/actions/workflows/build-executables.yml/runs \
             --jq '.workflow_runs[] | select(.head_sha == "${{ github.sha }}") | .id' | head -1)
-          
+
           if [ -z "$RUN_ID" ]; then
             echo "No build workflow found"
             exit 1
           fi
-          
+
           echo "build_run_id=$RUN_ID" >> $GITHUB_OUTPUT
-          
+
           # Wait for workflow to complete
           for i in {1..30}; do
             STATUS=$(gh api repos/${{ github.repository }}/actions/runs/$RUN_ID --jq '.status')
             CONCLUSION=$(gh api repos/${{ github.repository }}/actions/runs/$RUN_ID --jq '.conclusion')
-            
+
             echo "Build status: $STATUS, conclusion: $CONCLUSION"
-            
+
             if [ "$STATUS" == "completed" ]; then
               if [ "$CONCLUSION" == "success" ]; then
                 echo "Build completed successfully"
@@ -80,13 +80,13 @@ jobs:
                 exit 1
               fi
             fi
-            
+
             echo "Waiting for build to complete... (attempt $i/30)"
             sleep 60
           done
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          
+
       - name: Download build artifacts
         run: |
           # Download artifacts from the build workflow
@@ -100,7 +100,7 @@ jobs:
           done
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
