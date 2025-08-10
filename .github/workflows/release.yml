@@ -86,22 +86,36 @@ jobs:
         run: |
           # タグまたはコミットSHAで最新のビルドワークフロー実行を取得
           echo "Looking for build workflow runs..."
+          echo "Target SHA: ${{ github.sha }}"
+          echo "Target tag: ${{ steps.set_tag.outputs.tag_name }}"
 
-          # 複数の条件で検索
+          # より広範囲でワークフロー実行を検索
           RUN_ID=$(gh api repos/${{ github.repository }}/actions/workflows/build-executables.yml/runs \
-            --jq ".workflow_runs[] | select(.head_sha == \"${{ github.sha }}\" or .head_branch == \"${{ steps.set_tag.outputs.tag_name }}\" or .event == \"push\") | .id" | head -1)
+            --jq ".workflow_runs[] | select(.head_sha == \"${{ github.sha }}\" or .head_branch == \"refs/tags/${{ steps.set_tag.outputs.tag_name }}\" or (.event == \"push\" and .status != \"cancelled\")) | .id" | head -1)
 
           if [ -z "$RUN_ID" ] || [ "$RUN_ID" == "null" ]; then
             echo "No build workflow found for SHA: ${{ github.sha }}"
-            echo "Checking recent runs..."
-            gh api repos/${{ github.repository }}/actions/workflows/build-executables.yml/runs --jq '.workflow_runs[0:3] | .[] | {id: .id, sha: .head_sha, branch: .head_branch, event: .event, status: .status}'
+            echo "Trying alternative search..."
+            
+            # 最新のpushイベントによるワークフローを検索
+            RUN_ID=$(gh api repos/${{ github.repository }}/actions/workflows/build-executables.yml/runs \
+              --jq ".workflow_runs[] | select(.event == \"push\" and .status == \"completed\" and .conclusion == \"success\") | .id" | head -1)
+          fi
+
+          if [ -z "$RUN_ID" ] || [ "$RUN_ID" == "null" ]; then
+            echo "No successful build workflow found"
+            echo "Recent workflow runs:"
+            gh api repos/${{ github.repository }}/actions/workflows/build-executables.yml/runs --jq '.workflow_runs[0:5] | .[] | {id: .id, sha: .head_sha, branch: .head_branch, event: .event, status: .status, conclusion: .conclusion}'
             exit 1
           fi
 
           echo "build_run_id=$RUN_ID" >> $GITHUB_OUTPUT
           echo "Found build run: $RUN_ID"
 
-          # Wait for workflow to complete
+          # ワークフロー実行の詳細を確認
+          gh api repos/${{ github.repository }}/actions/runs/$RUN_ID --jq '{id: .id, status: .status, conclusion: .conclusion, head_sha: .head_sha}'
+
+          # ワークフローが完了するまで待機
           for i in {1..30}; do
             STATUS=$(gh api repos/${{ github.repository }}/actions/runs/$RUN_ID --jq '.status')
             CONCLUSION=$(gh api repos/${{ github.repository }}/actions/runs/$RUN_ID --jq '.conclusion')
@@ -110,50 +124,54 @@ jobs:
 
             if [ "$STATUS" == "completed" ]; then
               if [ "$CONCLUSION" == "success" ]; then
-                echo "Build completed successfully"
+                echo "✅ Build completed successfully"
                 break
               else
-                echo "Build failed with conclusion: $CONCLUSION"
+                echo "❌ Build failed with conclusion: $CONCLUSION"
                 exit 1
               fi
             fi
 
-            echo "Waiting for build to complete... (attempt $i/30)"
+            echo "⏳ Waiting for build to complete... (attempt $i/30)"
             sleep 60
           done
+
+          if [ "$STATUS" != "completed" ]; then
+            echo "❌ Build workflow did not complete within timeout"
+            exit 1
+          fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ steps.build_status.outputs.build_run_id }}
+          path: ./downloads
+
+      - name: Organize downloaded artifacts
         run: |
-          # Download artifacts from the build workflow
-          echo "Downloading artifacts from build run: ${{ steps.build_status.outputs.build_run_id }}"
-
-          # アーティファクト一覧を取得
-          ARTIFACTS=$(gh api repos/${{ github.repository }}/actions/runs/${{ steps.build_status.outputs.build_run_id }}/artifacts --jq '.artifacts[]')
-
-          if [ -z "$ARTIFACTS" ]; then
-            echo "No artifacts found"
-            exit 1
-          fi
-
-          echo "Found artifacts:"
-          echo "$ARTIFACTS" | jq -r '.name'
-
-          # 各アーティファクトをダウンロード
-          echo "$ARTIFACTS" | jq -r '"artifact_name=" + .name + " artifact_url=" + .archive_download_url' | while read line; do
-            eval $line
-            echo "Downloading artifact: $artifact_name"
-            gh api "$artifact_url" > "${artifact_name}.zip"
-            unzip "${artifact_name}.zip"
-            rm "${artifact_name}.zip"
+          echo "Contents of downloads directory:"
+          find ./downloads -type f -name "*.zip" | head -20
+          
+          # アーティファクトを整理
+          mkdir -p ./release-files
+          
+          # 各アーティファクトディレクトリからZIPファイルを移動
+          for artifact_dir in ./downloads/*/; do
+            if [ -d "$artifact_dir" ]; then
+              artifact_name=$(basename "$artifact_dir")
+              echo "Processing artifact: $artifact_name"
+              
+              # ZIPファイルを探してコピー
+              find "$artifact_dir" -name "*.zip" -exec cp {} "./release-files/" \;
+            fi
           done
-
-          # ダウンロードしたファイルを確認
-          echo "Downloaded files:"
-          ls -la *.zip 2>/dev/null || echo "No archive files found"
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+          # 最終的なファイル一覧
+          echo "Files ready for release:"
+          ls -la ./release-files/
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -161,7 +179,7 @@ jobs:
           tag_name: ${{ steps.set_tag.outputs.tag_name }}
           name: Release ${{ steps.set_tag.outputs.tag_name }}
           files: |
-            *.zip
+            ./release-files/*.zip
           draft: false
           prerelease: ${{ steps.set_tag.outputs.prerelease == 'true' }}
           generate_release_notes: true
@@ -239,7 +257,7 @@ jobs:
             --title "Release ${{ steps.set_tag.outputs.tag_name }}" \
             --notes-file release_notes.md \
             $PRERELEASE_FLAG \
-            *.zip 2>/dev/null || echo "No archive files to upload"
+            ./release-files/*.zip 2>/dev/null || echo "No archive files to upload"
 
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
