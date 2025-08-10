@@ -96,7 +96,7 @@ jobs:
           if [ -z "$RUN_ID" ] || [ "$RUN_ID" == "null" ]; then
             echo "No build workflow found for SHA: ${{ github.sha }}"
             echo "Trying alternative search..."
-            
+
             # 最新のpushイベントによるワークフローを検索
             RUN_ID=$(gh api repos/${{ github.repository }}/actions/workflows/build-executables.yml/runs \
               --jq ".workflow_runs[] | select(.event == \"push\" and .status == \"completed\" and .conclusion == \"success\") | .id" | head -1)
@@ -154,21 +154,21 @@ jobs:
         run: |
           echo "Contents of downloads directory:"
           find ./downloads -type f -name "*.zip" | head -20
-          
+
           # アーティファクトを整理
           mkdir -p ./release-files
-          
+
           # 各アーティファクトディレクトリからZIPファイルを移動
           for artifact_dir in ./downloads/*/; do
             if [ -d "$artifact_dir" ]; then
               artifact_name=$(basename "$artifact_dir")
               echo "Processing artifact: $artifact_name"
-              
+
               # ZIPファイルを探してコピー
               find "$artifact_dir" -name "*.zip" -exec cp {} "./release-files/" \;
             fi
           done
-          
+
           # 最終的なファイル一覧
           echo "Files ready for release:"
           ls -la ./release-files/
