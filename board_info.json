@@ -1,0 +1,195 @@
+{
+  "2025-08-11_TEST_MODEL_1234567-10": {
+    "date": "2025-08-11",
+    "model_name": "TEST_MODEL",
+    "lot_number": "1234567-10",
+    "current_board": 2,
+    "boards_data": {
+      "1": {
+        "board_number": 1,
+        "coordinates": [
+          [
+            100,
+            150
+          ]
+        ],
+        "coordinate_details": [
+          {
+            "reference": "A1",
+            "defect": "ズレ"
+          }
+        ],
+        "lot_number": "1234567-10",
+        "worker_no": "001",
+        "image_path": "/test/sample_image.jpg",
+        "model_name": "TEST_MODEL",
+        "created_at": "2025-08-11T08:48:30.230499",
+        "updated_at": "2025-08-11T08:48:30.230503",
+        "total_coordinates": 1
+      }
+    },
+    "board_history": [
+      1
+    ],
+    "updated_at": "2025-08-11T08:48:30.232228"
+  },
+  "2025-08-11_Y8470608_SHINANOSEIKEN_1234567-10": {
+    "date": "2025-08-11",
+    "model_name": "Y8470608_SHINANOSEIKEN",
+    "lot_number": "1234567-10",
+    "current_board": 5,
+    "boards_data": {
+      "1": {
+        "board_number": 1,
+        "coordinates": [
+          [
+            201,
+            73
+          ],
+          [
+            240,
+            112
+          ]
+        ],
+        "coordinate_details": [
+          {
+            "item_number": "1",
+            "reference": "",
+            "defect": "",
+            "repaired": "いいえ",
+            "comment": ""
+          },
+          {
+            "item_number": "2",
+            "reference": "",
+            "defect": "",
+            "repaired": "いいえ",
+            "comment": ""
+          }
+        ],
+        "lot_number": "1234567-10",
+        "worker_no": "DEBUG",
+        "image_path": "/Users/user/Pictures/image_coords_app/Y8470608_SHINANOSEIKEN.png",
+        "model_name": "Y8470608_SHINANOSEIKEN",
+        "created_at": "2025-08-11T09:27:57.400136",
+        "updated_at": "2025-08-11T09:27:57.400158",
+        "total_coordinates": 2
+      },
+      "2": {
+        "board_number": 2,
+        "coordinates": [
+          [
+            78,
+            77
+          ],
+          [
+            263,
+            101
+          ]
+        ],
+        "coordinate_details": [
+          {
+            "item_number": "1",
+            "reference": "",
+            "defect": "",
+            "repaired": "いいえ",
+            "comment": ""
+          },
+          {
+            "item_number": "2",
+            "reference": "",
+            "defect": "",
+            "repaired": "いいえ",
+            "comment": ""
+          }
+        ],
+        "lot_number": "1234567-10",
+        "worker_no": "DEBUG",
+        "image_path": "/Users/user/Pictures/image_coords_app/Y8470608_SHINANOSEIKEN.png",
+        "model_name": "Y8470608_SHINANOSEIKEN",
+        "created_at": "2025-08-11T09:28:01.553321",
+        "updated_at": "2025-08-11T09:28:01.553348",
+        "total_coordinates": 2
+      },
+      "3": {
+        "board_number": 3,
+        "coordinates": [
+          [
+            201,
+            73
+          ],
+          [
+            240,
+            112
+          ]
+        ],
+        "coordinate_details": [
+          {
+            "item_number": "1",
+            "reference": "",
+            "defect": "",
+            "repaired": "いいえ",
+            "comment": ""
+          },
+          {
+            "item_number": "2",
+            "reference": "",
+            "defect": "",
+            "repaired": "いいえ",
+            "comment": ""
+          }
+        ],
+        "lot_number": "1234567-10",
+        "worker_no": "DEBUG",
+        "image_path": "/Users/user/Pictures/image_coords_app/Y8470608_SHINANOSEIKEN.png",
+        "model_name": "Y8470608_SHINANOSEIKEN",
+        "created_at": "2025-08-11T09:28:05.640840",
+        "updated_at": "2025-08-11T09:28:05.640873",
+        "total_coordinates": 2
+      },
+      "4": {
+        "board_number": 4,
+        "coordinates": [
+          [
+            201,
+            73
+          ],
+          [
+            240,
+            112
+          ]
+        ],
+        "coordinate_details": [
+          {
+            "item_number": "1",
+            "reference": "",
+            "defect": "",
+            "repaired": "いいえ",
+            "comment": ""
+          },
+          {
+            "item_number": "2",
+            "reference": "",
+            "defect": "",
+            "repaired": "いいえ",
+            "comment": ""
+          }
+        ],
+        "lot_number": "1234567-10",
+        "worker_no": "DEBUG",
+        "image_path": "/Users/user/Pictures/image_coords_app/Y8470608_SHINANOSEIKEN.png",
+        "model_name": "Y8470608_SHINANOSEIKEN",
+        "created_at": "2025-08-11T09:28:09.442512",
+        "updated_at": "2025-08-11T09:28:09.442532",
+        "total_coordinates": 2
+      }
+    },
+    "board_history": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "updated_at": "2025-08-11T09:28:09.444411"
+  }
+}

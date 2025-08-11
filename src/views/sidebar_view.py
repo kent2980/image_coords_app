@@ -29,6 +29,9 @@ class SidebarView:
         # 作業者番号（表示用）
         self.current_worker_no = ""
 
+        # 現在の基盤番号（表示用）
+        self.current_board_number = 1
+
         # UI要素の参照
         self.item_entry = None
         self.reference_entry = None
@@ -37,6 +40,7 @@ class SidebarView:
         self.worker_label = None
         self.lot_label = None
         self.product_label = None
+        self.board_label = None
 
         # コールバック関数
         self.callbacks: Dict[str, Callable] = {}
@@ -116,6 +120,17 @@ class SidebarView:
         )
         self.lot_label.pack(fill=tk.X, padx=15, pady=(0, 5))
 
+        # 基盤番号ラベル
+        self.board_label = tk.Label(
+            self.parent_frame,
+            text="基盤: 1",
+            font=("Arial", 10, "bold"),
+            bg="#f5f5f5",
+            fg="#0066cc",
+            anchor="w",
+        )
+        self.board_label.pack(fill=tk.X, padx=15, pady=(0, 5))
+
         # 区切り線
         separator4 = tk.Frame(self.parent_frame, height=1, bg="#cccccc")
         separator4.pack(fill=tk.X, padx=15, pady=(0, 15))
@@ -178,8 +193,6 @@ class SidebarView:
             relief="solid",
             bd=1,
             highlightthickness=1,
-            highlightcolor="#4CAF50",
-            bg=entry_bg,
             state=entry_state,
         )
         entry.pack(fill=tk.X)
@@ -285,8 +298,6 @@ class SidebarView:
             relief="solid",
             bd=1,
             highlightthickness=1,
-            highlightcolor="#4CAF50",
-            bg="white",
             wrap=tk.WORD,
         )
         self.comment_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -478,3 +489,32 @@ class SidebarView:
     def set_worker_no(self, worker_no: str):
         """作業者番号を設定"""
         self.current_worker_no = worker_no
+
+    def update_board_display(self, board_number: int):
+        """基盤番号表示を更新"""
+        self.current_board_number = board_number
+        if hasattr(self, "board_label") and self.board_label:
+            self.board_label.config(text=f"基盤: {board_number}")
+
+    def get_current_board_number(self) -> int:
+        """現在の基盤番号を取得"""
+        return self.current_board_number
+
+    def display_coordinate_info(self, detail: Dict[str, Any], index: int):
+        """座標詳細情報を表示（閲覧モード用）"""
+        # 座標詳細情報を設定
+        self.set_coordinate_detail(detail)
+
+        # 項目番号を表示
+        if "item_number" not in detail:
+            detail_with_item = detail.copy()
+            detail_with_item["item_number"] = str(index + 1)
+            self.set_coordinate_detail(detail_with_item)
+
+    def display_coordinate_summary(self, summary: Dict[str, Any]):
+        """座標概要情報を表示（閲覧モード用）"""
+        # 概要情報に基づいてフォームをクリア
+        self.clear_form()
+
+        # 概要情報があれば表示（現在は特別な処理なし）
+        # 必要に応じて将来的に概要情報の表示機能を追加

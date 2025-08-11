@@ -44,6 +44,134 @@
         "documentation": {}
     },
     {
+        "label": "date",
+        "importPath": "datetime",
+        "description": "datetime",
+        "isExtraImport": true,
+        "detail": "datetime",
+        "documentation": {}
+    },
+    {
+        "label": "datetime",
+        "importPath": "datetime",
+        "description": "datetime",
+        "isExtraImport": true,
+        "detail": "datetime",
+        "documentation": {}
+    },
+    {
+        "label": "date",
+        "importPath": "datetime",
+        "description": "datetime",
+        "isExtraImport": true,
+        "detail": "datetime",
+        "documentation": {}
+    },
+    {
+        "label": "datetime",
+        "importPath": "datetime",
+        "description": "datetime",
+        "isExtraImport": true,
+        "detail": "datetime",
+        "documentation": {}
+    },
+    {
+        "label": "datetime",
+        "importPath": "datetime",
+        "description": "datetime",
+        "isExtraImport": true,
+        "detail": "datetime",
+        "documentation": {}
+    },
+    {
+        "label": "datetime",
+        "importPath": "datetime",
+        "description": "datetime",
+        "isExtraImport": true,
+        "detail": "datetime",
+        "documentation": {}
+    },
+    {
+        "label": "date",
+        "importPath": "datetime",
+        "description": "datetime",
+        "isExtraImport": true,
+        "detail": "datetime",
+        "documentation": {}
+    },
+    {
+        "label": "datetime",
+        "importPath": "datetime",
+        "description": "datetime",
+        "isExtraImport": true,
+        "detail": "datetime",
+        "documentation": {}
+    },
+    {
+        "label": "datetime",
+        "importPath": "datetime",
+        "description": "datetime",
+        "isExtraImport": true,
+        "detail": "datetime",
+        "documentation": {}
+    },
+    {
+        "label": "datetime",
+        "importPath": "datetime",
+        "description": "datetime",
+        "isExtraImport": true,
+        "detail": "datetime",
+        "documentation": {}
+    },
+    {
+        "label": "TYPE_CHECKING",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Any",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Dict",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "List",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Optional",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Tuple",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
         "label": "TYPE_CHECKING",
         "importPath": "typing",
         "description": "typing",
@@ -204,6 +332,46 @@
         "documentation": {}
     },
     {
+        "label": "Any",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Dict",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "List",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Optional",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Tuple",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
         "label": "List",
         "importPath": "typing",
         "description": "typing",
@@ -476,6 +644,38 @@
         "documentation": {}
     },
     {
+        "label": "Protocol",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "TypedDict",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Union",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "overload",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
         "label": "Any",
         "importPath": "typing",
         "description": "typing",
@@ -509,6 +709,14 @@
     },
     {
         "label": "Optional",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "reveal_type",
         "importPath": "typing",
         "description": "typing",
         "isExtraImport": true,
@@ -646,62 +854,6 @@
         "documentation": {}
     },
     {
-        "label": "datetime",
-        "importPath": "datetime",
-        "description": "datetime",
-        "isExtraImport": true,
-        "detail": "datetime",
-        "documentation": {}
-    },
-    {
-        "label": "date",
-        "importPath": "datetime",
-        "description": "datetime",
-        "isExtraImport": true,
-        "detail": "datetime",
-        "documentation": {}
-    },
-    {
-        "label": "datetime",
-        "importPath": "datetime",
-        "description": "datetime",
-        "isExtraImport": true,
-        "detail": "datetime",
-        "documentation": {}
-    },
-    {
-        "label": "datetime",
-        "importPath": "datetime",
-        "description": "datetime",
-        "isExtraImport": true,
-        "detail": "datetime",
-        "documentation": {}
-    },
-    {
-        "label": "date",
-        "importPath": "datetime",
-        "description": "datetime",
-        "isExtraImport": true,
-        "detail": "datetime",
-        "documentation": {}
-    },
-    {
-        "label": "datetime",
-        "importPath": "datetime",
-        "description": "datetime",
-        "isExtraImport": true,
-        "detail": "datetime",
-        "documentation": {}
-    },
-    {
-        "label": "datetime",
-        "importPath": "datetime",
-        "description": "datetime",
-        "isExtraImport": true,
-        "detail": "datetime",
-        "documentation": {}
-    },
-    {
         "label": "configparser",
         "kind": 6,
         "isExtraImport": true,
@@ -744,6 +896,14 @@
         "documentation": {}
     },
     {
+        "label": "BoardController",
+        "importPath": "src.controllers",
+        "description": "src.controllers",
+        "isExtraImport": true,
+        "detail": "src.controllers",
+        "documentation": {}
+    },
+    {
         "label": "CoordinateController",
         "importPath": "src.controllers",
         "description": "src.controllers",
@@ -769,6 +929,14 @@
     },
     {
         "label": "AppSettingsModel",
+        "importPath": "src.models",
+        "description": "src.models",
+        "isExtraImport": true,
+        "detail": "src.models",
+        "documentation": {}
+    },
+    {
+        "label": "BoardModel",
         "importPath": "src.models",
         "description": "src.models",
         "isExtraImport": true,
@@ -929,6 +1097,15 @@
         "documentation": {}
     },
     {
+        "label": "BoardController",
+        "kind": 6,
+        "importPath": "src.controllers.board_controller",
+        "description": "src.controllers.board_controller",
+        "peekOfCode": "class BoardController:\n    \"\"\"基盤管理を行うコントローラー\"\"\"\n    def __init__(\n        self,\n        board_model: \"BoardModel\",\n        coordinate_model: \"CoordinateModel\",\n        image_model: \"ImageModel\",\n        file_controller: \"FileController\",\n    ):\n        self.board_model = board_model",
+        "detail": "src.controllers.board_controller",
+        "documentation": {}
+    },
+    {
         "label": "CoordinateController",
         "kind": 6,
         "importPath": "src.controllers.coordinate_controller",
@@ -951,7 +1128,7 @@
         "kind": 6,
         "importPath": "src.controllers.main_controller",
         "description": "src.controllers.main_controller",
-        "peekOfCode": "class MainController:\n    \"\"\"メインアプリケーションコントローラー\"\"\"\n    def __init__(\n        self,\n        coordinate_model: \"CoordinateModel\",\n        settings_model: \"AppSettingsModel\",\n        worker_model: \"WorkerModel\",\n        image_model: \"ImageModel\",\n        main_view: \"MainView\",\n        canvas_view: \"CoordinateCanvasView\",",
+        "peekOfCode": "class MainController:\n    \"\"\"メインアプリケーションコントローラー\"\"\"\n    def __init__(\n        self,\n        coordinate_model: \"CoordinateModel\",\n        settings_model: \"AppSettingsModel\",\n        worker_model: \"WorkerModel\",\n        image_model: \"ImageModel\",\n        board_model: \"BoardModel\",\n        main_view: \"MainView\",",
         "detail": "src.controllers.main_controller",
         "documentation": {}
     },
@@ -962,6 +1139,15 @@
         "description": "src.models.app_settings_model",
         "peekOfCode": "class AppSettingsModel:\n    \"\"\"アプリケーション設定を管理するモデル\"\"\"\n    def __init__(self):\n        self._config = configparser.ConfigParser()\n        self._settings_file = os.path.join(os.path.expanduser('~'), 'image_coords_settings.ini')\n        self._default_settings = {\n            'image_directory': '未選択',\n            'data_directory': '未選択',\n            'default_mode': '編集'\n        }",
         "detail": "src.models.app_settings_model",
+        "documentation": {}
+    },
+    {
+        "label": "BoardModel",
+        "kind": 6,
+        "importPath": "src.models.board_model",
+        "description": "src.models.board_model",
+        "peekOfCode": "class BoardModel:\n    \"\"\"基盤データを管理するモデル\"\"\"\n    def __init__(self):\n        self._current_board_number: int = 1\n        self._boards_data: Dict[int, Dict[str, Any]] = {}\n        self._board_history: List[int] = []\n        self._project_root = os.path.dirname(\n            os.path.dirname(os.path.dirname(os.path.abspath(__file__)))\n        )\n    @property",
+        "detail": "src.models.board_model",
         "documentation": {}
     },
     {
@@ -1046,6 +1232,33 @@
         "documentation": {}
     },
     {
+        "label": "CallbackProtocol",
+        "kind": 6,
+        "importPath": "src.views.main_view",
+        "description": "src.views.main_view",
+        "peekOfCode": "class CallbackProtocol(Protocol):\n    \"\"\"コールバック関数のプロトコル\"\"\"\n    def __call__(self) -> Any: ...\nclass ParameterCallbackProtocol(Protocol):\n    \"\"\"パラメータを受け取るコールバック関数のプロトコル\"\"\"\n    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...\n# 具体的なコールバック関数の型定義\nclass CallbackTypes(TypedDict, total=False):\n    \"\"\"コールバック関数の型定義辞書\"\"\"\n    # ファイル操作",
+        "detail": "src.views.main_view",
+        "documentation": {}
+    },
+    {
+        "label": "ParameterCallbackProtocol",
+        "kind": 6,
+        "importPath": "src.views.main_view",
+        "description": "src.views.main_view",
+        "peekOfCode": "class ParameterCallbackProtocol(Protocol):\n    \"\"\"パラメータを受け取るコールバック関数のプロトコル\"\"\"\n    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...\n# 具体的なコールバック関数の型定義\nclass CallbackTypes(TypedDict, total=False):\n    \"\"\"コールバック関数の型定義辞書\"\"\"\n    # ファイル操作\n    open_file: CallbackProtocol\n    save_file: CallbackProtocol\n    exit_app: CallbackProtocol",
+        "detail": "src.views.main_view",
+        "documentation": {}
+    },
+    {
+        "label": "CallbackTypes",
+        "kind": 6,
+        "importPath": "src.views.main_view",
+        "description": "src.views.main_view",
+        "peekOfCode": "class CallbackTypes(TypedDict, total=False):\n    \"\"\"コールバック関数の型定義辞書\"\"\"\n    # ファイル操作\n    open_file: CallbackProtocol\n    save_file: CallbackProtocol\n    exit_app: CallbackProtocol\n    # 編集操作\n    undo_action: CallbackProtocol\n    redo_action: CallbackProtocol\n    clear_coordinates: CallbackProtocol",
+        "detail": "src.views.main_view",
+        "documentation": {}
+    },
+    {
         "label": "MainView",
         "kind": 6,
         "importPath": "src.views.main_view",
@@ -1064,6 +1277,15 @@
         "documentation": {}
     },
     {
+        "label": "demonstrate_type_benefits",
+        "kind": 2,
+        "importPath": "demonstrate_types",
+        "description": "demonstrate_types",
+        "peekOfCode": "def demonstrate_type_benefits():\n    \"\"\"型推定改善のメリットを実演\"\"\"\n    print(\"🎯 MainView 型推定改善のメリット実演\")\n    print(\"=\" * 60)\n    root = tk.Tk()\n    root.withdraw()\n    main_view = MainView(root)\n    print(\"📋 改善前と改善後の比較:\")\n    print()\n    print(\"【改善前】\")",
+        "detail": "demonstrate_types",
+        "documentation": {}
+    },
+    {
         "label": "ImageCoordsApp",
         "kind": 6,
         "importPath": "main",
@@ -1079,6 +1301,42 @@
         "description": "main",
         "peekOfCode": "def main():\n    \"\"\"メイン関数\"\"\"\n    try:\n        app = ImageCoordsApp()\n        app.run()\n    except KeyboardInterrupt:\n        print(\"アプリケーションが中断されました。\")\n    except Exception as e:\n        print(f\"予期しないエラーが発生しました: {e}\")\n        messagebox.showerror(\"エラー\", f\"予期しないエラーが発生しました: {e}\")",
         "detail": "main",
+        "documentation": {}
+    },
+    {
+        "label": "CallbackTestApp",
+        "kind": 6,
+        "importPath": "test_callbacks",
+        "description": "test_callbacks",
+        "peekOfCode": "class CallbackTestApp:\n    \"\"\"コールバック関数のテスト用アプリケーション\"\"\"\n    def __init__(self):\n        self.root = tk.Tk()\n        self.test_results = {}\n        # モデルの初期化\n        print(\"モデルを初期化中...\")\n        self.app_settings_model = AppSettingsModel()\n        self.coordinate_model = CoordinateModel()\n        self.image_model = ImageModel()",
+        "detail": "test_callbacks",
+        "documentation": {}
+    },
+    {
+        "label": "main",
+        "kind": 2,
+        "importPath": "test_callbacks",
+        "description": "test_callbacks",
+        "peekOfCode": "def main():\n    \"\"\"メイン関数\"\"\"\n    print(\"MainViewコールバック関数テスト\")\n    print(f\"開始時刻: {datetime.now()}\")\n    try:\n        app = CallbackTestApp()\n    except Exception as e:\n        print(f\"アプリケーション初期化エラー: {e}\")\n        import traceback\n        traceback.print_exc()",
+        "detail": "test_callbacks",
+        "documentation": {}
+    },
+    {
+        "label": "test_type_safety",
+        "kind": 2,
+        "importPath": "test_type_hints",
+        "description": "test_type_hints",
+        "peekOfCode": "def test_type_safety():\n    \"\"\"型安全性をテスト\"\"\"\n    print(\"MainViewの型推定改善テスト\")\n    print(\"=\" * 50)\n    # MainViewのインスタンス作成\n    root = tk.Tk()\n    root.withdraw()  # ウィンドウを非表示にする\n    main_view = MainView(root)\n    # コールバック関数の定義\n    def test_callback():",
+        "detail": "test_type_hints",
+        "documentation": {}
+    },
+    {
+        "label": "test_ui_initialization",
+        "kind": 2,
+        "importPath": "test_ui_initialization",
+        "description": "test_ui_initialization",
+        "peekOfCode": "def test_ui_initialization():\n    \"\"\"UI初期化メソッドのテスト\"\"\"\n    print(\"🔧 MainView UI初期化メソッド移動テスト\")\n    print(\"=\" * 50)\n    root = tk.Tk()\n    root.withdraw()  # ウィンドウを非表示\n    print(\"1. MainViewインスタンス作成中...\")\n    try:\n        main_view = MainView(root)\n        print(\"✅ MainViewインスタンス作成成功\")",
+        "detail": "test_ui_initialization",
         "documentation": {}
     }
 ]

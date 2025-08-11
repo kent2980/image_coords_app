@@ -11,8 +11,19 @@ from tkinter import messagebox
 # プロジェクトルートを追加
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from src.controllers import CoordinateController, FileController, MainController
-from src.models import AppSettingsModel, CoordinateModel, ImageModel, WorkerModel
+from src.controllers import (
+    BoardController,
+    CoordinateController,
+    FileController,
+    MainController,
+)
+from src.models import (
+    AppSettingsModel,
+    BoardModel,
+    CoordinateModel,
+    ImageModel,
+    WorkerModel,
+)
 from src.views import CoordinateCanvasView, MainView, SidebarView
 from src.views.dialogs import DateSelectDialog, SettingsDialog, WorkerInputDialog
 
@@ -63,6 +74,9 @@ class ImageCoordsApp:
         # 画像モデル
         self.image_model = ImageModel()
 
+        # 基盤モデル
+        self.board_model = BoardModel()
+
     def _initialize_views(self):
         """ビューの初期化"""
         # メインビュー
@@ -93,18 +107,28 @@ class ImageCoordsApp:
             self.coordinate_model, self.image_model
         )
 
+        # 基盤コントローラー
+        self.board_controller = BoardController(
+            self.board_model,
+            self.coordinate_model,
+            self.image_model,
+            self.file_controller,
+        )
+
         # メインコントローラー（他のコントローラーを統括）
         self.main_controller = MainController(
             coordinate_model=self.coordinate_model,
             settings_model=self.settings_model,
             worker_model=self.worker_model,
             image_model=self.image_model,
+            board_model=self.board_model,
             main_view=self.main_view,
             canvas_view=self.canvas_view,
             sidebar_view=self.sidebar_view,
             dialogs=self.dialogs,
             coordinate_controller=self.coordinate_controller,
             file_controller=self.file_controller,
+            board_controller=self.board_controller,
         )
 
         # デバッグモードの設定（環境変数またはコマンドライン引数で制御）

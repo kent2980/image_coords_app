@@ -100,6 +100,19 @@ class CoordinateController:
                 self.canvas_view.highlight_coordinate(index)
             elif self.canvas_view:
                 self.canvas_view.clear_highlight()
+
+            # サイドバーに座標詳細を表示
+            if self.sidebar_view and index >= 0:
+                detail = self.coordinate_model.get_coordinate_detail(index)
+                if detail:
+                    # 座標詳細をサイドバーに表示
+                    self.sidebar_view.set_coordinate_detail(detail)
+                else:
+                    # 詳細がない場合はフォームをクリア
+                    self.sidebar_view.clear_form()
+            elif self.sidebar_view:
+                self.sidebar_view.clear_form()
+
             return True
         return False
 
@@ -271,16 +284,27 @@ class CoordinateController:
             bool: 削除に成功した場合True
         """
         try:
-            coordinates = self.coordinate_model.get_coordinates()
+            coordinates = self.coordinate_model.coordinates
             if 0 <= index < len(coordinates):
-                # アンドゥ用に現在の状態を保存
-                self.coordinate_model.save_state_for_undo()
+                total_coordinates = len(coordinates)
 
-                # 座標を削除
+                # 座標を削除（remove_coordinateメソッド内でアンドゥ用状態保存も実行される）
                 self.coordinate_model.remove_coordinate(index)
 
-                # 現在の座標インデックスをリセット
-                self.coordinate_model.set_current_coordinate(-1)
+                # 残った座標がある場合は適切な座標を選択
+                remaining_coordinates = len(self.coordinate_model.coordinates)
+                if remaining_coordinates > 0:
+                    # 削除したインデックスの位置に座標がまだある場合はそれを選択
+                    if index < remaining_coordinates:
+                        new_index = index
+                    # 削除したのが最後の座標の場合は、前の座標を選択
+                    else:
+                        new_index = remaining_coordinates - 1
+
+                    self.coordinate_model.set_current_coordinate(new_index)
+                else:
+                    # 座標が全て削除された場合
+                    self.coordinate_model.set_current_coordinate(-1)
 
                 return True
             return False
@@ -288,3 +312,68 @@ class CoordinateController:
         except Exception as e:
             print(f"座標削除エラー: {e}")
             return False
+
+    def delete_selected_coordinate(self) -> bool:
+        """現在選択中の座標を削除"""
+        current_index = self.coordinate_model.current_index
+        if current_index >= 0:
+            success = self.delete_coordinate(current_index)
+            if success:
+                self._redraw_all_markers()
+
+                # 削除後に選択された座標がある場合は、その詳細をサイドバーに表示
+                new_current_index = self.coordinate_model.current_index
+                if self.sidebar_view:
+                    if new_current_index >= 0:
+                        # 新しく選択された座標の詳細を表示
+                        detail = self.coordinate_model.get_coordinate_detail(
+                            new_current_index
+                        )
+                        if detail:
+                            # 項目番号を更新
+                            detail_with_item = detail.copy()
+                            detail_with_item["item_number"] = str(new_current_index + 1)
+                            self.sidebar_view.set_coordinate_detail(detail_with_item)
+                        else:
+                            # 詳細がない場合は項目番号のみ設定
+                            self.sidebar_view.set_coordinate_detail(
+                                {"item_number": str(new_current_index + 1)}
+                            )
+                    else:
+                        # 座標が全て削除された場合はフォームをクリア
+                        self.sidebar_view.clear_form()
+
+            return success
+        return False
+
+    def select_previous_coordinate(self) -> bool:
+        """前の座標を選択"""
+        current_index = self.coordinate_model.current_index
+        coordinates = self.coordinate_model.coordinates
+
+        if not coordinates:
+            return False
+
+        if current_index <= 0:
+            # 最初の座標または未選択の場合、最後の座標を選択
+            new_index = len(coordinates) - 1
+        else:
+            new_index = current_index - 1
+
+        return self.set_current_coordinate(new_index)
+
+    def select_next_coordinate(self) -> bool:
+        """次の座標を選択"""
+        current_index = self.coordinate_model.current_index
+        coordinates = self.coordinate_model.coordinates
+
+        if not coordinates:
+            return False
+
+        if current_index >= len(coordinates) - 1 or current_index < 0:
+            # 最後の座標または未選択の場合、最初の座標を選択
+            new_index = 0
+        else:
+            new_index = current_index + 1
+
+        return self.set_current_coordinate(new_index)

@@ -10,9 +10,11 @@ from tkinter import messagebox
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 if TYPE_CHECKING:
+    from ..controllers.board_controller import BoardController
     from ..controllers.coordinate_controller import CoordinateController
     from ..controllers.file_controller import FileController
     from ..models.app_settings_model import AppSettingsModel
+    from ..models.board_model import BoardModel
     from ..models.coordinate_model import CoordinateModel
     from ..models.image_model import ImageModel
     from ..models.worker_model import WorkerModel
@@ -30,12 +32,14 @@ class MainController:
         settings_model: "AppSettingsModel",
         worker_model: "WorkerModel",
         image_model: "ImageModel",
+        board_model: "BoardModel",
         main_view: "MainView",
         canvas_view: "CoordinateCanvasView",
         sidebar_view: "SidebarView",
         dialogs: Dict[str, Any],
         coordinate_controller: "CoordinateController",
         file_controller: "FileController",
+        board_controller: "BoardController",
     ):
 
         # モデル
@@ -43,6 +47,7 @@ class MainController:
         self.settings_model = settings_model
         self.worker_model = worker_model
         self.image_model = image_model
+        self.board_model = board_model
 
         # ビュー
         self.main_view = main_view
@@ -53,6 +58,7 @@ class MainController:
         # 他のコントローラー
         self.coordinate_controller = coordinate_controller
         self.file_controller = file_controller
+        self.board_controller = board_controller
 
         # 現在の日付
         self.current_date = date.today()
@@ -100,6 +106,7 @@ class MainController:
         # コントローラー間の連携を設定
         self.coordinate_controller.set_canvas_view(self.canvas_view)
         self.coordinate_controller.set_sidebar_view(self.sidebar_view)
+        self.board_controller.set_sidebar_view(self.sidebar_view)
 
         # SidebarViewにMainViewの参照を設定
         self.sidebar_view.set_main_view_reference(self.main_view)
@@ -153,14 +160,17 @@ class MainController:
             "select_date": self.select_date,
             "on_mode_change": self.on_mode_change,
             "open_settings": self.open_settings,
-            "undo": self.undo_action,
-            "redo": self.redo_action,
+            "undo_action": self.undo_action,
+            "redo_action": self.redo_action,
             "select_image": self.select_image,
             "load_json": self.load_json,
             "save_coordinates": self.save_coordinates,
             "save_data": self.save_coordinates,  # 旧コード互換
             "on_save_button_click": self.on_save_button_click,  # 保存ボタン処理
             "clear_coordinates": self.clear_coordinates,
+            "delete_coordinate": self.delete_coordinate,
+            "prev_coordinate": self.prev_coordinate,
+            "next_coordinate": self.next_coordinate,
             "on_model_selected": self.on_model_selected,
             "load_models_from_file": self.load_models_from_file,  # 旧コード互換コールバック
             "on_lot_number_save": self.on_lot_number_save,  # ロット番号保存
@@ -175,6 +185,10 @@ class MainController:
             # ボタンコールバック
             "prev_board": self.prev_board,
             "next_board": self.next_board,
+            "delete_board": self.delete_board,
+            # 基盤管理コールバック
+            "save_all_boards": self.save_all_boards,
+            "load_board_session": self.load_board_session,
         }
 
         # コールバック設定のデバッグ情報
@@ -222,6 +236,9 @@ class MainController:
 
         # トップコントロールを設定
         self.main_view.setup_top_controls()
+
+        # メニューを設定
+        self.main_view.setup_menu_buttons()
 
         # 日付表示を更新
         self.main_view.update_date_label(self.current_date.strftime("%Y-%m-%d"))
@@ -305,13 +322,13 @@ class MainController:
             return
 
         # 選択中の座標を削除
-        current_index = self.coordinate_model.get_current_coordinate_index()
+        current_index = self.coordinate_model.current_index
         if current_index >= 0:
             # 座標を削除
             self.coordinate_controller.delete_coordinate(current_index)
 
-            # 座標表示を更新
-            self.update_coordinate_display()
+            # 座標マーカーを再描画
+            self._redraw_coordinates_for_new_scale()
 
             # サイドバーをクリア
             self.sidebar_view.clear_form()
@@ -340,6 +357,13 @@ class MainController:
 
             # 選択されたモデルの画像を表示
             self._load_model_image(selected_model)
+
+            # 基盤セッションを自動読み込み（該当するものがあれば）
+            current_lot = self.current_lot_number or self.sidebar_view.get_lot_number()
+            if current_lot:
+                self.board_controller.load_board_session(
+                    self.current_date, selected_model, current_lot
+                )
 
             # 保存名を自動設定
             current_lot = self.current_lot_number or self.sidebar_view.get_lot_number()
@@ -504,8 +528,12 @@ class MainController:
 
                 # 現在のロット番号と作業者Noを取得
                 form_data = self.sidebar_view.get_form_data()
-                lot_number = form_data["lot_number"]
-                worker_no = form_data["worker_no"]
+                lot_number = (
+                    form_data.get("lot_number")
+                    or self.current_lot_number
+                    or self.sidebar_view.get_lot_number()
+                )
+                worker_no = form_data.get("worker_no") or self.current_worker_no
 
                 # 自動更新保存
                 if self.file_controller.save_coordinates_with_auto_update(
@@ -593,6 +621,9 @@ class MainController:
             )
             if auto_save_name:
                 self.main_view.set_save_name(auto_save_name)
+
+        # 対象ディレクトリの最新JSONファイルをチェックして自動読み込み
+        self._check_and_load_latest_json(selected_model, lot_number)
 
         self.main_view.show_message(f"ロット番号を設定しました: {lot_number}")
 
@@ -831,9 +862,20 @@ class MainController:
 
             # データを保存
             if self.file_controller.save_json_data(file_path, save_data):
+                # 現在の基盤データもセッションとJSONファイルに保存
+                self._save_current_board_to_session_and_json(
+                    coordinates, coordinate_details, lot_number
+                )
+
                 self.file_controller.show_success_message(
                     f"座標をJSON形式で保存しました。\n保存先: {file_path}"
                 )
+
+                # 保存後に座標をリセット
+                self.coordinate_controller.clear_coordinates()
+                self.sidebar_view.clear_form()
+                self._update_undo_redo_state()
+                print("[JSON保存] 座標をリセットしました")
 
                 # 保存名エントリを次の連番に更新
                 if save_dir:
@@ -850,9 +892,47 @@ class MainController:
 
     def clear_coordinates(self):
         """座標をクリア"""
+        print("[DEBUG] 座標をクリアします")
         self.coordinate_controller.clear_coordinates()
         self.sidebar_view.clear_form()
         self._update_undo_redo_state()
+
+    def delete_coordinate(self):
+        """現在選択中の座標を削除する"""
+        print("[DEBUG] delete_coordinate() called")
+        # CoordinateControllerに削除機能があるかチェック
+        if hasattr(self.coordinate_controller, "delete_selected_coordinate"):
+            self.coordinate_controller.delete_selected_coordinate()
+        else:
+            print(
+                "[DEBUG] CoordinateController.delete_selected_coordinate method not found"
+            )
+
+        # フォームをクリア
+        self.sidebar_view.clear_form()
+        self._update_undo_redo_state()
+
+    def prev_coordinate(self):
+        """前の座標に移動する"""
+        print("[DEBUG] prev_coordinate() called")
+        # CoordinateControllerに前の座標機能があるかチェック
+        if hasattr(self.coordinate_controller, "select_previous_coordinate"):
+            self.coordinate_controller.select_previous_coordinate()
+        else:
+            print(
+                "[DEBUG] CoordinateController.select_previous_coordinate method not found"
+            )
+
+    def next_coordinate(self):
+        """次の座標に移動する"""
+        print("[DEBUG] next_coordinate() called")
+        # CoordinateControllerに次の座標機能があるかチェック
+        if hasattr(self.coordinate_controller, "select_next_coordinate"):
+            self.coordinate_controller.select_next_coordinate()
+        else:
+            print(
+                "[DEBUG] CoordinateController.select_next_coordinate method not found"
+            )
 
     def undo_action(self):
         """元に戻す操作"""
@@ -1186,11 +1266,460 @@ class MainController:
     def prev_board(self):
         """前の基板を選択"""
         print("[ボタン] 前の基板が選択されました")
-        # 基板選択機能の実装（必要に応じて）
-        messagebox.showinfo("基板選択", "前の基板選択機能は実装中です。")
+
+        try:
+            # 現在のモデル、ロット番号、作業者情報を取得
+            selected_model = self.main_view.get_selected_model()
+            lot_number = self.current_lot_number or self.sidebar_view.get_lot_number()
+
+            if (
+                not selected_model
+                or selected_model.startswith("画像")
+                or not lot_number
+            ):
+                messagebox.showwarning(
+                    "基盤切り替えエラー",
+                    "モデルとロット番号が設定されていません。\n基盤切り替えにはモデルとロット番号が必要です。",
+                )
+                return
+
+            # 前の基盤に切り替え
+            success = self.board_controller.switch_to_previous_board(
+                self.current_date, selected_model, lot_number, self.current_worker_no
+            )
+
+            if success:
+                board_number = self.board_controller.get_current_board_number()
+
+                # 既存のJSONファイルがあるかチェックして読み込み
+                self._load_existing_json_for_board(
+                    selected_model, lot_number, board_number
+                )
+
+                # 座標表示を更新
+                self._redraw_coordinates_for_new_scale()
+
+                next_board = board_number + 1
+                self.main_view.show_message(
+                    f"基盤 {next_board} のデータを保存して基盤 {board_number} に戻りました"
+                )
+
+                # Undo/Redoボタンの状態を更新
+                self._update_undo_redo_state()
+            else:
+                messagebox.showinfo("基盤切り替え", "これが最初の基盤です。")
+
+        except Exception as e:
+            print(f"前の基盤切り替えエラー: {e}")
+            messagebox.showerror(
+                "エラー", f"前の基盤への切り替え中にエラーが発生しました:\n{str(e)}"
+            )
 
     def next_board(self):
         """次の基板を選択"""
         print("[ボタン] 次の基板が選択されました")
-        # 基板選択機能の実装（必要に応じて）
-        messagebox.showinfo("基板選択", "次の基板選択機能は実装中です。")
+
+        try:
+            # 現在のモデル、ロット番号、作業者情報を取得
+            selected_model = self.main_view.get_selected_model()
+            lot_number = self.current_lot_number or self.sidebar_view.get_lot_number()
+
+            if (
+                not selected_model
+                or selected_model.startswith("画像")
+                or not lot_number
+            ):
+                messagebox.showwarning(
+                    "基盤切り替えエラー",
+                    "モデルとロット番号が設定されていません。\n基盤切り替えにはモデルとロット番号が必要です。",
+                )
+                return
+
+            # 次の基盤に切り替え
+            success = self.board_controller.switch_to_next_board(
+                self.current_date, selected_model, lot_number, self.current_worker_no
+            )
+
+            if success:
+                # 座標表示をクリア
+                self.coordinate_controller.clear_coordinates()
+
+                # 現在の基板番号を取得
+                board_number = self.board_controller.get_current_board_number()
+
+                # 既存のJSONファイルがあるかチェックして読み込み
+                self._load_existing_json_for_board(
+                    selected_model, lot_number, board_number
+                )
+
+                # 保存された基盤のメッセージを表示
+                prev_board = board_number - 1 if board_number > 1 else 1
+                self.main_view.show_message(
+                    f"基盤 {prev_board} のデータを保存して基盤 {board_number} に切り替えました"
+                )
+
+                # Undo/Redoボタンの状態を更新
+                self._update_undo_redo_state()
+
+        except Exception as e:
+            print(f"次の基盤切り替えエラー: {e}")
+            messagebox.showerror(
+                "エラー", f"次の基盤への切り替え中にエラーが発生しました:\n{str(e)}"
+            )
+
+    def delete_board(self):
+        """現在の基板を削除"""
+        print("[DEBUG] delete_board() called")
+
+        # 削除確認ダイアログを表示
+        result = messagebox.askyesno(
+            "基板削除確認",
+            "現在の基板を削除しますか？\n\n注意: この操作は元に戻せません。",
+            icon="warning",
+        )
+
+        if result:
+            try:
+                print("[DEBUG] 基板削除処理を開始")
+
+                # 現在のモデル、ロット番号を取得
+                selected_model = self.main_view.get_selected_model()
+                lot_number = (
+                    self.current_lot_number or self.sidebar_view.get_lot_number()
+                )
+
+                if (
+                    not selected_model
+                    or selected_model.startswith("画像")
+                    or not lot_number
+                ):
+                    messagebox.showwarning(
+                        "基盤削除エラー", "モデルとロット番号が設定されていません。"
+                    )
+                    return
+
+                # 基盤を削除
+                success = self.board_controller.delete_current_board(
+                    self.current_date, selected_model, lot_number
+                )
+
+                if success:
+                    # 座標表示を更新
+                    self._redraw_coordinates_for_new_scale()
+
+                    # アンドゥ/リドゥの状態を更新
+                    self._update_undo_redo_state()
+
+                    board_number = self.board_controller.get_current_board_number()
+                    messagebox.showinfo(
+                        "基板削除", f"基板を削除しました。現在の基板: {board_number}"
+                    )
+                else:
+                    messagebox.showerror("エラー", "基板削除に失敗しました。")
+
+            except Exception as e:
+                print(f"[DEBUG] 基板削除エラー: {e}")
+                messagebox.showerror(
+                    "エラー", f"基板削除中にエラーが発生しました:\n{str(e)}"
+                )
+        else:
+            print("[DEBUG] 基板削除をキャンセル")
+
+    def save_all_boards(self):
+        """全基盤をJSONファイルに保存"""
+        print("[基盤管理] 全基盤保存が選択されました")
+
+        try:
+            # 現在のモデル、ロット番号、作業者情報を取得
+            selected_model = self.main_view.get_selected_model()
+            lot_number = self.current_lot_number or self.sidebar_view.get_lot_number()
+
+            if (
+                not selected_model
+                or selected_model.startswith("画像")
+                or not lot_number
+            ):
+                messagebox.showwarning(
+                    "保存エラー",
+                    "モデルとロット番号が設定されていません。\n全基盤保存にはモデルとロット番号が必要です。",
+                )
+                return
+
+            # 全基盤を保存
+            success = self.board_controller.save_all_boards_to_json(
+                self.current_date, selected_model, lot_number, self.current_worker_no
+            )
+
+            if success:
+                board_summary = self.board_controller.get_board_summary()
+                messagebox.showinfo(
+                    "保存完了",
+                    f"全 {board_summary['total_boards']} 基盤をJSONファイルに保存しました。",
+                )
+            else:
+                messagebox.showerror("エラー", "全基盤の保存に失敗しました。")
+
+        except Exception as e:
+            print(f"全基盤保存エラー: {e}")
+            messagebox.showerror(
+                "エラー", f"全基盤保存中にエラーが発生しました:\n{str(e)}"
+            )
+
+    def load_board_session(self):
+        """基盤セッションを読み込み"""
+        print("[基盤管理] 基盤セッション読み込みが選択されました")
+
+        try:
+            # 現在のモデル、ロット番号を取得
+            selected_model = self.main_view.get_selected_model()
+            lot_number = self.current_lot_number or self.sidebar_view.get_lot_number()
+
+            if (
+                not selected_model
+                or selected_model.startswith("画像")
+                or not lot_number
+            ):
+                messagebox.showwarning(
+                    "読み込みエラー",
+                    "モデルとロット番号が設定されていません。\n基盤セッション読み込みにはモデルとロット番号が必要です。",
+                )
+                return
+
+            # 基盤セッションを読み込み
+            success = self.board_controller.load_board_session(
+                self.current_date, selected_model, lot_number
+            )
+
+            if success:
+                # 座標表示を更新
+                self._redraw_coordinates_for_new_scale()
+
+                board_summary = self.board_controller.get_board_summary()
+                board_number = self.board_controller.get_current_board_number()
+                messagebox.showinfo(
+                    "読み込み完了",
+                    f"基盤セッションを読み込みました。\n現在の基盤: {board_number}\n保存済み基盤数: {board_summary['total_boards']}",
+                )
+            else:
+                messagebox.showinfo(
+                    "読み込み", "該当する基盤セッションが見つかりませんでした。"
+                )
+
+        except Exception as e:
+            print(f"基盤セッション読み込みエラー: {e}")
+            messagebox.showerror(
+                "エラー", f"基盤セッション読み込み中にエラーが発生しました:\n{str(e)}"
+            )
+
+    def _save_current_board_to_session_and_json(
+        self,
+        coordinates: List[Tuple[int, int]],
+        coordinate_details: List[Dict[str, Any]],
+        lot_number: str,
+    ):
+        """現在の基盤データをセッションとJSONファイルの両方に保存"""
+        try:
+            selected_model = self.main_view.get_selected_model()
+            if selected_model and not selected_model.startswith("画像"):
+                image_path = self.image_model.current_image_path or ""
+
+                # 基盤セッションデータを保存
+                self.board_model.save_board_data(
+                    self.board_model.current_board_number,
+                    coordinates,
+                    coordinate_details,
+                    lot_number,
+                    self.current_worker_no or "",
+                    image_path,
+                    selected_model,
+                )
+
+                # 基盤情報をファイルに保存
+                date_str = self.current_date.strftime("%Y-%m-%d")
+                self.board_model.save_board_info_to_file(
+                    date_str, selected_model, lot_number
+                )
+
+                # 基盤を個別のJSONファイルにも保存
+                json_success = self.board_controller._save_current_board_to_json(
+                    self.current_date,
+                    selected_model,
+                    lot_number,
+                    self.current_worker_no or "",
+                    coordinates,
+                    coordinate_details,
+                )
+
+                if json_success:
+                    print(
+                        f"基盤 {self.board_model.current_board_number} をセッションとJSONファイルに保存しました"
+                    )
+                else:
+                    print(
+                        f"基盤 {self.board_model.current_board_number} をセッションに保存しました（JSONファイル保存は失敗）"
+                    )
+
+        except Exception as e:
+            print(f"基盤セッション・JSONファイル保存エラー: {e}")
+
+    def _save_current_board_to_session(
+        self,
+        coordinates: List[Tuple[int, int]],
+        coordinate_details: List[Dict[str, Any]],
+        lot_number: str,
+    ):
+        """現在の基盤データをセッションに保存（旧メソッド - 互換性のため残す）"""
+        self._save_current_board_to_session_and_json(
+            coordinates, coordinate_details, lot_number
+        )
+
+    def _load_existing_json_for_board(
+        self, model_name: str, lot_number: str, board_number: int
+    ):
+        """指定された基盤のJSONファイルが存在する場合に読み込み"""
+        try:
+            # JSONファイルのパスを構築
+            json_dir = self.file_controller.setup_json_save_dir(
+                self.current_date, model_name, lot_number
+            )
+
+            if not json_dir:
+                print(
+                    f"[JSONロード] 基盤 {board_number} のディレクトリが見つかりません"
+                )
+                return False
+
+            json_filename = f"{board_number:04d}.json"
+            json_filepath = os.path.join(json_dir, json_filename)
+
+            # JSONファイルが存在するかチェック
+            if not os.path.exists(json_filepath):
+                print(
+                    f"[JSONロード] 基盤 {board_number} のJSONファイルが見つかりません: {json_filepath}"
+                )
+                return False
+
+            # JSONファイルからデータを読み込み
+            print(
+                f"[JSONロード] 基盤 {board_number} のJSONファイルを読み込み中: {json_filepath}"
+            )
+
+            data = self.file_controller.load_json_data(json_filepath)
+            parsed_data = self.file_controller.parse_loaded_data(data)
+
+            # 座標と詳細情報を復元
+            if parsed_data["coordinates"]:
+                self.coordinate_controller.load_coordinates_from_data(
+                    parsed_data["coordinates"], parsed_data["coordinate_details"]
+                )
+
+                # 座標マーカーを再描画
+                self._redraw_coordinates_for_new_scale()
+
+                coord_count = len(parsed_data["coordinates"])
+                print(
+                    f"[JSONロード] 基盤 {board_number} に {coord_count}個の座標を復元しました"
+                )
+
+                # 成功メッセージを表示
+                self.main_view.show_message(
+                    f"基盤 {board_number} の座標データ（{coord_count}個）をJSONファイルから読み込みました"
+                )
+
+                return True
+            else:
+                print(
+                    f"[JSONロード] 基盤 {board_number} のJSONファイルに座標データがありません"
+                )
+                return False
+
+        except Exception as e:
+            print(f"[JSONロード] 基盤 {board_number} のJSONファイル読み込みエラー: {e}")
+            # エラーが発生しても処理を継続（セッションデータがあれば使用される）
+            return False
+
+    def _check_and_load_latest_json(self, model_name: str, lot_number: str):
+        """対象ディレクトリの最新のJSONファイルを検索して自動読み込み、次のインデックスを設定"""
+        try:
+            # JSONファイルのディレクトリパスを構築
+            json_dir = self.file_controller.setup_json_save_dir(
+                self.current_date, model_name, lot_number
+            )
+
+            if not json_dir:
+                print(f"[最新JSON読み込み] ディレクトリが見つかりません")
+                return False
+
+            if not os.path.exists(json_dir):
+                print(f"[最新JSON読み込み] ディレクトリが存在しません: {json_dir}")
+                return False
+
+            # ディレクトリ内の全JSONファイルを検索
+            json_files = []
+            for filename in os.listdir(json_dir):
+                if filename.endswith(".json") and filename[:4].isdigit():
+                    try:
+                        index = int(filename[:4])
+                        json_files.append((index, filename))
+                    except ValueError:
+                        continue
+
+            if not json_files:
+                print(
+                    f"[最新JSON読み込み] 数字インデックスのJSONファイルが見つかりません: {json_dir}"
+                )
+                return False
+
+            # インデックスが最大のファイルを取得
+            json_files.sort(key=lambda x: x[0])
+            latest_index, latest_filename = json_files[-1]
+            latest_filepath = os.path.join(json_dir, latest_filename)
+
+            print(
+                f"[最新JSON読み込み] 最新ファイルを発見: {latest_filename} (インデックス: {latest_index})"
+            )
+
+            # JSONファイルからデータを読み込み
+            print(f"[最新JSON読み込み] ファイルを読み込み中: {latest_filepath}")
+
+            data = self.file_controller.load_json_data(latest_filepath)
+            parsed_data = self.file_controller.parse_loaded_data(data)
+
+            # 座標と詳細情報を復元
+            if parsed_data["coordinates"]:
+                self.coordinate_controller.load_coordinates_from_data(
+                    parsed_data["coordinates"], parsed_data["coordinate_details"]
+                )
+
+                # 座標マーカーを再描画
+                self._redraw_coordinates_for_new_scale()
+
+                coord_count = len(parsed_data["coordinates"])
+                print(f"[最新JSON読み込み] {coord_count}個の座標を復元しました")
+
+                # 次のインデックスを保存名として設定
+                next_index = latest_index + 1
+                next_save_name = f"{next_index:04d}"
+
+                # MainViewとSidebarViewに次の保存名を設定
+                if hasattr(self.main_view, "set_save_name"):
+                    self.main_view.set_save_name(next_save_name)
+                if hasattr(self.sidebar_view, "set_save_name"):
+                    self.sidebar_view.set_save_name(next_save_name)
+
+                print(f"[最新JSON読み込み] 次の保存名を設定: {next_save_name}")
+
+                # 成功メッセージを表示
+                self.main_view.show_message(
+                    f"既存のJSONファイル（{latest_filename}）から座標データ（{coord_count}個）を読み込みました\n次の保存名: {next_save_name}"
+                )
+
+                return True
+            else:
+                print(f"[最新JSON読み込み] JSONファイルに座標データがありません")
+                return False
+
+        except Exception as e:
+            print(f"[最新JSON読み込み] ファイル読み込みエラー: {e}")
+            # エラーが発生しても処理を継続
+            return False

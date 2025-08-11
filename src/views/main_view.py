@@ -6,7 +6,72 @@
 import tkinter as tk
 from datetime import datetime
 from tkinter import ttk
-from typing import Any, Callable, Dict, List, Optional
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Protocol,
+    TypedDict,
+    Union,
+    overload,
+)
+
+
+# コールバック関数の型定義
+class CallbackProtocol(Protocol):
+    """コールバック関数のプロトコル"""
+
+    def __call__(self) -> Any: ...
+
+
+class ParameterCallbackProtocol(Protocol):
+    """パラメータを受け取るコールバック関数のプロトコル"""
+
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
+
+
+# 具体的なコールバック関数の型定義
+class CallbackTypes(TypedDict, total=False):
+    """コールバック関数の型定義辞書"""
+
+    # ファイル操作
+    open_file: CallbackProtocol
+    save_file: CallbackProtocol
+    exit_app: CallbackProtocol
+
+    # 編集操作
+    undo_action: CallbackProtocol
+    redo_action: CallbackProtocol
+    clear_coordinates: CallbackProtocol
+    delete_coordinate: CallbackProtocol
+    prev_coordinate: CallbackProtocol
+    next_coordinate: CallbackProtocol
+
+    # UI操作
+    on_mode_change: CallbackProtocol
+    on_model_selected: CallbackProtocol
+    on_item_tag_change: CallbackProtocol
+    on_lot_number_save: CallbackProtocol
+    open_settings: CallbackProtocol
+
+    # プロジェクト操作
+    new_project: CallbackProtocol
+    new_file: CallbackProtocol
+    select_date: CallbackProtocol
+    select_image: CallbackProtocol
+    load_json: CallbackProtocol
+    save_coordinates: CallbackProtocol
+    save_data: CallbackProtocol
+    on_save_button_click: CallbackProtocol
+    load_models_from_file: CallbackProtocol
+    setup_save_name_entry: CallbackProtocol
+
+    # 基板操作
+    prev_board: CallbackProtocol
+    next_board: CallbackProtocol
+    delete_board: CallbackProtocol
 
 
 class MainView:
@@ -33,8 +98,8 @@ class MainView:
         self.redo_button = None
         self.settings_button = None
 
-        # コールバック関数
-        self.callbacks: Dict[str, Callable] = {}
+        # コールバック関数（型安全）
+        self.callbacks: CallbackTypes = {}
 
         # レイアウト用フレーム
         self.menu_frame = None
@@ -48,9 +113,25 @@ class MainView:
         # 生産情報用変数
         self.save_name_var = tk.StringVar(value="")
 
+        # UI設定の初期化
         self._setup_layout()
 
-        self.setup_menu_buttons()
+    # 型安全なコールバック取得メソッド
+    @overload
+    def get_callback(self, key: str) -> Optional[CallbackProtocol]: ...
+
+    @overload
+    def get_callback(self, key: str, default: CallbackProtocol) -> CallbackProtocol: ...
+
+    def get_callback(
+        self, key: str, default: Optional[CallbackProtocol] = None
+    ) -> Optional[CallbackProtocol]:
+        """型安全なコールバック関数取得"""
+        return self.callbacks.get(key, default)  # type: ignore
+
+    def has_callback(self, key: str) -> bool:
+        """コールバック関数の存在確認"""
+        return key in self.callbacks and self.callbacks[key] is not None
 
     def _setup_layout(self):
         """レイアウトを設定 - 既存UIと同じ構造"""
@@ -103,39 +184,44 @@ class MainView:
         # ファイルメニュー
         file_menu = tk.Menu(menu_bar, tearoff=False)
         menu_bar.add_cascade(label="ファイル", menu=file_menu)
-        file_menu.add_command(label="開く", command=self.callbacks.get("open_file"))
-        file_menu.add_command(label="保存", command=self.callbacks.get("save_file"))
+        file_menu.add_command(label="開く", command=self.get_callback("open_file"))
+        file_menu.add_command(label="保存", command=self.get_callback("save_file"))
         file_menu.add_separator()
-        file_menu.add_command(label="終了", command=self.callbacks.get("exit_app"))
+        file_menu.add_command(label="終了", command=self.get_callback("exit_app"))
 
         # 編集メニュー
         edit_menu = tk.Menu(menu_bar, tearoff=False)
         menu_bar.add_cascade(label="編集", menu=edit_menu)
-        edit_menu.add_command(label="元に戻す", command=self.callbacks.get("undo"))
-        edit_menu.add_command(label="やり直し", command=self.callbacks.get("redo"))
+        edit_menu.add_command(
+            label="元に戻す", command=self.get_callback("undo_action")
+        )
+        edit_menu.add_command(
+            label="やり直し", command=self.get_callback("redo_action")
+        )
         edit_menu.add_separator()
         edit_menu.add_command(
-            label="座標をクリア", command=self.callbacks.get("clear_coordinates")
+            label="座標をクリア", command=self.get_callback("clear_coordinates")
         )
 
-        # 表示メニュー
-        view_menu = tk.Menu(menu_bar, tearoff=False)
-        menu_bar.add_cascade(label="表示", menu=view_menu)
-        view_menu.add_command(label="ズームイン", command=self.callbacks.get("zoom_in"))
-        view_menu.add_command(
-            label="ズームアウト", command=self.callbacks.get("zoom_out")
+        # 基盤メニュー
+        board_menu = tk.Menu(menu_bar, tearoff=False)
+        menu_bar.add_cascade(label="基盤", menu=board_menu)
+        board_menu.add_command(
+            label="全基盤保存", command=self.get_callback("save_all_boards")
         )
-        view_menu.add_separator()
-        view_menu.add_command(
-            label="リセット", command=self.callbacks.get("reset_view")
+        board_menu.add_command(
+            label="基盤セッション読み込み",
+            command=self.get_callback("load_board_session"),
         )
-
-        # ヘルプメニュー
-        help_menu = tk.Menu(menu_bar, tearoff=False)
-        menu_bar.add_cascade(label="ヘルプ", menu=help_menu)
-        help_menu.add_command(label="使い方", command=self.callbacks.get("show_help"))
-        help_menu.add_command(
-            label="バージョン情報", command=self.callbacks.get("show_version")
+        board_menu.add_separator()
+        board_menu.add_command(
+            label="前の基盤", command=self.get_callback("prev_board")
+        )
+        board_menu.add_command(
+            label="次の基盤", command=self.get_callback("next_board")
+        )
+        board_menu.add_command(
+            label="基盤削除", command=self.get_callback("delete_board")
         )
 
     def setup_top_controls(self):
@@ -148,7 +234,7 @@ class MainView:
         self.settings_button = tk.Button(
             settings_frame,
             text="⚙ 設定",
-            command=self.callbacks.get("open_settings"),
+            command=self.get_callback("open_settings"),
             font=("Arial", 10),
             relief="raised",
             padx=10,
@@ -166,7 +252,7 @@ class MainView:
             text="編集",
             variable=self.mode_var,
             value="編集",
-            command=self.callbacks.get("on_mode_change"),
+            command=self.get_callback("on_mode_change"),
             font=("Arial", 10),
         )
         mode_edit.pack(side=tk.LEFT, padx=5)
@@ -176,7 +262,7 @@ class MainView:
             text="閲覧",
             variable=self.mode_var,
             value="閲覧",
-            command=self.callbacks.get("on_mode_change"),
+            command=self.get_callback("on_mode_change"),
             font=("Arial", 10),
         )
         mode_view.pack(side=tk.LEFT, padx=5)
@@ -227,13 +313,13 @@ class MainView:
         # 「現品票で切り替え」ボタン
         print(f"[DEBUG] 現品票切り替えボタンを作成中...")
         print(
-            f"[DEBUG] コールバック 'on_item_tag_change': {self.callbacks.get('on_item_tag_change')}"
+            f"[DEBUG] コールバック 'on_item_tag_change': {self.get_callback('on_item_tag_change')}"
         )
 
         self.item_tag_change_button = tk.Button(
             self.canvas_top_frame,
             text="現品票で切り替え",
-            command=self.callbacks.get("on_item_tag_change"),
+            command=self.get_callback("on_item_tag_change"),
             font=("Arial", 10),
             relief="raised",
             padx=10,
@@ -247,32 +333,39 @@ class MainView:
         # ボタンのコマンドをテスト
         def test_button_click():
             print("[DEBUG] 現品票切り替えボタンがクリックされました（テスト関数）")
-            if "on_item_tag_change" in self.callbacks:
+            if self.has_callback("on_item_tag_change"):
                 print("[DEBUG] on_item_tag_changeコールバックが存在します")
-                self.callbacks["on_item_tag_change"]()
+                callback = self.get_callback("on_item_tag_change")
+                if callback:
+                    callback()
             else:
                 print("[DEBUG] on_item_tag_changeコールバックが見つかりません")
 
         # デバッグ用に直接コールバック関数を設定
-        if not self.callbacks.get("on_item_tag_change"):
+        if not self.has_callback("on_item_tag_change"):
             print("[DEBUG] コールバックが設定されていないため、テスト関数を設定します")
             self.item_tag_change_button.config(command=test_button_click)
 
     def initialize_models(self):
         """モデル選択肢を初期化（旧コード互換機能）"""
-        if "load_models_from_file" in self.callbacks:
+        if self.has_callback("load_models_from_file"):
             try:
-                model_data = self.callbacks["load_models_from_file"]()
-                self.update_model_options(model_data)
+                callback = self.get_callback("load_models_from_file")
+                if callback:
+                    model_data = callback()
+                    self.update_model_options(model_data)
 
-                # 最初のモデルを自動選択（旧コードと同じ動作）
-                if hasattr(self, "model_combobox") and self.model_combobox["values"]:
-                    self.model_combobox.current(0)
-                    self._on_model_selected()  # 選択イベントをトリガー
+                    # 最初のモデルを自動選択（旧コードと同じ動作）
+                    if (
+                        hasattr(self, "model_combobox")
+                        and self.model_combobox["values"]
+                    ):
+                        self.model_combobox.current(0)
+                        self._on_model_selected()  # 選択イベントをトリガー
 
-                print(
-                    f"モデル初期化完了: {len(self.model_combobox['values']) if hasattr(self, 'model_combobox') else 0}個のモデル"
-                )
+                    print(
+                        f"モデル初期化完了: {len(self.model_combobox['values']) if hasattr(self, 'model_combobox') else 0}個のモデル"
+                    )
             except Exception as e:
                 print(f"モデル初期化エラー: {e}")
                 # エラーの場合はデフォルト値を設定
@@ -280,7 +373,7 @@ class MainView:
                     self.model_combobox["values"] = ["設定エラー"]
                     self.model_combobox.current(0)
 
-    def set_callbacks(self, callbacks: Dict[str, Callable]):
+    def set_callbacks(self, callbacks: CallbackTypes):
         """コールバック関数を設定"""
         print(
             f"[DEBUG] set_callbacks が呼び出されました: {len(callbacks)}個のコールバック"
@@ -292,7 +385,7 @@ class MainView:
 
         print(f"[DEBUG] コールバック設定後: {len(self.callbacks)}個")
         print(
-            f"[DEBUG] on_item_tag_change設定確認: {self.callbacks.get('on_item_tag_change')}"
+            f"[DEBUG] on_item_tag_change設定確認: {self.get_callback('on_item_tag_change')}"
         )
 
         # ボタンのコマンドを更新
@@ -302,7 +395,7 @@ class MainView:
         """ボタンのコマンドを更新"""
         try:
             if hasattr(self, "item_tag_change_button") and self.item_tag_change_button:
-                callback = self.callbacks.get("on_item_tag_change")
+                callback = self.get_callback("on_item_tag_change")
                 if callback:
                     print(f"[DEBUG] 現品票切り替えボタンのコマンドを更新: {callback}")
                     self.item_tag_change_button.config(command=callback)
@@ -434,14 +527,18 @@ class MainView:
 
     def _on_model_selected(self, event=None):
         """モデル選択時のイベントハンドラー"""
-        if "on_model_selected" in self.callbacks:
-            self.callbacks["on_model_selected"]()
+        if self.has_callback("on_model_selected"):
+            callback = self.get_callback("on_model_selected")
+            if callback:
+                callback()
 
     def _on_lot_number_enter(self, event):
         """ロット番号入力フィールドでEnterキーが押された時の処理"""
         print("[DEBUG] ロット番号入力フィールドでEnterキーが押されました")
-        if "on_lot_number_save" in self.callbacks:
-            self.callbacks["on_lot_number_save"]()
+        if self.has_callback("on_lot_number_save"):
+            callback = self.get_callback("on_lot_number_save")
+            if callback:
+                callback()
 
     def show_message(self, message: str, title: str = "情報"):
         """メッセージを表示"""
@@ -504,20 +601,17 @@ class MainView:
         # 座標番号ラベル（白背景）
         self.coordinate_number_label = tk.Label(
             coordinate_frame,
-            text="",
+            text="0 / 0",
             font=("Arial", 12),
-            bg="white",
             width=10,
-            fg="black",
         )
         self.coordinate_number_label.pack(side=tk.LEFT, padx=5)
-        self.set_coordinate_number_text("0 / 0")  # 初期値を設定
 
         # 前へボタン
         prev_button = tk.Button(
             coordinate_frame,
             text="前へ",
-            command=self.callbacks.get("prev_coordinate"),
+            command=self.get_callback("prev_coordinate"),
             font=("Arial", 10),
         )
         prev_button.pack(side=tk.LEFT, padx=2)
@@ -526,7 +620,7 @@ class MainView:
         next_button = tk.Button(
             coordinate_frame,
             text="次へ",
-            command=self.callbacks.get("next_coordinate"),
+            command=self.get_callback("next_coordinate"),
             font=("Arial", 10),
         )
         next_button.pack(side=tk.LEFT, padx=2)
@@ -535,7 +629,7 @@ class MainView:
         clear_button = tk.Button(
             coordinate_frame,
             text="削除",
-            command=self.callbacks.get("delete_coordinate"),
+            command=self.get_callback("delete_coordinate"),
             font=("Arial", 10),
         )
         clear_button.pack(side=tk.LEFT, padx=2)
@@ -544,7 +638,7 @@ class MainView:
         all_clear_button = tk.Button(
             coordinate_frame,
             text="全削除",
-            command=self.callbacks.get("clear_coordinates"),
+            command=self.get_callback("clear_coordinates"),
             font=("Arial", 10),
         )
         all_clear_button.pack(side=tk.LEFT, padx=2)
@@ -554,14 +648,23 @@ class MainView:
         board_frame.pack(side=tk.LEFT, padx=5)
 
         # 基板選択ラベル
-        self.board_label = tk.Label(board_frame, text="基板選択:", font=("Arial", 10))
+        self.board_label = tk.Label(
+            board_frame,
+            text="基板選択:",
+            font=("Arial", 12),
+            width=10,
+        )
         self.board_label.pack(side=tk.LEFT, padx=5)
+
+        # 基板インデックスラベル
+        self.board_index_label = tk.Label(board_frame, text="0 / 0", font=("Arial", 12))
+        self.board_index_label.pack(side=tk.LEFT, padx=5)
 
         # 基板選択「前へ」ボタン
         prev_board_button = tk.Button(
             self.menu_frame,
             text="前へ",
-            command=self.callbacks.get("prev_board"),
+            command=self.get_callback("prev_board"),
             font=("Arial", 10),
         )
         prev_board_button.pack(side=tk.LEFT, padx=5)
@@ -570,10 +673,19 @@ class MainView:
         next_board_button = tk.Button(
             self.menu_frame,
             text="次へ",
-            command=self.callbacks.get("next_board"),
+            command=self.get_callback("next_board"),
             font=("Arial", 10),
         )
         next_board_button.pack(side=tk.LEFT, padx=5)
+
+        # 基板削除ボタン
+        delete_board_button = tk.Button(
+            self.menu_frame,
+            text="基板削除",
+            command=self.get_callback("delete_board"),
+            font=("Arial", 10),
+        )
+        delete_board_button.pack(side=tk.LEFT, padx=5)
 
     def get_form_data(self) -> Dict[str, Any]:
         """フォームデータを取得（旧コード互換）"""
