@@ -1691,11 +1691,37 @@ class MainController:
                     parsed_data["coordinates"], parsed_data["coordinate_details"]
                 )
 
+                # サイドバーに基本情報を設定
+                form_data = {
+                    "lot_number": parsed_data["lot_number"],
+                    "worker_no": parsed_data["worker_no"],
+                }
+                self.sidebar_view.set_form_data(form_data)
+                print(
+                    f"[最新JSON読み込み] サイドバーに基本情報を設定: ロット={parsed_data['lot_number']}, 作業者={parsed_data['worker_no']}"
+                )
+
                 # 座標マーカーを再描画
                 self._redraw_coordinates_for_new_scale()
 
                 coord_count = len(parsed_data["coordinates"])
                 print(f"[最新JSON読み込み] {coord_count}個の座標を復元しました")
+
+                # 最初の座標を自動選択して詳細表示（編集モード以外の場合）
+                current_mode = self.main_view.get_current_mode()
+                if current_mode == "閲覧" and coord_count > 0:
+                    self.coordinate_controller.set_current_coordinate(0)
+                    detail = self.coordinate_controller.get_current_coordinate_detail()
+                    if detail:
+                        detail["item_number"] = "1"  # 項目番号を設定
+                        self.sidebar_view.display_coordinate_info(detail, 0)
+                        # 選択した座標をハイライト表示
+                        self.canvas_view.highlight_coordinate(0)
+                        print(f"[最新JSON読み込み] 最初の座標を自動選択しました")
+                    else:
+                        # 詳細情報がない場合は項目番号のみ設定
+                        detail = {"item_number": "1"}
+                        self.sidebar_view.set_coordinate_detail(detail)
 
                 # 次のインデックスを保存名として設定
                 next_index = latest_index + 1
