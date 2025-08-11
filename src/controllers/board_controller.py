@@ -37,6 +37,32 @@ class BoardController:
         """サイドバービューを設定"""
         self.sidebar_view = sidebar_view
 
+    def set_board_model(self, board_model: "BoardModel") -> None:
+        """基盤モデルを設定"""
+        self.board_model = board_model
+
+    def set_coordinate_model(self, coordinate_model: "CoordinateModel") -> None:
+        """座標モデルを設定"""
+        self.coordinate_model = coordinate_model
+
+    def set_image_model(self, image_model: "ImageModel") -> None:
+        """画像モデルを設定"""
+        self.image_model = image_model
+
+    def set_file_controller(self, file_controller: "FileController") -> None:
+        """ファイルコントローラーを設定"""
+        self.file_controller = file_controller
+
+    def set_current_board_number(self, board_number: int) -> None:
+        """現在の基盤番号を設定"""
+        if board_number > 0:
+            self.board_model.set_current_board(board_number)
+            if self.sidebar_view:
+                self.sidebar_view.update_board_display(board_number)
+            print(f"現在の基盤番号を {board_number} に設定しました")
+        else:
+            raise ValueError("基盤番号は1以上の値を設定してください")
+
     def get_current_board_number(self) -> int:
         """現在の基盤番号を取得"""
         return self.board_model.current_board_number
@@ -295,6 +321,56 @@ class BoardController:
     def get_board_summary(self) -> Dict[str, Any]:
         """基盤管理の概要を取得"""
         return self.board_model.get_summary()
+
+    def set_board_data(
+        self,
+        board_number: int,
+        coordinates: List[Tuple[int, int]],
+        coordinate_details: List[Dict[str, Any]],
+        lot_number: str,
+        worker_no: str,
+        image_path: str = "",
+        model_name: str = "",
+    ) -> bool:
+        """指定された基盤にデータを設定"""
+        try:
+            success = self.board_model.save_board_data(
+                board_number,
+                coordinates,
+                coordinate_details,
+                lot_number,
+                worker_no,
+                image_path,
+                model_name,
+            )
+
+            if success:
+                print(
+                    f"基盤 {board_number} にデータを設定しました（座標数: {len(coordinates)}）"
+                )
+
+            return success
+
+        except Exception as e:
+            print(f"基盤データ設定エラー: {e}")
+            return False
+
+    def set_coordinates_for_current_board(
+        self,
+        coordinates: List[Tuple[int, int]],
+        coordinate_details: List[Dict[str, Any]] = None,
+    ) -> None:
+        """現在の基盤に座標データを設定"""
+        if coordinate_details is None:
+            coordinate_details = []
+
+        self.coordinate_model.set_coordinates_with_details(
+            coordinates, coordinate_details
+        )
+
+        print(
+            f"現在の基盤（{self.board_model.current_board_number}）に座標データを設定しました（座標数: {len(coordinates)}）"
+        )
 
     def has_unsaved_changes(self) -> bool:
         """現在の基盤に未保存の変更があるかチェック"""

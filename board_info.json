@@ -21,26 +21,26 @@
         ],
         "lot_number": "1234567-10",
         "worker_no": "001",
-        "image_path": "/test/sample_image.jpg",
+        "image_path": "",
         "model_name": "TEST_MODEL",
-        "created_at": "2025-08-11T08:48:30.230499",
-        "updated_at": "2025-08-11T08:48:30.230503",
+        "created_at": "2025-08-11T12:04:27.944919",
+        "updated_at": "2025-08-11T12:04:27.944924",
         "total_coordinates": 1
       }
     },
     "board_history": [
       1
     ],
-    "updated_at": "2025-08-11T08:48:30.232228"
+    "updated_at": "2025-08-11T12:04:27.947215"
   },
   "2025-08-11_Y8470608_SHINANOSEIKEN_1234567-10": {
     "date": "2025-08-11",
     "model_name": "Y8470608_SHINANOSEIKEN",
     "lot_number": "1234567-10",
-    "current_board": 2,
+    "current_board": 5,
     "boards_data": {
-      "1": {
-        "board_number": 1,
+      "4": {
+        "board_number": 4,
         "coordinates": [
           [
             201,
@@ -49,6 +49,10 @@
           [
             240,
             112
+          ],
+          [
+            280,
+            179
           ]
         ],
         "coordinate_details": [
@@ -65,20 +69,146 @@
             "defect": "",
             "repaired": "いいえ",
             "comment": ""
+          },
+          {
+            "item_number": "3",
+            "reference": "",
+            "defect": "",
+            "repaired": "いいえ",
+            "comment": ""
           }
         ],
         "lot_number": "1234567-10",
         "worker_no": "DEBUG",
         "image_path": "/Users/user/Pictures/image_coords_app/Y8470608_SHINANOSEIKEN.png",
         "model_name": "Y8470608_SHINANOSEIKEN",
-        "created_at": "2025-08-11T09:35:52.940101",
-        "updated_at": "2025-08-11T09:35:52.940155",
-        "total_coordinates": 2
+        "created_at": "2025-08-11T12:12:56.258731",
+        "updated_at": "2025-08-11T12:12:56.258756",
+        "total_coordinates": 3
       }
     },
     "board_history": [
-      1
+      1,
+      4,
+      5
     ],
-    "updated_at": "2025-08-11T09:35:52.944644"
+    "updated_at": "2025-08-11T12:12:56.262095"
+  },
+  "2024-01-15_CUSTOM_MODEL_9999999-10": {
+    "date": "2024-01-15",
+    "model_name": "CUSTOM_MODEL",
+    "lot_number": "9999999-10",
+    "current_board": 3,
+    "boards_data": {
+      "1": {
+        "board_number": 1,
+        "coordinates": [
+          [
+            100,
+            150
+          ]
+        ],
+        "coordinate_details": [
+          {
+            "reference": "A1",
+            "defect": "ズレ"
+          }
+        ],
+        "lot_number": "1234567-10",
+        "worker_no": "001",
+        "image_path": "",
+        "model_name": "TEST_MODEL",
+        "created_at": "2025-08-11T12:02:51.967178",
+        "updated_at": "2025-08-11T12:02:51.967183",
+        "total_coordinates": 1
+      },
+      "2": {
+        "board_number": 2,
+        "coordinates": [
+          [
+            300,
+            350
+          ]
+        ],
+        "coordinate_details": [
+          {
+            "reference": "C3",
+            "defect": "汚れ",
+            "comment": "基盤2の座標"
+          }
+        ],
+        "lot_number": "9999999-10",
+        "worker_no": "999",
+        "image_path": "",
+        "model_name": "CUSTOM_MODEL",
+        "created_at": "2025-08-11T12:02:51.970385",
+        "updated_at": "2025-08-11T12:02:51.970389",
+        "total_coordinates": 1
+      }
+    },
+    "board_history": [
+      1,
+      2
+    ],
+    "updated_at": "2025-08-11T12:02:51.971068"
+  },
+  "2025-08-11_TEST_MODEL_5555555-20": {
+    "date": "2025-08-11",
+    "model_name": "TEST_MODEL",
+    "lot_number": "5555555-20",
+    "current_board": 4,
+    "boards_data": {
+      "1": {
+        "board_number": 1,
+        "coordinates": [
+          [
+            100,
+            150
+          ]
+        ],
+        "coordinate_details": [
+          {
+            "reference": "A1",
+            "defect": "ズレ"
+          }
+        ],
+        "lot_number": "1234567-10",
+        "worker_no": "001",
+        "image_path": "",
+        "model_name": "TEST_MODEL",
+        "created_at": "2025-08-11T12:02:51.967178",
+        "updated_at": "2025-08-11T12:02:51.967183",
+        "total_coordinates": 1
+      },
+      "2": {
+        "board_number": 2,
+        "coordinates": [
+          [
+            300,
+            350
+          ]
+        ],
+        "coordinate_details": [
+          {
+            "reference": "C3",
+            "defect": "汚れ",
+            "comment": "基盤2の座標"
+          }
+        ],
+        "lot_number": "9999999-10",
+        "worker_no": "999",
+        "image_path": "",
+        "model_name": "CUSTOM_MODEL",
+        "created_at": "2025-08-11T12:02:51.970385",
+        "updated_at": "2025-08-11T12:02:51.970389",
+        "total_coordinates": 1
+      }
+    },
+    "board_history": [
+      1,
+      2,
+      3
+    ],
+    "updated_at": "2025-08-11T12:02:51.972860"
   }
 }

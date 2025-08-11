@@ -1320,46 +1320,16 @@ class MainController:
         print("[ボタン] 次の基板が選択されました")
 
         try:
-            # 現在のモデル、ロット番号、作業者情報を取得
+            # 次の基板への切り替えを実行
             selected_model = self.main_view.get_selected_model()
             lot_number = self.current_lot_number or self.sidebar_view.get_lot_number()
 
-            if (
-                not selected_model
-                or selected_model.startswith("画像")
-                or not lot_number
-            ):
-                messagebox.showwarning(
-                    "基盤切り替えエラー",
-                    "モデルとロット番号が設定されていません。\n基盤切り替えにはモデルとロット番号が必要です。",
-                )
-                return
-
-            # 次の基盤に切り替え
-            success = self.board_controller.switch_to_next_board(
-                self.current_date, selected_model, lot_number, self.current_worker_no
+            self._switch_to_next_board_with_validation(
+                selected_model=selected_model,
+                lot_number=lot_number,
+                worker_no=self.current_worker_no,
+                current_date=self.current_date,
             )
-
-            if success:
-                # 座標表示をクリア
-                self.coordinate_controller.clear_coordinates()
-
-                # 現在の基板番号を取得
-                board_number = self.board_controller.get_current_board_number()
-
-                # 既存のJSONファイルがあるかチェックして読み込み
-                self._load_existing_json_for_board(
-                    selected_model, lot_number, board_number
-                )
-
-                # 保存された基盤のメッセージを表示
-                prev_board = board_number - 1 if board_number > 1 else 1
-                self.main_view.show_message(
-                    f"基盤 {prev_board} のデータを保存して基盤 {board_number} に切り替えました"
-                )
-
-                # Undo/Redoボタンの状態を更新
-                self._update_undo_redo_state()
 
         except Exception as e:
             print(f"次の基盤切り替えエラー: {e}")
@@ -1510,6 +1480,62 @@ class MainController:
             messagebox.showerror(
                 "エラー", f"基盤セッション読み込み中にエラーが発生しました:\n{str(e)}"
             )
+
+    def _switch_to_next_board_with_validation(
+        self,
+        selected_model: str = None,
+        lot_number: str = None,
+        worker_no: str = None,
+        current_date=None,
+    ):
+        """次の基板への切り替えを実行（バリデーション付き）
+
+        Args:
+            selected_model: 選択されたモデル名（Noneの場合は現在のモデルを使用）
+            lot_number: ロット番号（Noneの場合は現在のロット番号を使用）
+            worker_no: 作業者番号（Noneの場合は現在の作業者番号を使用）
+            current_date: 現在の日付（Noneの場合は現在の日付を使用）
+        """
+        # 引数が指定されていない場合は現在の値を使用
+        if selected_model is None:
+            selected_model = self.main_view.get_selected_model()
+        if lot_number is None:
+            lot_number = self.current_lot_number or self.sidebar_view.get_lot_number()
+        if worker_no is None:
+            worker_no = self.current_worker_no
+        if current_date is None:
+            current_date = self.current_date
+
+        if not selected_model or selected_model.startswith("画像") or not lot_number:
+            messagebox.showwarning(
+                "基盤切り替えエラー",
+                "モデルとロット番号が設定されていません。\n基盤切り替えにはモデルとロット番号が必要です。",
+            )
+            return
+
+        # 次の基盤に切り替え
+        success = self.board_controller.switch_to_next_board(
+            current_date, selected_model, lot_number, worker_no
+        )
+
+        if success:
+            # 座標表示をクリア
+            self.coordinate_controller.clear_coordinates()
+
+            # 現在の基板番号を取得
+            board_number = self.board_controller.get_current_board_number()
+
+            # 既存のJSONファイルがあるかチェックして読み込み
+            self._load_existing_json_for_board(selected_model, lot_number, board_number)
+
+            # 保存された基盤のメッセージを表示
+            prev_board = board_number - 1 if board_number > 1 else 1
+            self.main_view.show_message(
+                f"基盤 {prev_board} のデータを保存して基盤 {board_number} に切り替えました"
+            )
+
+            # Undo/Redoボタンの状態を更新
+            self._update_undo_redo_state()
 
     def _save_current_board_to_session_and_json(
         self,
@@ -1672,78 +1698,16 @@ class MainController:
 
             # インデックスが最大のファイルを取得
             json_files.sort(key=lambda x: x[0])
-            latest_index, latest_filename = json_files[-1]
-            latest_filepath = os.path.join(json_dir, latest_filename)
+            max_index = json_files[-1][0]
 
-            print(
-                f"[最新JSON読み込み] 最新ファイルを発見: {latest_filename} (インデックス: {latest_index})"
+            self.board_controller.set_current_board_number(max_index)
+
+            self._switch_to_next_board_with_validation(
+                selected_model=model_name,
+                lot_number=lot_number,
+                worker_no=self.current_worker_no,
+                current_date=self.current_date,
             )
-
-            # JSONファイルからデータを読み込み
-            print(f"[最新JSON読み込み] ファイルを読み込み中: {latest_filepath}")
-
-            data = self.file_controller.load_json_data(latest_filepath)
-            parsed_data = self.file_controller.parse_loaded_data(data)
-
-            # 座標と詳細情報を復元
-            if parsed_data["coordinates"]:
-                self.coordinate_controller.load_coordinates_from_data(
-                    parsed_data["coordinates"], parsed_data["coordinate_details"]
-                )
-
-                # サイドバーに基本情報を設定
-                form_data = {
-                    "lot_number": parsed_data["lot_number"],
-                    "worker_no": parsed_data["worker_no"],
-                }
-                self.sidebar_view.set_form_data(form_data)
-                print(
-                    f"[最新JSON読み込み] サイドバーに基本情報を設定: ロット={parsed_data['lot_number']}, 作業者={parsed_data['worker_no']}"
-                )
-
-                # 座標マーカーを再描画
-                self._redraw_coordinates_for_new_scale()
-
-                coord_count = len(parsed_data["coordinates"])
-                print(f"[最新JSON読み込み] {coord_count}個の座標を復元しました")
-
-                # 最初の座標を自動選択して詳細表示（編集モード以外の場合）
-                current_mode = self.main_view.get_current_mode()
-                if current_mode == "閲覧" and coord_count > 0:
-                    self.coordinate_controller.set_current_coordinate(0)
-                    detail = self.coordinate_controller.get_current_coordinate_detail()
-                    if detail:
-                        detail["item_number"] = "1"  # 項目番号を設定
-                        self.sidebar_view.display_coordinate_info(detail, 0)
-                        # 選択した座標をハイライト表示
-                        self.canvas_view.highlight_coordinate(0)
-                        print(f"[最新JSON読み込み] 最初の座標を自動選択しました")
-                    else:
-                        # 詳細情報がない場合は項目番号のみ設定
-                        detail = {"item_number": "1"}
-                        self.sidebar_view.set_coordinate_detail(detail)
-
-                # 次のインデックスを保存名として設定
-                next_index = latest_index + 1
-                next_save_name = f"{next_index:04d}"
-
-                # MainViewとSidebarViewに次の保存名を設定
-                if hasattr(self.main_view, "set_save_name"):
-                    self.main_view.set_save_name(next_save_name)
-                if hasattr(self.sidebar_view, "set_save_name"):
-                    self.sidebar_view.set_save_name(next_save_name)
-
-                print(f"[最新JSON読み込み] 次の保存名を設定: {next_save_name}")
-
-                # 成功メッセージを表示
-                self.main_view.show_message(
-                    f"既存のJSONファイル（{latest_filename}）から座標データ（{coord_count}個）を読み込みました\n次の保存名: {next_save_name}"
-                )
-
-                return True
-            else:
-                print(f"[最新JSON読み込み] JSONファイルに座標データがありません")
-                return False
 
         except Exception as e:
             print(f"[最新JSON読み込み] ファイル読み込みエラー: {e}")
