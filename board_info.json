@@ -215,13 +215,50 @@
     "date": "2025-08-12",
     "model_name": "Y8470680R_AAE004547-CAA_MAIN_A面",
     "lot_number": "1234567-10",
-    "current_board": 1,
-    "boards_data": {},
+    "current_board": 2,
+    "boards_data": {
+      "1": {
+        "board_number": 1,
+        "coordinates": [
+          [
+            1338,
+            514
+          ],
+          [
+            1399,
+            774
+          ]
+        ],
+        "coordinate_details": [
+          {
+            "item_number": "1",
+            "reference": "",
+            "defect": "",
+            "repaired": "いいえ",
+            "comment": ""
+          },
+          {
+            "item_number": "2",
+            "reference": "",
+            "defect": "",
+            "repaired": "いいえ",
+            "comment": ""
+          }
+        ],
+        "lot_number": "1234567-10",
+        "worker_no": "DEBUG",
+        "image_path": "C:/Users/kentaroyoshida/Pictures/image_coords_app\\Y8470680R_AAE004547-CAA_MAIN_A面.jpg",
+        "model_name": "Y8470680R_AAE004547-CAA_MAIN_A面",
+        "created_at": "2025-08-12T17:20:54.136159",
+        "updated_at": "2025-08-12T17:20:54.136159",
+        "total_coordinates": 2
+      }
+    },
     "board_history": [
       1,
       2,
       3
     ],
-    "updated_at": "2025-08-12T17:19:45.291959"
+    "updated_at": "2025-08-12T17:20:54.154149"
   }
 }
