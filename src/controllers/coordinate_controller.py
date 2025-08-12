@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from ..models.image_model import ImageModel
     from ..views.coordinate_canvas_view import CoordinateCanvasView
     from ..views.sidebar_view import SidebarView
+    from ..views.main_view import MainView
 
 
 class CoordinateController:
@@ -23,6 +24,7 @@ class CoordinateController:
         # ビューへの参照（後で設定）
         self.canvas_view: Optional["CoordinateCanvasView"] = None
         self.sidebar_view: Optional["SidebarView"] = None
+        self.main_view: Optional["MainView"] = None
 
     def set_canvas_view(self, canvas_view: "CoordinateCanvasView") -> None:
         """キャンバスビューを設定"""
@@ -31,6 +33,10 @@ class CoordinateController:
     def set_sidebar_view(self, sidebar_view: "SidebarView") -> None:
         """サイドバービューを設定"""
         self.sidebar_view = sidebar_view
+    
+    def set_main_view(self, main_view: "MainView") -> None:
+        """メインビューを設定"""
+        self.main_view = main_view
 
     def add_coordinate(self, display_x: int, display_y: int) -> int:
         """座標を追加（表示座標から元座標に変換して保存）"""
@@ -46,6 +52,9 @@ class CoordinateController:
         if self.canvas_view:
             self.canvas_view.add_coordinate_marker(display_x, display_y, index + 1)
 
+        # メインビューの座標表示を更新
+        self._update_coordinate_display()
+
         return index
 
     def remove_coordinate(self, index: int) -> bool:
@@ -53,6 +62,10 @@ class CoordinateController:
         if self.coordinate_model.remove_coordinate(index):
             # ビューのマーカーを再描画
             self._redraw_all_markers()
+            
+            # メインビューの座標表示を更新
+            self._update_coordinate_display()
+            
             return True
         return False
 
@@ -66,6 +79,10 @@ class CoordinateController:
         if self.coordinate_model.update_coordinate(index, orig_x, orig_y):
             # ビューのマーカーを再描画
             self._redraw_all_markers()
+            
+            # メインビューの座標表示を更新
+            self._update_coordinate_display()
+            
             return True
         return False
 
@@ -113,6 +130,9 @@ class CoordinateController:
             elif self.sidebar_view:
                 self.sidebar_view.clear_form()
 
+            # メインビューの座標表示を更新
+            self._update_coordinate_display()
+
             return True
         return False
 
@@ -133,11 +153,18 @@ class CoordinateController:
         if self.canvas_view:
             self.canvas_view.clear_coordinate_markers()
             self.canvas_view.clear_highlight()
+        
+        # メインビューの座標表示を更新（クリア）
+        self._update_coordinate_display()
 
     def undo(self) -> bool:
         """元に戻す"""
         if self.coordinate_model.undo():
             self._redraw_all_markers()
+            
+            # メインビューの座標表示を更新
+            self._update_coordinate_display()
+            
             return True
         return False
 
@@ -145,6 +172,10 @@ class CoordinateController:
         """やり直し"""
         if self.coordinate_model.redo():
             self._redraw_all_markers()
+            
+            # メインビューの座標表示を更新
+            self._update_coordinate_display()
+            
             return True
         return False
 
@@ -165,6 +196,9 @@ class CoordinateController:
 
         # ビューのマーカーを再描画
         self._redraw_all_markers()
+        
+        # メインビューの座標表示を更新
+        self._update_coordinate_display()
 
     def _redraw_all_markers(self) -> None:
         """全マーカーを再描画"""
@@ -343,6 +377,9 @@ class CoordinateController:
                         # 座標が全て削除された場合はフォームをクリア
                         self.sidebar_view.clear_form()
 
+                # メインビューの座標表示を更新
+                self._update_coordinate_display()
+
             return success
         return False
 
@@ -360,7 +397,12 @@ class CoordinateController:
         else:
             new_index = current_index - 1
 
-        return self.set_current_coordinate(new_index)
+        result = self.set_current_coordinate(new_index)
+        
+        # メインビューの座標表示を更新（set_current_coordinateでも呼ばれるが明示的に）
+        self._update_coordinate_display()
+        
+        return result
 
     def select_next_coordinate(self) -> bool:
         """次の座標を選択"""
@@ -376,4 +418,38 @@ class CoordinateController:
         else:
             new_index = current_index + 1
 
-        return self.set_current_coordinate(new_index)
+        result = self.set_current_coordinate(new_index)
+        
+        # メインビューの座標表示を更新（set_current_coordinateでも呼ばれるが明示的に）
+        self._update_coordinate_display()
+        
+        return result
+
+    def _update_coordinate_display(self) -> None:
+        """メインビューの座標表示を更新"""
+        if not self.main_view:
+            return
+            
+        try:
+            # 座標データを取得
+            coordinates = self.coordinate_model.coordinates
+            current_index = self.coordinate_model.current_index
+            
+            # 座標データを辞書形式に変換（update_coordinate_display_realtimeが期待する形式）
+            coordinates_data = []
+            for i, (x, y) in enumerate(coordinates):
+                coordinates_data.append({
+                    "index": i,
+                    "x": x,
+                    "y": y
+                })
+            
+            # メインビューの座標表示を更新
+            self.main_view.update_coordinate_display_realtime(coordinates_data, current_index)
+            
+            print(f"[DEBUG] 座標表示更新: {len(coordinates_data)}個の座標, 選択インデックス: {current_index}")
+            
+        except Exception as e:
+            print(f"[ERROR] 座標表示更新エラー: {e}")
+            import traceback
+            traceback.print_exc()

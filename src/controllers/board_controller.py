@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from ..models.coordinate_model import CoordinateModel
     from ..models.image_model import ImageModel
     from ..views.sidebar_view import SidebarView
+    from ..views.main_view import MainView
 
 
 class BoardController:
@@ -32,10 +33,15 @@ class BoardController:
 
         # ビューへの参照（後で設定）
         self.sidebar_view: Optional["SidebarView"] = None
+        self.main_view: Optional["MainView"] = None
 
     def set_sidebar_view(self, sidebar_view: "SidebarView") -> None:
         """サイドバービューを設定"""
         self.sidebar_view = sidebar_view
+
+    def set_main_view(self, main_view: "MainView") -> None:
+        """メインビューを設定"""
+        self.main_view = main_view
 
     def set_board_model(self, board_model: "BoardModel") -> None:
         """基盤モデルを設定"""
@@ -59,6 +65,10 @@ class BoardController:
             self.board_model.set_current_board(board_number)
             if self.sidebar_view:
                 self.sidebar_view.update_board_display(board_number)
+                
+            # メインビューの基盤表示を更新
+            self._update_board_display()
+                
             print(f"現在の基盤番号を {board_number} に設定しました")
         else:
             raise ValueError("基盤番号は1以上の値を設定してください")
@@ -112,6 +122,9 @@ class BoardController:
             if self.sidebar_view:
                 self.sidebar_view.clear_form()
                 self.sidebar_view.update_board_display(next_board_number)
+
+            # メインビューの基盤表示を更新
+            self._update_board_display()
 
             # 基盤情報をファイルに保存
             date_str = current_date.strftime("%Y-%m-%d")
@@ -172,6 +185,9 @@ class BoardController:
             if self.sidebar_view:
                 self.sidebar_view.update_board_display(previous_board_number)
 
+            # メインビューの基盤表示を更新
+            self._update_board_display()
+
             # 基盤情報をファイルに保存
             date_str = current_date.strftime("%Y-%m-%d")
             self.board_model.save_board_info_to_file(date_str, model_name, lot_number)
@@ -214,6 +230,9 @@ class BoardController:
             if self.sidebar_view:
                 self.sidebar_view.clear_form()
                 self.sidebar_view.update_board_display(new_board_number)
+
+            # メインビューの基盤表示を更新
+            self._update_board_display()
 
             # 基盤情報をファイルに保存
             date_str = current_date.strftime("%Y-%m-%d")
@@ -306,6 +325,9 @@ class BoardController:
                 # サイドバーの表示を更新
                 if self.sidebar_view:
                     self.sidebar_view.update_board_display(current_board_number)
+
+                # メインビューの基盤表示を更新
+                self._update_board_display()
 
                 print(
                     f"基盤セッションを読み込みました（現在の基盤: {current_board_number}）"
@@ -496,3 +518,39 @@ class BoardController:
 
         except Exception as e:
             print(f"基盤セッションリセットエラー: {e}")
+
+    def _update_board_display(self) -> None:
+        """メインビューの基盤表示を更新"""
+        if not self.main_view:
+            return
+            
+        try:
+            # 基盤データを取得
+            current_board_number = self.board_model.current_board_number
+            board_list = self.board_model.get_board_list()
+            
+            # 基盤データを辞書形式に変換（update_board_display_realtimeが期待する形式）
+            boards_data = []
+            for board_number in sorted(board_list) if board_list else [1]:
+                boards_data.append({
+                    "board_number": board_number,
+                    "is_current": board_number == current_board_number
+                })
+            
+            # 現在の基盤のインデックスを計算
+            if board_list:
+                sorted_boards = sorted(board_list)
+                current_index = sorted_boards.index(current_board_number) if current_board_number in sorted_boards else 0
+            else:
+                current_index = 0
+                boards_data = [{"board_number": 1, "is_current": True}]
+            
+            # メインビューの基盤表示を更新
+            self.main_view.update_board_display_realtime(boards_data, current_index)
+            
+            print(f"[DEBUG] 基盤表示更新: {len(boards_data)}個の基盤, 選択インデックス: {current_index}, 現在の基盤: {current_board_number}")
+            
+        except Exception as e:
+            print(f"[ERROR] 基盤表示更新エラー: {e}")
+            import traceback
+            traceback.print_exc()

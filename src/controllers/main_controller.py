@@ -106,7 +106,9 @@ class MainController:
         # コントローラー間の連携を設定
         self.coordinate_controller.set_canvas_view(self.canvas_view)
         self.coordinate_controller.set_sidebar_view(self.sidebar_view)
+        self.coordinate_controller.set_main_view(self.main_view)
         self.board_controller.set_sidebar_view(self.sidebar_view)
+        self.board_controller.set_main_view(self.main_view)
 
         # SidebarViewにMainViewの参照を設定
         self.sidebar_view.set_main_view_reference(self.main_view)
@@ -378,6 +380,10 @@ class MainController:
             if auto_save_name:
                 self.main_view.set_save_name(auto_save_name)
 
+            # 基盤表示を更新（モデルとロットが設定されている場合）
+            if current_lot:
+                self._update_board_display()
+
             if not model_changed:
                 print(f"モデルを選択しました: {selected_model}")
 
@@ -607,6 +613,36 @@ class MainController:
         self.sidebar_view.set_lot_number(lot_number)
         print(f"ロット番号を保存しました: {lot_number}")
 
+        # 現在の座標データがある場合は基盤データも保存
+        current_coordinates = self.coordinate_controller.get_all_coordinates()
+        if current_coordinates:
+            try:
+                # 座標詳細情報を取得
+                coordinate_details = self.coordinate_controller.get_all_coordinate_details()
+                
+                # 現在の基盤データを保存
+                success = self.board_model.save_board_data(
+                    self.board_model.current_board_number,
+                    current_coordinates,
+                    coordinate_details,
+                    lot_number,
+                    self.current_worker_no or "",
+                    self.image_model.current_image_path or "",
+                    selected_model,
+                )
+                
+                if success:
+                    print(f"ロット番号設定時に基盤 {self.board_model.current_board_number} のデータを保存しました")
+                    
+                    # 基盤情報をファイルにも保存
+                    date_str = self.current_date.strftime("%Y-%m-%d")
+                    self.board_model.save_board_info_to_file(date_str, selected_model, lot_number)
+                else:
+                    print(f"基盤データの保存に失敗しました")
+                    
+            except Exception as e:
+                print(f"基盤データ保存エラー: {e}")
+
         # ロット番号入力フィールドをクリア
         self.main_view.clear_lot_number()
 
@@ -624,6 +660,9 @@ class MainController:
 
         # 対象ディレクトリの最新JSONファイルをチェックして自動読み込み
         self._check_and_load_latest_json(selected_model, lot_number)
+
+        # 基盤表示を初期化
+        self._update_board_display()
 
         self.main_view.show_message(f"ロット番号を設定しました: {lot_number}")
 
@@ -1002,6 +1041,19 @@ class MainController:
         except Exception as e:
             print(f"座標再描画エラー: {e}")
 
+    def _update_board_display(self) -> None:
+        """基盤表示を更新"""
+        try:
+            # BoardControllerの_update_board_display()メソッドを呼び出し
+            if hasattr(self.board_controller, '_update_board_display'):
+                self.board_controller._update_board_display()
+            else:
+                print("[DEBUG] BoardController._update_board_displayメソッドが見つかりません")
+        except Exception as e:
+            print(f"基盤表示更新エラー: {e}")
+            import traceback
+            traceback.print_exc()
+
     def on_item_tag_change(self):
         """現品票で切り替えボタンが押された時の処理"""
         print("[DEBUG] 現品票切り替えボタンがクリックされました")
@@ -1033,6 +1085,37 @@ class MainController:
 
                     # 現在のロット番号を更新
                     self.current_lot_number = lot_number
+
+                    # 現在の座標データがある場合は基盤データも保存
+                    current_coordinates = self.coordinate_controller.get_all_coordinates()
+                    selected_model = self.main_view.get_selected_model()
+                    if current_coordinates and selected_model and not selected_model.startswith("画像"):
+                        try:
+                            # 座標詳細情報を取得
+                            coordinate_details = self.coordinate_controller.get_all_coordinate_details()
+                            
+                            # 現在の基盤データを保存
+                            success = self.board_model.save_board_data(
+                                self.board_model.current_board_number,
+                                current_coordinates,
+                                coordinate_details,
+                                lot_number,
+                                self.current_worker_no or "",
+                                self.image_model.current_image_path or "",
+                                selected_model,
+                            )
+                            
+                            if success:
+                                print(f"現品票切り替え時に基盤 {self.board_model.current_board_number} のデータを保存しました")
+                                
+                                # 基盤情報をファイルにも保存
+                                date_str = self.current_date.strftime("%Y-%m-%d")
+                                self.board_model.save_board_info_to_file(date_str, selected_model, lot_number)
+                            else:
+                                print(f"基盤データの保存に失敗しました")
+                                
+                        except Exception as e:
+                            print(f"基盤データ保存エラー: {e}")
 
                     # 製番に基づいてモデル切り替え処理を実行
                     print(f"[DEBUG] 製番 '{product_number}' でモデル検索を開始")
@@ -1299,6 +1382,9 @@ class MainController:
                 # 座標表示を更新
                 self._redraw_coordinates_for_new_scale()
 
+                # 基盤表示を更新
+                self._update_board_display()
+
                 next_board = board_number + 1
                 self.main_view.show_message(
                     f"基盤 {next_board} のデータを保存して基盤 {board_number} に戻りました"
@@ -1376,6 +1462,9 @@ class MainController:
                 if success:
                     # 座標表示を更新
                     self._redraw_coordinates_for_new_scale()
+
+                    # 基盤表示を更新
+                    self._update_board_display()
 
                     # アンドゥ/リドゥの状態を更新
                     self._update_undo_redo_state()
@@ -1464,6 +1553,9 @@ class MainController:
                 # 座標表示を更新
                 self._redraw_coordinates_for_new_scale()
 
+                # 基盤表示を更新
+                self._update_board_display()
+
                 board_summary = self.board_controller.get_board_summary()
                 board_number = self.board_controller.get_current_board_number()
                 messagebox.showinfo(
@@ -1527,6 +1619,9 @@ class MainController:
 
             # 既存のJSONファイルがあるかチェックして読み込み
             self._load_existing_json_for_board(selected_model, lot_number, board_number)
+
+            # 基盤表示を更新
+            self._update_board_display()
 
             # 保存された基盤のメッセージを表示
             prev_board = board_number - 1 if board_number > 1 else 1
