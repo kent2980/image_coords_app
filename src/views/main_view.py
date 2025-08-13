@@ -813,15 +813,6 @@ class MainView:
         )
         next_board_button.pack(side=tk.LEFT, padx=5)
 
-        # 基板削除ボタン
-        delete_board_button = tk.Button(
-            self.menu_frame,
-            text="基板削除",
-            command=lambda: self.trigger_board_callback_with_update("delete_board"),
-            font=("Arial", 10),
-        )
-        delete_board_button.pack(side=tk.LEFT, padx=5)
-
     def get_form_data(self) -> Dict[str, Any]:
         """フォームデータを取得（旧コード互換）"""
         return {

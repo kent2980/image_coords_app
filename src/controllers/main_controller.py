@@ -380,10 +380,6 @@ class MainController:
             if auto_save_name:
                 self.main_view.set_save_name(auto_save_name)
 
-            # 基盤表示を更新（モデルとロットが設定されている場合）
-            if current_lot:
-                self._update_board_display()
-
             if not model_changed:
                 print(f"モデルを選択しました: {selected_model}")
 
@@ -660,11 +656,6 @@ class MainController:
 
         # 対象ディレクトリの最新JSONファイルをチェックして自動読み込み
         self._check_and_load_latest_json(selected_model, lot_number)
-
-        # 基盤表示を初期化
-        self._update_board_display()
-
-        self.main_view.show_message(f"ロット番号を設定しました: {lot_number}")
 
     def setup_save_name_entry(self):
         """保存名を自動設定"""
@@ -1382,13 +1373,7 @@ class MainController:
                 # 座標表示を更新
                 self._redraw_coordinates_for_new_scale()
 
-                # 基盤表示を更新
-                self._update_board_display()
-
                 next_board = board_number + 1
-                self.main_view.show_message(
-                    f"基盤 {next_board} のデータを保存して基盤 {board_number} に戻りました"
-                )
 
                 # Undo/Redoボタンの状態を更新
                 self._update_undo_redo_state()
@@ -1404,6 +1389,15 @@ class MainController:
     def next_board(self):
         """次の基板を選択"""
         print("[ボタン] 次の基板が選択されました")
+
+        coordinate_count = len(self.coordinate_controller.get_all_coordinates())
+
+        if coordinate_count == 0:
+            messagebox.showwarning(
+                "基盤切り替えエラー",
+                "現在の基盤には座標データがありません。\n基盤を切り替えるには座標データが必要です。",
+            )
+            return 
 
         try:
             # 次の基板への切り替えを実行
@@ -1463,9 +1457,6 @@ class MainController:
                     # 座標表示を更新
                     self._redraw_coordinates_for_new_scale()
 
-                    # 基盤表示を更新
-                    self._update_board_display()
-
                     # アンドゥ/リドゥの状態を更新
                     self._update_undo_redo_state()
 
@@ -1473,6 +1464,7 @@ class MainController:
                     messagebox.showinfo(
                         "基板削除", f"基板を削除しました。現在の基板: {board_number}"
                     )
+                        
                 else:
                     messagebox.showerror("エラー", "基板削除に失敗しました。")
 
@@ -1553,9 +1545,6 @@ class MainController:
                 # 座標表示を更新
                 self._redraw_coordinates_for_new_scale()
 
-                # 基盤表示を更新
-                self._update_board_display()
-
                 board_summary = self.board_controller.get_board_summary()
                 board_number = self.board_controller.get_current_board_number()
                 messagebox.showinfo(
@@ -1620,14 +1609,8 @@ class MainController:
             # 既存のJSONファイルがあるかチェックして読み込み
             self._load_existing_json_for_board(selected_model, lot_number, board_number)
 
-            # 基盤表示を更新
-            self._update_board_display()
-
             # 保存された基盤のメッセージを表示
             prev_board = board_number - 1 if board_number > 1 else 1
-            self.main_view.show_message(
-                f"基盤 {prev_board} のデータを保存して基盤 {board_number} に切り替えました"
-            )
 
             # Undo/Redoボタンの状態を更新
             self._update_undo_redo_state()
@@ -1740,11 +1723,6 @@ class MainController:
                 coord_count = len(parsed_data["coordinates"])
                 print(
                     f"[JSONロード] 基盤 {board_number} に {coord_count}個の座標を復元しました"
-                )
-
-                # 成功メッセージを表示
-                self.main_view.show_message(
-                    f"基盤 {board_number} の座標データ（{coord_count}個）をJSONファイルから読み込みました"
                 )
 
                 return True

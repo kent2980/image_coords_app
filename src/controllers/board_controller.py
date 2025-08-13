@@ -76,18 +76,19 @@ class BoardController:
     def get_current_board_number(self) -> int:
         """現在の基盤番号を取得"""
         return self.board_model.current_board_number
-    
-    def get_board_max_number(self) -> int:
+
+    def get_board_max_number(self, mode: str, is_delete: bool) -> int:
         """現在のデータディレクトリに存在するJSONファイルの数を返却します"""
 
-        save_dir = self.file_controller.get_save_dir()
-        if not save_dir:
+        json_files = self.file_controller.get_json_lists()
+        if len(json_files) == 0:
             return 0
-
-        json_files = [
-            f for f in os.listdir(save_dir) if f.endswith('.json')
-        ]
-        return len(json_files) + 1
+        if is_delete:
+            return len(json_files)
+        if mode == "編集":
+            return len(json_files) + 1
+        else:
+            return len(json_files) 
 
     def switch_to_next_board(
         self, current_date: date, model_name: str, lot_number: str, worker_no: str
@@ -217,6 +218,14 @@ class BoardController:
         """現在の基盤を削除"""
         try:
             current_board_number = self.board_model.current_board_number
+            
+            # 現在のJSONパスを取得
+            json_path = self.file_controller.get_current_json_path()
+
+            # JSONファイルを削除
+            if json_path:
+                if os.path.exists(json_path):
+                    os.remove(json_path)
 
             # 基盤データを削除
             self.board_model.delete_board_data(current_board_number)
@@ -225,14 +234,14 @@ class BoardController:
             self.coordinate_model.clear_coordinates()
 
             # 削除後の基盤番号を決定
-            board_list = self.board_model.get_board_list()
+            board_list = self.file_controller.get_json_lists()
 
             if board_list:
                 # 残っている基盤がある場合は最後の基盤に切り替え
-                last_board = max(board_list)
-                self.board_model.set_current_board(last_board)
-                self._load_board_data(last_board)
-                new_board_number = last_board
+                board_count = len(board_list)
+                self.board_model.set_current_board(board_count)
+                self._load_board_data(board_count)
+                new_board_number = board_count
             else:
                 # 基盤が全て削除された場合は基盤1に戻る
                 self.board_model.set_current_board(1)
@@ -244,7 +253,7 @@ class BoardController:
                 self.sidebar_view.update_board_display(new_board_number)
 
             # メインビューの基盤表示を更新
-            self._update_board_display(new_board_number)
+            self._update_board_display(new_board_number,True)
 
             # 基盤情報をファイルに保存
             date_str = current_date.strftime("%Y-%m-%d")
@@ -531,14 +540,20 @@ class BoardController:
         except Exception as e:
             print(f"基盤セッションリセットエラー: {e}")
 
-    def _update_board_display(self, board_number: int) -> None:
+    def _update_board_display(self, board_number: int,is_delete:bool = False) -> None:
         """メインビューの基盤表示を更新"""
         if not self.main_view:
             return
             
         try:
-            max_number = self.get_board_max_number()
+            # 現在のモードを取得
+            mode = self.main_view.get_current_mode()
+            # 作成済み基盤の最大番号を取得
+            max_number = self.get_board_max_number(mode,is_delete)
+            # 現在の基盤番号を更新
             self.main_view.set_board_index_text(board_number, max_number)
+            # 現在のJSONファイルのパスを設定する
+            self.file_controller.set_current_json_path(board_number)
         except Exception as e:
             print(f"[ERROR] 基盤表示更新エラー: {e}")
             import traceback

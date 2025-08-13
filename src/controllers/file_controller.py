@@ -37,7 +37,13 @@ class FileController:
     def get_current_json_path(self) -> Optional[str]:
         """現在のJSONファイルパスを取得"""
         return self.current_json_path
-    
+
+    def set_current_json_path(self,board_number:int):
+        # 4桁の数字文字列（0埋め）を生成
+        board_number_str = f"{board_number:04d}"
+        self.current_json_path = os.path.join(self.save_dir, f"{board_number_str}.json")
+        print(f"現在のJSONファイルパスを設定しました: {self.current_json_path}")
+
     def get_default_defects(self) -> List[str]:
         """デフォルトの不良項目リストを取得"""
         return self.default_defects.copy()
@@ -479,6 +485,18 @@ class FileController:
         except Exception as e:
             print(f"保存名自動設定エラー: {e}")
             return current_save_name
+
+    def get_json_lists(self) -> List[str]:
+
+        save_dir = self.get_save_dir()
+        if not save_dir:
+            return []
+
+        json_files = [
+            f for f in os.listdir(save_dir) if f.endswith('.json')
+        ]
+
+        return json_files
     
     def show_info_message(self, message: str, title: str = "情報"):
         """情報メッセージを表示"""
