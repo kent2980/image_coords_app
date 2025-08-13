@@ -16,6 +16,9 @@ class FileController:
         self.coordinate_model = coordinate_model
         self.settings_model = settings_model
         self.worker_model = worker_model
+
+        # 現在の保存ディレクトリ
+        self.save_dir = None
         
         # 現在のJSONファイルパス
         self.current_json_path = None
@@ -25,6 +28,19 @@ class FileController:
             "ズレ", "裏", "飛び", "傷", "汚れ", "欠け",
             "変色", "寸法不良", "形状不良", "その他"
         ]
+    
+    # ゲッター関数
+    def get_save_dir(self) -> Optional[str]:
+        """現在の保存ディレクトリを取得"""
+        return self.save_dir
+    
+    def get_current_json_path(self) -> Optional[str]:
+        """現在のJSONファイルパスを取得"""
+        return self.current_json_path
+    
+    def get_default_defects(self) -> List[str]:
+        """デフォルトの不良項目リストを取得"""
+        return self.default_defects.copy()
     
     def select_image_file(self) -> Optional[str]:
         """画像ファイルを選択"""
@@ -447,11 +463,11 @@ class FileController:
                 return current_save_name
             
             # 保存ディレクトリを取得
-            save_dir = self.setup_json_save_dir(current_date, model_name, lot_number)
+            self.save_dir = self.setup_json_save_dir(current_date, model_name, lot_number)
             
-            if save_dir:
+            if self.save_dir:
                 # 次の連番を取得
-                next_number = self.get_next_sequential_number(save_dir)
+                next_number = self.get_next_sequential_number(self.save_dir)
                 
                 # 4桁ゼロパディングで保存名を設定
                 auto_save_name = f"{next_number:04d}"

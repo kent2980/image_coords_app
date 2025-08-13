@@ -538,10 +538,17 @@ class MainView:
             return self.board_index_label.cget("text")
         return ""
 
-    def set_board_index_text(self, text: str):
+    def set_board_index_text(self, current_board_number:int, max_board_number:int):
         """基盤インデックスラベルのテキストを設定"""
+
+        # 最大基盤番号が現在の基盤番号より小さい場合は更新
+        if current_board_number > max_board_number:
+            max_board_number = current_board_number
+
+        # ラベルのテキストを設定
         if hasattr(self, "board_index_label") and self.board_index_label:
-            self.board_index_label.config(text=text)
+            label_text = f"{current_board_number}/{max_board_number}"
+            self.board_index_label.config(text=label_text)
 
     def update_board_index_display(self, current_index: int, total_count: int):
         """基盤インデックス表示を更新（例：1/3）"""

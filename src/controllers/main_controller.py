@@ -1761,50 +1761,45 @@ class MainController:
 
     def _check_and_load_latest_json(self, model_name: str, lot_number: str):
         """対象ディレクトリの最新のJSONファイルを検索して自動読み込み、次のインデックスを設定"""
-        try:
-            # JSONファイルのディレクトリパスを構築
-            json_dir = self.file_controller.setup_json_save_dir(
-                self.current_date, model_name, lot_number
-            )
+    
+        # JSONファイルのディレクトリパスを構築
+        json_dir = self.file_controller.setup_json_save_dir(
+            self.current_date, model_name, lot_number
+        )
 
-            if not json_dir:
-                print(f"[最新JSON読み込み] ディレクトリが見つかりません")
-                return False
-
-            if not os.path.exists(json_dir):
-                print(f"[最新JSON読み込み] ディレクトリが存在しません: {json_dir}")
-                return False
-
-            # ディレクトリ内の全JSONファイルを検索
-            json_files = []
-            for filename in os.listdir(json_dir):
-                if filename.endswith(".json") and filename[:4].isdigit():
-                    try:
-                        index = int(filename[:4])
-                        json_files.append((index, filename))
-                    except ValueError:
-                        continue
-
-            if not json_files:
-                print(
-                    f"[最新JSON読み込み] 数字インデックスのJSONファイルが見つかりません: {json_dir}"
-                )
-                return False
-
-            # インデックスが最大のファイルを取得
-            json_files.sort(key=lambda x: x[0])
-            max_index = json_files[-1][0]
-
-            self.board_controller.set_current_board_number(max_index)
-
-            self._switch_to_next_board_with_validation(
-                selected_model=model_name,
-                lot_number=lot_number,
-                worker_no=self.current_worker_no,
-                current_date=self.current_date,
-            )
-
-        except Exception as e:
-            print(f"[最新JSON読み込み] ファイル読み込みエラー: {e}")
-            # エラーが発生しても処理を継続
+        if not json_dir:
+            print(f"[最新JSON読み込み] ディレクトリが見つかりません")
             return False
+
+        if not os.path.exists(json_dir):
+            print(f"[最新JSON読み込み] ディレクトリが存在しません: {json_dir}")
+            return False
+
+        # ディレクトリ内の全JSONファイルを検索
+        json_files = []
+        for filename in os.listdir(json_dir):
+            if filename.endswith(".json") and filename[:4].isdigit():
+                try:
+                    index = int(filename[:4])
+                    json_files.append((index, filename))
+                except ValueError:
+                    continue
+
+        if not json_files:
+            print(
+                f"[最新JSON読み込み] 数字インデックスのJSONファイルが見つかりません: {json_dir}"
+            )
+            return False
+
+        # インデックスが最大のファイルを取得
+        json_files.sort(key=lambda x: x[0])
+        max_index = json_files[-1][0]
+
+        self.board_controller.set_current_board_number(max_index)
+
+        self._switch_to_next_board_with_validation(
+            selected_model=model_name,
+            lot_number=lot_number,
+            worker_no=self.current_worker_no,
+            current_date=self.current_date,
+        )

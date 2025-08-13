@@ -67,7 +67,7 @@ class BoardController:
                 self.sidebar_view.update_board_display(board_number)
                 
             # メインビューの基盤表示を更新
-            self._update_board_display()
+            self._update_board_display(board_number)
                 
             print(f"現在の基盤番号を {board_number} に設定しました")
         else:
@@ -76,6 +76,18 @@ class BoardController:
     def get_current_board_number(self) -> int:
         """現在の基盤番号を取得"""
         return self.board_model.current_board_number
+    
+    def get_board_max_number(self) -> int:
+        """現在のデータディレクトリに存在するJSONファイルの数を返却します"""
+
+        save_dir = self.file_controller.get_save_dir()
+        if not save_dir:
+            return 0
+
+        json_files = [
+            f for f in os.listdir(save_dir) if f.endswith('.json')
+        ]
+        return len(json_files) + 1
 
     def switch_to_next_board(
         self, current_date: date, model_name: str, lot_number: str, worker_no: str
@@ -124,7 +136,7 @@ class BoardController:
                 self.sidebar_view.update_board_display(next_board_number)
 
             # メインビューの基盤表示を更新
-            self._update_board_display()
+            self._update_board_display(next_board_number)
 
             # 基盤情報をファイルに保存
             date_str = current_date.strftime("%Y-%m-%d")
@@ -186,7 +198,7 @@ class BoardController:
                 self.sidebar_view.update_board_display(previous_board_number)
 
             # メインビューの基盤表示を更新
-            self._update_board_display()
+            self._update_board_display(previous_board_number)
 
             # 基盤情報をファイルに保存
             date_str = current_date.strftime("%Y-%m-%d")
@@ -232,7 +244,7 @@ class BoardController:
                 self.sidebar_view.update_board_display(new_board_number)
 
             # メインビューの基盤表示を更新
-            self._update_board_display()
+            self._update_board_display(new_board_number)
 
             # 基盤情報をファイルに保存
             date_str = current_date.strftime("%Y-%m-%d")
@@ -327,7 +339,7 @@ class BoardController:
                     self.sidebar_view.update_board_display(current_board_number)
 
                 # メインビューの基盤表示を更新
-                self._update_board_display()
+                self._update_board_display(current_board_number)
 
                 print(
                     f"基盤セッションを読み込みました（現在の基盤: {current_board_number}）"
@@ -519,37 +531,14 @@ class BoardController:
         except Exception as e:
             print(f"基盤セッションリセットエラー: {e}")
 
-    def _update_board_display(self) -> None:
+    def _update_board_display(self, board_number: int) -> None:
         """メインビューの基盤表示を更新"""
         if not self.main_view:
             return
             
         try:
-            # 基盤データを取得
-            current_board_number = self.board_model.current_board_number
-            board_list = self.board_model.get_board_list()
-            
-            # 基盤データを辞書形式に変換（update_board_display_realtimeが期待する形式）
-            boards_data = []
-            for board_number in sorted(board_list) if board_list else [1]:
-                boards_data.append({
-                    "board_number": board_number,
-                    "is_current": board_number == current_board_number
-                })
-            
-            # 現在の基盤のインデックスを計算
-            if board_list:
-                sorted_boards = sorted(board_list)
-                current_index = sorted_boards.index(current_board_number) if current_board_number in sorted_boards else 0
-            else:
-                current_index = 0
-                boards_data = [{"board_number": 1, "is_current": True}]
-            
-            # メインビューの基盤表示を更新
-            self.main_view.update_board_display_realtime(boards_data, current_index)
-            
-            print(f"[DEBUG] 基盤表示更新: {len(boards_data)}個の基盤, 選択インデックス: {current_index}, 現在の基盤: {current_board_number}")
-            
+            max_number = self.get_board_max_number()
+            self.main_view.set_board_index_text(board_number, max_number)
         except Exception as e:
             print(f"[ERROR] 基盤表示更新エラー: {e}")
             import traceback
