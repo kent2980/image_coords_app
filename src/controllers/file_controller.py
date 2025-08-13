@@ -110,15 +110,34 @@ class FileController:
     def load_json_data(self, file_path: str) -> Dict[str, Any]:
         """JSONファイルを読み込み"""
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-            return data
+            # 最初にutf-8-sigで試行（BOM付きUTF-8対応）
+            try:
+                with open(file_path, 'r', encoding='utf-8-sig') as f:
+                    data = json.load(f)
+                print(f"[JSON読み込み] UTF-8 (BOM対応) で読み込み成功: {file_path}")
+                return data
+            except UnicodeDecodeError:
+                # utf-8-sigで失敗した場合はcp932（Shift_JIS）で試行
+                try:
+                    with open(file_path, 'r', encoding='cp932') as f:
+                        data = json.load(f)
+                    print(f"[JSON読み込み] CP932 (Shift_JIS) で読み込み成功: {file_path}")
+                    return data
+                except UnicodeDecodeError:
+                    # それでも失敗した場合はutf-8で試行
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                    print(f"[JSON読み込み] UTF-8 で読み込み成功: {file_path}")
+                    return data
         except Exception as e:
             raise Exception(f"JSONファイル読み込みエラー: {e}")
     
     def save_json_data(self, file_path: str, data: Dict[str, Any]) -> bool:
         """JSONファイルに保存"""
         try:
+            # ディレクトリが存在しない場合は作成
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            
             with open(file_path, 'w', encoding='utf-8') as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
             
@@ -127,12 +146,13 @@ class FileController:
             return True
         except Exception as e:
             raise Exception(f"JSONファイル保存エラー: {e}")
-    
-    def create_save_data(self, coordinates: List[Tuple[int, int]], image_path: str, 
-                        coordinate_details: List[Dict[str, Any]], lot_number: str, 
-                        worker_no: str) -> Dict[str, Any]:
+
+    def create_save_data(self, model: str, coordinates: List[Tuple[int, int]], image_path: str,
+                         coordinate_details: List[Dict[str, Any]], lot_number: str,
+                         worker_no: str) -> Dict[str, Any]:
         """保存用データを作成"""
         return {
+            'model': model,
             'coordinates': coordinates,
             'image_path': image_path,
             'coordinate_details': coordinate_details,
@@ -145,6 +165,7 @@ class FileController:
     def parse_loaded_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """読み込んだデータを解析"""
         parsed_data = {
+            'model': data.get('model', ''),
             'coordinates': data.get('coordinates', []),
             'image_path': data.get('image_path', ''),
             'coordinate_details': data.get('coordinate_details', []),
@@ -233,7 +254,7 @@ class FileController:
     
     def save_coordinates_with_auto_update(self, coordinates: List[Tuple[int, int]], 
                                         coordinate_details: List[Dict[str, Any]], 
-                                        lot_number: str, worker_no: str) -> bool:
+                                        lot_number: str, worker_no: str, model: str = "") -> bool:
         """座標データを自動更新保存（現在のJSONファイルに）"""
         if not self.current_json_path:
             return False
@@ -244,7 +265,7 @@ class FileController:
             
             # 保存データを作成
             save_data = self.create_save_data(
-                coordinates, image_path, coordinate_details, lot_number, worker_no
+                model, coordinates, image_path, coordinate_details, lot_number, worker_no
             )
             
             # 現在のJSONファイルを更新
@@ -293,7 +314,7 @@ class FileController:
             
             if os.path.exists(lot_number_info_path):
                 try:
-                    with open(lot_number_info_path, 'r', encoding='utf-8') as f:
+                    with open(lot_number_info_path, 'r', encoding='utf-8-sig') as f:
                         lot_number_info = json.load(f)
                 except (json.JSONDecodeError, Exception):
                     lot_number_info = {}
@@ -332,7 +353,7 @@ class FileController:
                 return None
             
             try:
-                with open(lot_number_info_path, 'r', encoding='utf-8') as f:
+                with open(lot_number_info_path, 'r', encoding='utf-8-sig') as f:
                     lot_number_info = json.load(f)
             except (json.JSONDecodeError, Exception) as e:
                 print(f"ロット番号情報ファイルの読み込みエラー: {e}")

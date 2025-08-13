@@ -670,10 +670,16 @@ class MainView:
     def _on_lot_number_enter(self, event):
         """ロット番号入力フィールドでEnterキーが押された時の処理"""
         print("[DEBUG] ロット番号入力フィールドでEnterキーが押されました")
-        if self.has_callback("on_lot_number_save"):
-            callback = self.get_callback("on_lot_number_save")
-            if callback:
-                callback()
+        if self.get_current_mode() == "編集":
+            if self.has_callback("on_lot_number_save"):
+                callback = self.get_callback("on_lot_number_save")
+                if callback:
+                    callback()
+        else:
+            if self.has_callback("load_start_json"):
+                callback = self.get_callback("load_start_json")
+                if callback:
+                    callback()
 
     def show_message(self, message: str, title: str = "情報"):
         """メッセージを表示"""

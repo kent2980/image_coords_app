@@ -155,7 +155,7 @@ class BoardModel:
             board_info = {}
             if os.path.exists(board_info_file):
                 try:
-                    with open(board_info_file, "r", encoding="utf-8") as f:
+                    with open(board_info_file, "r", encoding="utf-8-sig") as f:
                         board_info = json.load(f)
                 except (json.JSONDecodeError, Exception):
                     board_info = {}
@@ -195,7 +195,7 @@ class BoardModel:
             if not os.path.exists(board_info_file):
                 return False
 
-            with open(board_info_file, "r", encoding="utf-8") as f:
+            with open(board_info_file, "r", encoding="utf-8-sig") as f:
                 board_info = json.load(f)
 
             # キーを作成: "日付_モデル名_ロット番号"

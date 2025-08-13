@@ -8,6 +8,7 @@ import tkinter as tk
 from datetime import date, datetime
 from tkinter import messagebox
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+import json
 
 if TYPE_CHECKING:
     from ..controllers.board_controller import BoardController
@@ -178,6 +179,7 @@ class MainController:
             "on_lot_number_save": self.on_lot_number_save,  # ロット番号保存
             "setup_save_name_entry": self.setup_save_name_entry,  # 保存名自動設定
             "on_item_tag_change": self.on_item_tag_change,  # 現品票切り替え
+            "load_start_json": self.load_start_json,  # 閲覧モード用開始JSON読み込み
             # メニューコールバック
             "new_project": self.new_project,
             "new_file": self.new_file,
@@ -536,10 +538,13 @@ class MainController:
                     or self.sidebar_view.get_lot_number()
                 )
                 worker_no = form_data.get("worker_no") or self.current_worker_no
+                
+                # 現在のモデル名を取得
+                current_model = self.main_view.get_selected_model() or ""
 
                 # 自動更新保存
                 if self.file_controller.save_coordinates_with_auto_update(
-                    coordinates, coordinate_details, lot_number, worker_no
+                    coordinates, coordinate_details, lot_number, worker_no, current_model
                 ):
                     print(
                         f"JSONファイルを自動更新しました: {self.file_controller.current_json_path}"
@@ -769,11 +774,12 @@ class MainController:
                 )
 
                 # サイドバーに基本情報を設定
-                form_data = {
-                    "lot_number": parsed_data["lot_number"],
-                    "worker_no": parsed_data["worker_no"],
-                }
-                self.sidebar_view.set_form_data(form_data)
+                lot_number = parsed_data.get("lot_number", "")
+                worker_no = parsed_data.get("worker_no", "")
+                product_number = parsed_data.get("model", "").split("_")[0]
+                self.sidebar_view.set_lot_number(lot_number)
+                self.sidebar_view.set_worker_no(worker_no)
+                self.sidebar_view.set_product_number(product_number)
 
                 # モデルコンボボックスの情報をログ出力（デバッグ用）
                 model_values = self.main_view.get_model_values()
@@ -883,6 +889,7 @@ class MainController:
 
             # 保存データを作成
             save_data = self.file_controller.create_save_data(
+                current_model,
                 coordinates,
                 self.image_model.current_image_path,
                 coordinate_details,
@@ -1781,3 +1788,76 @@ class MainController:
             worker_no=self.current_worker_no,
             current_date=self.current_date,
         )
+
+    def load_start_json(self):
+        """閲覧モード用: ロット番号に基づいて開始JSONファイルを読み込み"""
+        import re
+
+        try:
+            # 現在のモードを確認
+            current_mode = self.main_view.get_current_mode()
+            if current_mode != "閲覧":
+                print("[load_start_json] 閲覧モード以外では実行できません")
+                return False
+
+            # ロット番号を取得
+            lot_number = self.main_view.get_lot_number().strip()
+            if not lot_number:
+                self.main_view.show_error("ロット番号を入力してください。")
+                return False
+
+            # ロット番号の形式をチェック (7桁-10/20の形式)
+            lot_pattern = r"^\d{7}-(10|20)$"
+            if not re.match(lot_pattern, lot_number):
+                self.main_view.show_error(
+                    "ロット番号の形式が正しくありません。\n形式: 1234567-10 または 1234567-20"
+                )
+                return False
+
+            print(f"[load_start_json] ロット番号による開始JSON読み込み: {lot_number}")
+
+            # ロット番号に基づいて対応するディレクトリを検索
+            json_dir = self._find_json_directory_by_lot_number(lot_number)
+            
+            if not json_dir:
+                self.main_view.show_error(
+                    f"ロット番号 '{lot_number}' に対応するディレクトリが見つかりませんでした。"
+                )
+                return False
+
+            # 開始JSONファイル（0001.json）のパスを構築
+            start_json_file = os.path.join(json_dir, "0001.json")
+            
+            if not os.path.exists(start_json_file):
+                self.main_view.show_error(
+                    f"開始JSONファイルが見つかりませんでした。\nパス: {start_json_file}"
+                )
+                return False
+
+            # JSONファイルを読み込み
+            print(f"[load_start_json] 開始JSONファイルを読み込み中: {start_json_file}")
+            self.load_json(file_path=start_json_file)
+            
+            # ロット番号入力フィールドをクリア
+            self.main_view.clear_lot_number()
+            
+            print(f"[load_start_json] 開始JSONファイルの読み込みが完了しました")
+            return True
+
+        except Exception as e:
+            print(f"[load_start_json] 開始JSON読み込みエラー: {e}")
+            self.main_view.show_error(f"開始JSON読み込み中にエラーが発生しました:\n{str(e)}")
+            return False
+
+    def _find_json_directory_by_lot_number(self, lot_number: str) -> Optional[str]:
+        """ロット番号に基づいてJSONディレクトリを検索"""
+        try:
+            # lot_number_info.jsonを読み込む
+            project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            info_file = os.path.join(project_root, "lot_number_info.json")
+            with open(info_file, "r", encoding="utf-8-sig") as f:
+                info_data = json.load(f)
+            return info_data.get(lot_number)
+        except Exception as e:
+            print(f"[find_json_dir] ディレクトリ検索エラー: {e}")
+            return None

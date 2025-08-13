@@ -304,6 +304,7 @@ class BoardController:
 
                 # JSONデータを作成
                 save_data = self.file_controller.create_save_data(
+                    board_data.get("model", model_name),
                     board_data["coordinates"],
                     board_data["image_path"],
                     board_data["coordinate_details"],
@@ -505,7 +506,7 @@ class BoardController:
 
             # 保存データを作成
             save_data = self.file_controller.create_save_data(
-                coordinates, image_path, coordinate_details, lot_number, worker_no
+                model_name, coordinates, image_path, coordinate_details, lot_number, worker_no
             )
 
             # 基盤番号を追加
