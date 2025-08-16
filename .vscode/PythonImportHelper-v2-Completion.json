@@ -1110,7 +1110,7 @@
         "kind": 6,
         "importPath": "src.controllers.coordinate_controller",
         "description": "src.controllers.coordinate_controller",
-        "peekOfCode": "class CoordinateController:\n    \"\"\"座標操作を管理するコントローラー\"\"\"\n    def __init__(self, coordinate_model: \"CoordinateModel\", image_model: \"ImageModel\"):\n        self.coordinate_model = coordinate_model\n        self.image_model = image_model\n        # ビューへの参照（後で設定）\n        self.canvas_view: Optional[\"CoordinateCanvasView\"] = None\n        self.sidebar_view: Optional[\"SidebarView\"] = None\n    def set_canvas_view(self, canvas_view: \"CoordinateCanvasView\") -> None:\n        \"\"\"キャンバスビューを設定\"\"\"",
+        "peekOfCode": "class CoordinateController:\n    \"\"\"座標操作を管理するコントローラー\"\"\"\n    def __init__(self, coordinate_model: \"CoordinateModel\", image_model: \"ImageModel\"):\n        self.coordinate_model = coordinate_model\n        self.image_model = image_model\n        # ビューへの参照（後で設定）\n        self.canvas_view: Optional[\"CoordinateCanvasView\"] = None\n        self.sidebar_view: Optional[\"SidebarView\"] = None\n        self.main_view: Optional[\"MainView\"] = None\n    def set_canvas_view(self, canvas_view: \"CoordinateCanvasView\") -> None:",
         "detail": "src.controllers.coordinate_controller",
         "documentation": {}
     },
@@ -1119,7 +1119,7 @@
         "kind": 6,
         "importPath": "src.controllers.file_controller",
         "description": "src.controllers.file_controller",
-        "peekOfCode": "class FileController:\n    \"\"\"ファイル操作を管理するコントローラー\"\"\"\n    def __init__(self, coordinate_model, settings_model, worker_model):\n        self.coordinate_model = coordinate_model\n        self.settings_model = settings_model\n        self.worker_model = worker_model\n        # 現在のJSONファイルパス\n        self.current_json_path = None\n        # デフォルトの不良項目\n        self.default_defects = [",
+        "peekOfCode": "class FileController:\n    \"\"\"ファイル操作を管理するコントローラー\"\"\"\n    def __init__(self, coordinate_model, settings_model, worker_model):\n        self.coordinate_model = coordinate_model\n        self.settings_model = settings_model\n        self.worker_model = worker_model\n        # 現在の保存ディレクトリ\n        self.save_dir = None\n        # 現在のJSONファイルパス\n        self.current_json_path = None",
         "detail": "src.controllers.file_controller",
         "documentation": {}
     },
