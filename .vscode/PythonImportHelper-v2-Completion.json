@@ -92,6 +92,14 @@
         "documentation": {}
     },
     {
+        "label": "datetime",
+        "importPath": "datetime",
+        "description": "datetime",
+        "isExtraImport": true,
+        "detail": "datetime",
+        "documentation": {}
+    },
+    {
         "label": "date",
         "importPath": "datetime",
         "description": "datetime",
@@ -896,6 +904,15 @@
         "documentation": {}
     },
     {
+        "label": "shutil",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "shutil",
+        "description": "shutil",
+        "detail": "shutil",
+        "documentation": {}
+    },
+    {
         "label": "BoardController",
         "importPath": "src.controllers",
         "description": "src.controllers",
@@ -1175,6 +1192,15 @@
         "description": "src.models.worker_model",
         "peekOfCode": "class WorkerModel:\n    \"\"\"作業者データを管理するモデル\"\"\"\n    def __init__(self):\n        self._worker_file = \"worker.csv\"\n        self._current_worker_no: str = \"\"\n        self._workers: Dict[str, str] = {}  # worker_no: worker_name\n        self._load_workers()\n    def _load_workers(self):\n        \"\"\"作業者データを読み込み\"\"\"\n        try:",
         "detail": "src.models.worker_model",
+        "documentation": {}
+    },
+    {
+        "label": "FileManager",
+        "kind": 6,
+        "importPath": "src.utils.file_manager_class",
+        "description": "src.utils.file_manager_class",
+        "peekOfCode": "class FileManager:\n    \"\"\"\n    ファイル管理を行うクラス\n    ### 機能:\n    - ファイルの検索\n    - JSONファイルの読み込み\n    - ファイルの履歴管理\n    - 操作ログの記録\n    - ファイルのバックアップ\n    - ファイルのロック管理",
+        "detail": "src.utils.file_manager_class",
         "documentation": {}
     },
     {
