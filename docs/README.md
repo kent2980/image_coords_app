@@ -79,27 +79,27 @@ graph TB
     MC[MainController] --> CC[CoordinateController]
     MC --> FC[FileController]
     MC --> BC[BoardController]
-    
+  
     MC --> CM[CoordinateModel]
     MC --> IM[ImageModel]
     MC --> WM[WorkerModel]
     MC --> BM[BoardModel]
     MC --> SM[SettingsModel]
-    
+  
     MC --> MV[MainView]
     MC --> CV[CanvasView]
     MC --> SV[SidebarView]
-    
+  
     FM[FileManager] --> FC
-    
+  
     CC --> CM
     CC --> IM
-    
+  
     classDef controller fill:#e1f5fe
     classDef model fill:#f3e5f5
     classDef view fill:#e8f5e8
     classDef utility fill:#fff3e0
-    
+  
     class MC,CC,FC,BC controller
     class CM,IM,WM,BM,SM model
     class MV,CV,SV view
@@ -222,14 +222,15 @@ root.mainloop()
 ### よくある問題
 
 1. **画像が表示されない**
+
    - `ImageModel.load_image()`のエラーログを確認
    - 対応画像形式かチェック（JPEG, PNG, BMP, GIF, TIFF）
-
 2. **座標が保存されない**
+
    - `CoordinateModel.coordinates`が空でないか確認
    - ファイル書き込み権限を確認
-
 3. **作業者情報が読み込まれない**
+
    - `worker.csv`ファイルの存在確認
    - UTF-8エンコーディングの確認
 
@@ -247,7 +248,7 @@ export DEBUG=1
 
 ### ログ出力
 
-各クラスで`print()`文によるデバッグ情報が出力されます。本格的なロギングシステムの導入も検討してください。
+各クラスで `print()`文によるデバッグ情報が出力されます。本格的なロギングシステムの導入も検討してください。
 
 ### 型チェック
 
@@ -269,13 +270,13 @@ pylint src/
 
 ## 関連ドキュメント
 
-- [API Reference](../README.md)
-- [User Manual](../USER_MANUAL.md)
-- [Development Guide](../DEVELOPMENT.md)
-- [Deployment Guide](../DEPLOYMENT.md)
+- [API Reference](./README.md)
+- [User Manual](./USER_MANUAL.md)
+- [Development Guide](./DEVELOPMENT.md)
+- [Deployment Guide](./DEPLOYMENT.md)
 
 ---
 
-**最終更新**: 2025年8月18日  
-**バージョン**: 1.0.0  
+**最終更新**: 2025年8月18日
+**バージョン**: 1.0.0
 **作成者**: GitHub Copilot
