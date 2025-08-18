@@ -615,6 +615,10 @@ class FileController:
 
         return json_files
     
+    def reload_lot_info(self) -> List[str]:
+        """lotInfo.jsonを更新"""
+        return self.file_manager.reload_lot_info()
+    
     def show_info_message(self, message: str, title: str = "情報"):
         """情報メッセージを表示"""
         from tkinter import messagebox

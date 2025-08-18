@@ -6,6 +6,7 @@ import re
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
 from pathlib import Path
+import ctypes
 
 
 class FileManager:
@@ -96,7 +97,7 @@ class FileManager:
 
         return self.lot_dir
 
-    def reload_lot_info(self) -> None:
+    def reload_lot_info(self) -> List[str]:
         """ロット情報を再読み込み"""
         json_list = []
         # ロットディレクトリ内のJSONファイルをリストアップ
@@ -104,11 +105,18 @@ class FileManager:
             if json_file.is_file():
                 if re.match(r'^\d{4}.json', json_file.name):
                     json_list.append(json_file.name)
-
-        # lotInfo.jsonファイルの内容を上書き保存（存在しなくても新規作成される）
-        lot_info_path = self.lot_dir / "lotInfo.json"
-        with open(lot_info_path, 'w', encoding='utf-8') as f:
-            json.dump({"json_list": json_list}, f, ensure_ascii=False, indent=4)
+                    # lotInfo.jsonファイルの内容を隠しファイルとして上書き保存（存在しなくても新規作成される）
+                    lot_info_path = self.lot_dir / "lotInfo.json"
+                    with open(lot_info_path, 'w', encoding='utf-8') as f:
+                        json.dump({"json_list": json_list}, f, ensure_ascii=False, indent=4)
+                    # Windowsの場合は隠し属性を付与
+                    try:
+                        FILE_ATTRIBUTE_HIDDEN = 0x02
+                        ctypes.windll.kernel32.SetFileAttributesW(str(lot_info_path), FILE_ATTRIBUTE_HIDDEN)
+                    except Exception:
+                        pass
+        
+        return json_list
 
     def validate_lot_number(self, lot_number: str) -> bool:
         """ロット番号の形式検証（7桁-2桁）"""

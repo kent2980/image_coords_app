@@ -1422,6 +1422,9 @@ class MainController:
                 current_date=self.current_date,
             )
 
+            # lotInfo.jsonを再読み込み
+            self.file_controller.reload_lot_info()
+
         except Exception as e:
             print(f"次の基盤切り替えエラー: {e}")
             messagebox.showerror(
@@ -1913,6 +1916,9 @@ class MainController:
                 self.main_view.set_save_name("")
                 
                 print(f"[delete_file] ファイル削除完了: {filename}")
+
+            # lotInfo.jsonを再読み込み
+            self.file_controller.reload_lot_info()
                 
         except Exception as e:
             print(f"[delete_file] ファイル削除処理エラー: {e}")
