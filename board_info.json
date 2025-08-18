@@ -345,5 +345,16 @@
       2
     ],
     "updated_at": "2025-08-13T16:54:59.580691"
+  },
+  "2025-08-18_Y8470680R_AAE004547-CAA_MAIN_A面_1234567-10": {
+    "date": "2025-08-18",
+    "model_name": "Y8470680R_AAE004547-CAA_MAIN_A面",
+    "lot_number": "1234567-10",
+    "current_board": 2,
+    "boards_data": {},
+    "board_history": [
+      1
+    ],
+    "updated_at": "2025-08-18T16:51:44.632336"
   }
 }

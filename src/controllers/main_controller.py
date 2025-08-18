@@ -104,6 +104,9 @@ class MainController:
 
             print("[DEBUG] デバッグモード: 作業者入力をスキップしました")
 
+        # FileManagerを初期化（作業者情報取得後）
+        self.file_controller.initialize_file_manager(self.current_worker_no or "作業者")
+
         # コントローラー間の連携を設定
         self.coordinate_controller.set_canvas_view(self.canvas_view)
         self.coordinate_controller.set_sidebar_view(self.sidebar_view)
@@ -186,6 +189,7 @@ class MainController:
             "open_file": self.open_file,
             "save_file": self.save_file,
             "exit_app": self.exit_app,
+            "delete_file": self.delete_file,
             # ボタンコールバック
             "prev_board": self.prev_board,
             "next_board": self.next_board,
@@ -1861,3 +1865,55 @@ class MainController:
         except Exception as e:
             print(f"[find_json_dir] ディレクトリ検索エラー: {e}")
             return None
+
+    def delete_file(self):
+        """
+        現在のファイルを削除（履歴フォルダに移動）
+        確認ダイアログ付き、検査担当者権限が必要
+        """
+        try:
+            # 現在のファイルパスを確認
+            current_path = self.file_controller.get_current_json_path()
+            if not current_path:
+                self.main_view.show_warning("削除対象のファイルが選択されていません")
+                return
+            
+            # 現在のユーザー情報を取得
+            current_user = self.worker_model._current_worker_no if self.worker_model._current_worker_no else "未設定"
+
+            # ファイル名を取得
+            filename = os.path.basename(current_path)
+            
+            # 確認ダイアログを表示
+            confirm_message = (
+                f"以下のファイルを削除しますか？\n\n"
+                f"ファイル: {filename}\n"
+                f"※ファイルは履歴フォルダに移動され、復元可能です\n"
+                f"※この操作には検査担当者権限が必要です"
+            )
+            
+            if not self.main_view.show_confirmation_dialog(confirm_message, "ファイル削除確認"):
+                return
+            
+            # FileControllerを使用してファイルを削除（履歴移動）
+            success = self.file_controller.delete_current_file()
+            
+            if success:
+                # UI状態をリセット
+                # self.coordinate_model.clear_coordinates()
+                self.coordinate_controller.clear_all_coordinates()
+                self.image_model.clear_image()
+                
+                # ビューを更新
+                # self.canvas_view.clear_image()
+                # self.canvas_view.clear_coordinates()
+                # self._update_coordinate_display()
+
+                # 保存名をクリア
+                self.main_view.set_save_name("")
+                
+                print(f"[delete_file] ファイル削除完了: {filename}")
+                
+        except Exception as e:
+            print(f"[delete_file] ファイル削除処理エラー: {e}")
+            self.main_view.show_error(f"ファイル削除処理中にエラーが発生しました:\n{str(e)}")

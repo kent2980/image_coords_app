@@ -4,6 +4,7 @@
 """
 
 import tkinter as tk
+import traceback
 from datetime import datetime
 from tkinter import ttk
 from typing import (
@@ -40,6 +41,7 @@ class CallbackTypes(TypedDict, total=False):
     open_file: CallbackProtocol
     save_file: CallbackProtocol
     exit_app: CallbackProtocol
+    delete_file: CallbackProtocol
 
     # 編集操作
     undo_action: CallbackProtocol
@@ -699,6 +701,12 @@ class MainView:
 
         messagebox.showwarning(title, message)
 
+    def show_confirmation_dialog(self, message: str, title: str = "確認") -> bool:
+        """確認ダイアログを表示"""
+        from tkinter import messagebox
+
+        return messagebox.askyesno(title, message)
+
     def show_item_tag_switch_dialog(self):
         """現品票切り替えダイアログを表示"""
         print("[DEBUG] show_item_tag_switch_dialog が呼び出されました")
@@ -818,6 +826,22 @@ class MainView:
             font=("Arial", 10),
         )
         next_board_button.pack(side=tk.LEFT, padx=5)
+
+        # ファイル操作フレーム
+        file_frame = tk.Frame(self.menu_frame)
+        file_frame.pack(side=tk.LEFT, padx=15)
+
+        # ファイル削除ボタン
+        delete_file_button = tk.Button(
+            file_frame,
+            text="🗑 ファイル削除",
+            command=self.get_callback("delete_file"),
+            font=("Arial", 10),
+            fg="red",
+            relief="raised",
+            padx=10,
+        )
+        delete_file_button.pack(side=tk.LEFT, padx=2)
 
     def get_form_data(self) -> Dict[str, Any]:
         """フォームデータを取得（旧コード互換）"""

@@ -7,10 +7,14 @@ import json
 from tkinter import filedialog, messagebox
 from datetime import datetime
 from typing import Dict, Any, List, Tuple, Optional
+from pathlib import Path
+
+# FileManagerクラスをインポート
+from src.utils.file_manager_class import FileManager
 
 
 class FileController:
-    """ファイル操作を管理するコントローラー"""
+    """ファイル操作を管理するコントローラー（FileManager統合版）"""
     
     def __init__(self, coordinate_model, settings_model, worker_model):
         self.coordinate_model = coordinate_model
@@ -23,11 +27,33 @@ class FileController:
         # 現在のJSONファイルパス
         self.current_json_path = None
         
+        # FileManagerのインスタンス
+        self.file_manager = None
+        
         # デフォルトの不良項目
         self.default_defects = [
             "ズレ", "裏", "飛び", "傷", "汚れ", "欠け",
             "変色", "寸法不良", "形状不良", "その他"
         ]
+    
+    def initialize_file_manager(self, current_user: str = "作業者"):
+        """FileManagerを初期化"""
+        data_directory = self.settings_model.data_directory
+        if data_directory and data_directory != "未選択":
+            self.file_manager = FileManager(
+                root_dir=data_directory,
+                user=current_user,
+                search_limit=100
+            )
+            print(f"FileManagerを初期化しました: {data_directory}")
+        else:
+            print("警告: データディレクトリが設定されていません")
+    
+    def ensure_file_manager(self) -> bool:
+        """FileManagerが初期化されているかチェック"""
+        if self.file_manager is None:
+            self.initialize_file_manager()
+        return self.file_manager is not None
     
     # ゲッター関数
     def get_save_dir(self) -> Optional[str]:
@@ -380,36 +406,21 @@ class FileController:
     
     def setup_json_save_dir(self, current_date, model_name: str, lot_number: str) -> Optional[str]:
         """
-        JSONファイルの保存先ディレクトリを作成 
-        \データディレクトリ\日付\モデル名\ロット番号\
-        
-        Args:
-            current_date: 現在の日付
-            model_name: モデル名
-            lot_number: ロット番号
-            
-        Returns:
-            str: 作成されたディレクトリのパス（作成できない場合はNone）
+        設計書に従ったJSONファイル保存先ディレクトリを作成
+        フォルダ構造: データディレクトリ/日付/モデル名/ロット番号/
         """
         try:
-            # 設定を読み込み
-            settings = self.settings_model.get_all_settings()
-            data_directory = settings.get('data_directory', '')
-            
-            if not data_directory or data_directory == "未選択":
-                print("データディレクトリが設定されていません。")
+            # FileManagerの確認
+            if not self.ensure_file_manager():
+                print("FileManagerが利用できません")
                 return None
             
-            # データディレクトリが存在するかチェック、存在しない場合は作成
-            if not os.path.exists(data_directory):
-                try:
-                    os.makedirs(data_directory, exist_ok=True)
-                    print(f"データディレクトリを作成しました: {data_directory}")
-                except Exception as e:
-                    print(f"データディレクトリの作成に失敗しました: {data_directory}, エラー: {e}")
-                    return None
+            # ロット番号の形式検証
+            if not self.file_manager.validate_lot_number(lot_number):
+                print(f"ロット番号の形式が不正です: {lot_number} (正しい形式: 1234567-10 または 1234567-20)")
+                return None
             
-            # 現在の日付を取得（YYYY-MM-DD形式）
+            # 日付文字列を作成
             current_date_str = current_date.strftime('%Y-%m-%d')
             
             if not model_name or model_name.startswith("画像") or model_name == "設定エラー":
@@ -420,68 +431,58 @@ class FileController:
                 print("ロット番号が設定されていません。")
                 return None
             
-            # ディレクトリパスを構築: データディレクトリ\日付\モデル名\ロット番号
-            save_dir = os.path.join(data_directory, current_date_str, model_name, lot_number)
-            
-            # ディレクトリを作成（存在しない場合）
-            os.makedirs(save_dir, exist_ok=True)
-            
+            # 設計書に従ったディレクトリ構造を作成
+            save_dir = self.file_manager.create_lot_directory_structure(
+                current_date_str, model_name, lot_number
+            )
+
             # ロット番号情報をJSONファイルに保存
-            self.save_lot_number_info(lot_number, save_dir)
+            self.save_lot_number_info(lot_number, str(save_dir))
 
             print(f"保存ディレクトリを作成/確認しました: {save_dir}")
-            return save_dir
+            return str(save_dir)
             
         except Exception as e:
             print(f"保存ディレクトリ作成エラー: {e}")
             return None
     
     def get_next_sequential_number(self, directory: str) -> int:
-        """指定されたディレクトリ内の連番ファイル名の次の番号を取得
-        
-        Args:
-            directory: 検索対象のディレクトリパス
-            
-        Returns:
-            int: 次の連番（0001から開始）
         """
-        if not directory or not os.path.exists(directory):
+        設計書に従った連番ファイル名の次の番号を取得
+        ファイル命名規則: <ロット番号>_<識別番号>.json
+        """
+        if not self.ensure_file_manager():
             return 1
         
         try:
-            # ディレクトリ内のJSONファイルを検索
-            json_files = []
-            for filename in os.listdir(directory):
-                if filename.endswith('.json') and os.path.isfile(os.path.join(directory, filename)):
-                    # ファイル名から数字部分を抽出
-                    name_without_ext = os.path.splitext(filename)[0]
-                    
-                    # 4桁の数字のみのファイル名かチェック
-                    if name_without_ext.isdigit() and len(name_without_ext) == 4:
-                        json_files.append(int(name_without_ext))
-            
-            if not json_files:
-                # 連番ファイルが存在しない場合は1から開始
+            # ディレクトリ内の最大識別番号を取得
+            directory_path = Path(directory)
+            if not directory_path.exists():
                 return 1
             
-            # 最大値の次の番号を返す
-            return max(json_files) + 1
+            max_number = 0
+            for json_file in directory_path.glob("*.json"):
+                filename = json_file.stem
+                # ロット番号_識別番号の形式をパース
+                if "_" in filename:
+                    parts = filename.split("_")
+                    if len(parts) >= 2:
+                        try:
+                            number = int(parts[-1])
+                            max_number = max(max_number, number)
+                        except ValueError:
+                            continue
+            
+            return max_number + 1
             
         except Exception as e:
             print(f"連番取得エラー: {e}")
             return 1
     
     def setup_save_name_entry(self, current_date, model_name: str, lot_number: str, current_save_name: str) -> str:
-        """保存名エントリに連番ファイル名を自動設定
-        
-        Args:
-            current_date: 現在の日付
-            model_name: モデル名
-            lot_number: ロット番号
-            current_save_name: 現在の保存名
-            
-        Returns:
-            str: 自動生成された保存名（空文字列の場合は変更なし）
+        """
+        設計書に従った保存名を自動生成
+        ファイル命名規則: <ロット番号>_<識別番号>.json
         """
         try:
             # 現在の保存名をチェック
@@ -489,15 +490,27 @@ class FileController:
                 # 保存名が既に設定されている場合は変更しない
                 return current_save_name
             
+            # FileManagerの確認
+            if not self.ensure_file_manager():
+                return current_save_name
+            
             # 保存ディレクトリを取得
             self.save_dir = self.setup_json_save_dir(current_date, model_name, lot_number)
             
             if self.save_dir:
-                # 次の連番を取得
-                next_number = self.get_next_sequential_number(self.save_dir)
+                # 日付文字列を作成
+                current_date_str = current_date.strftime('%Y-%m-%d')
                 
-                # 4桁ゼロパディングで保存名を設定
-                auto_save_name = f"{next_number:04d}"
+                # 次の識別番号を取得
+                next_sequence = self.file_manager.get_next_sequence_number(
+                    current_date_str, model_name, lot_number
+                )
+                
+                # 設計書に従ったファイル名を生成: <ロット番号>_<識別番号>
+                auto_save_name = self.file_manager.generate_sequential_filename(
+                    lot_number, next_sequence
+                ).replace('.json', '')  # 拡張子を除去
+                
                 print(f"保存名を自動設定しました: {auto_save_name}")
                 return auto_save_name
             
@@ -506,6 +519,89 @@ class FileController:
         except Exception as e:
             print(f"保存名自動設定エラー: {e}")
             return current_save_name
+
+    # ----------------------------
+    # FileManager統合メソッド
+    # ----------------------------
+    def search_files(self, query: str, date_str: str = None, model_name: str = None) -> List[Dict[str, str]]:
+        """ファイル検索（FileManager使用）"""
+        if not self.ensure_file_manager():
+            return []
+        
+        return self.file_manager.search_files(query, date_str, model_name)
+    
+    def move_file_to_history(self, file_path: str, date_str: str, model_name: str, lot_number: str) -> bool:
+        """ファイルを履歴フォルダに退避（検査担当者のみ）"""
+        if not self.ensure_file_manager():
+            return False
+        
+        return self.file_manager.move_to_history(file_path, date_str, model_name, lot_number)
+    
+    def restore_file_from_history(self, original_path: str, date_str: str, model_name: str, lot_number: str) -> bool:
+        """履歴から最新ファイルを復元（検査担当者のみ）"""
+        if not self.ensure_file_manager():
+            return False
+        
+        return self.file_manager.restore_latest(original_path, date_str, model_name, lot_number)
+    
+    def get_lot_files(self, date_str: str, model_name: str, lot_number: str, include_history: bool = False) -> List[Dict[str, str]]:
+        """指定ロットの全ファイルを取得"""
+        if not self.ensure_file_manager():
+            return []
+        
+        return self.file_manager.get_lot_files(date_str, model_name, lot_number, include_history)
+    
+    def get_operation_logs(self, start_date: datetime = None, end_date: datetime = None) -> List[Dict[str, str]]:
+        """操作ログを取得"""
+        if not self.ensure_file_manager():
+            return []
+        
+        return self.file_manager.get_operation_logs(start_date, end_date)
+    
+    def get_file_manager_statistics(self) -> Dict[str, int]:
+        """ファイル管理統計情報を取得"""
+        if not self.ensure_file_manager():
+            return {}
+        
+        return self.file_manager.get_statistics()
+    
+    def check_user_permissions(self, user: str) -> Dict[str, bool]:
+        """ユーザー権限をチェック"""
+        if not self.ensure_file_manager():
+            return {"view": False, "edit": False, "delete": False, "history": False}
+        
+        try:
+            # 基本権限（全ユーザー）
+            permissions = {
+                "view": True,
+                "edit": True,
+                "delete": False,
+                "history": False
+            }
+            
+            # 管理者権限チェック
+            try:
+                # FileManagerのユーザー情報を一時的に変更してチェック
+                original_user = self.file_manager.user
+                self.file_manager.user = user
+                self.file_manager.check_admin_permissions()
+                
+                # 権限ありの場合
+                permissions["delete"] = True
+                permissions["history"] = True
+                
+                # 元のユーザー情報に戻す
+                self.file_manager.user = original_user
+                
+            except PermissionError:
+                # 権限なしの場合はそのまま
+                pass
+            
+            return permissions
+            
+        except Exception as e:
+            print(f"権限チェックエラー: {e}")
+            return {"view": False, "edit": False, "delete": False, "history": False}
 
     def get_json_lists(self) -> List[str]:
 
@@ -535,3 +631,103 @@ class FileController:
     def show_warning_message(self, message: str, title: str = "警告"):
         """警告メッセージを表示"""
         messagebox.showwarning(title, message)
+
+    def delete_current_file(self) -> bool:
+        """
+        現在のJSONファイルを履歴フォルダに移動（削除の代替）
+        検査担当者権限が必要
+        """
+        try:
+            # FileManagerの確認
+            if not self.ensure_file_manager():
+                self.show_error_message("ファイル管理システムが利用できません")
+                return False
+            
+            # 現在のJSONファイルパスの確認
+            if not self.current_json_path or not os.path.exists(self.current_json_path):
+                self.show_error_message("削除対象のファイルが見つかりません")
+                return False
+            
+            # ファイルパスから情報を抽出
+            file_info = self._extract_file_info(self.current_json_path)
+            if not file_info:
+                self.show_error_message("ファイル情報の取得に失敗しました")
+                return False
+            
+            # file_infoからworker_noを取得
+            worker_no = file_info.get('worker_no', '不明')
+            
+            # 権限チェック
+            try:
+                self.file_manager.check_admin_permissions(worker_no)
+            except PermissionError:
+                self.show_error_message(
+                    f"ファイル削除権限がありません。\n"
+                )
+                return False
+            
+            # 履歴フォルダに移動
+            success = self.file_manager.move_to_history(
+                self.current_json_path,
+                file_info['date_str'],
+                file_info['model_name'],
+                file_info['lot_number'],
+                worker_no
+            )
+            
+            if success:
+                self.show_success_message(
+                    f"ファイルの削除が完了しました:\n{os.path.basename(self.current_json_path)}"
+                )
+                # 現在のパスをクリア
+                self.current_json_path = None
+                return True
+            else:
+                self.show_error_message("ファイルの履歴移動に失敗しました")
+                return False
+                
+        except Exception as e:
+            self.show_error_message(f"ファイル削除処理中にエラーが発生しました:\n{str(e)}")
+            return False
+    
+    def _extract_file_info(self, file_path: str) -> Optional[Dict[str, str]]:
+        """
+        ファイルパスから日付、モデル名、ロット番号を抽出
+        パス形式: データディレクトリ/日付/モデル名/ロット番号/ファイル名.json
+        """
+        try:
+            path_obj = Path(file_path)
+            parts = path_obj.parts
+            
+            # 最低4つの階層が必要（データディレクトリ/日付/モデル名/ロット番号）
+            if len(parts) < 4:
+                return None
+            
+            # パスの最後から情報を抽出
+            lot_number = parts[-2]      # ロット番号（ファイルの親ディレクトリ）
+            model_name = parts[-3]      # モデル名
+            date_str = parts[-4]        # 日付
+            
+            # ロット番号の形式検証
+            if not self.file_manager.validate_lot_number(lot_number):
+                print(f"ロット番号の形式が不正: {lot_number}")
+                return None
+            
+            # JSONファイルを読み込んで情報を取得
+            json_data = json.loads(path_obj.read_text(encoding='utf-8-sig'))
+            if not json_data:
+                print(f"JSONファイルの読み込みに失敗: {file_path}")
+                return None
+            
+            worker_no = json_data.get('worker_no', '不明')
+
+            return {
+                'date_str': date_str,
+                'model_name': model_name,
+                'lot_number': lot_number,
+                'worker_no': worker_no
+            }
+            
+        except Exception as e:
+            print(f"ファイル情報抽出エラー: {e}")
+            return None

@@ -68,6 +68,16 @@ class CoordinateController:
             
             return True
         return False
+    
+    def clear_all_coordinates(self) -> None:
+        """全座標をクリア"""
+        self.coordinate_model.clear_coordinates()
+        if self.canvas_view:
+            self.canvas_view.clear_coordinate_markers()
+            self.canvas_view.clear_highlight()
+
+        # メインビューの座標表示を更新（クリア）
+        self._update_coordinate_display()
 
     def update_coordinate(self, index: int, display_x: int, display_y: int) -> bool:
         """座標を更新"""
