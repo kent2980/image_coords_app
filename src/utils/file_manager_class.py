@@ -100,23 +100,42 @@ class FileManager:
     def reload_lot_info(self) -> List[str]:
         """ロット情報を再読み込み"""
         json_list = []
+        remove_list = []
         # ロットディレクトリ内のJSONファイルをリストアップ
-        for json_file in self.lot_dir.glob(f"*{self.file_extension}"):
+        # self.lot_dir配下のサブフォルダも含めてすべてのファイルをループ
+        for json_file in self.lot_dir.rglob(f"*{self.file_extension}"):
             if json_file.is_file():
-                if re.match(r'^\d{4}.json', json_file.name):
+                # 例: ファイル名が4桁+拡張子の場合のみ追加
+                if re.match(r'^\d{4}\.json$', json_file.name):
                     json_list.append(json_file.name)
-                    # lotInfo.jsonファイルの内容を隠しファイルとして上書き保存（存在しなくても新規作成される）
-                    lot_info_path = self.lot_dir / "lotInfo.json"
-                    with open(lot_info_path, 'w', encoding='utf-8') as f:
-                        json.dump({"json_list": json_list}, f, ensure_ascii=False, indent=4)
-                    # Windowsの場合は隠し属性を付与
-                    try:
-                        FILE_ATTRIBUTE_HIDDEN = 0x02
-                        ctypes.windll.kernel32.SetFileAttributesW(str(lot_info_path), FILE_ATTRIBUTE_HIDDEN)
-                    except Exception:
-                        pass
+                elif re.match(r'^\d{4}_.*json$', json_file.name):
+                    remove_list.append(json_file.name)
+
+        # lotInfo.jsonファイルの内容を隠しファイルとして上書き保存（存在しなくても新規作成される）
+        lot_info_path = self.lot_dir / "lotInfo.json"
+        with open(lot_info_path, 'w', encoding='utf-8') as f:
+            json.dump({"json_list": json_list,"remove_list": remove_list}, f, ensure_ascii=False, indent=4)
+        # Windowsの場合は隠し属性を付与
+        try:
+            FILE_ATTRIBUTE_HIDDEN = 0x02
+            ctypes.windll.kernel32.SetFileAttributesW(str(lot_info_path), FILE_ATTRIBUTE_HIDDEN)
+        except Exception:
+            pass
         
         return json_list
+
+    def load_lot_info(self) -> Dict[str, List[str]]:
+        """現在のロットのJSONファイル一覧を取得"""
+        lot_info_path = self.lot_dir / "lotInfo.json"
+        if not lot_info_path.is_file():
+            return {"json_list": [], "remove_list": []}
+
+        with open(lot_info_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            return {
+                "json_list": data.get("json_list", []),
+                "remove_list": data.get("remove_list", [])
+            }
 
     def validate_lot_number(self, lot_number: str) -> bool:
         """ロット番号の形式検証（7桁-2桁）"""
