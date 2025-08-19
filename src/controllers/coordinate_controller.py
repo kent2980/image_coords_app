@@ -89,7 +89,7 @@ class CoordinateController:
             return True
         return False
     
-    def clear_all_coordinates(self) -> None:
+    def clear_all_coordinates(self, is_create_json = True) -> None:
         """全座標をクリア"""
         self.coordinate_model.clear_coordinates()
         if self.canvas_view:
@@ -100,7 +100,8 @@ class CoordinateController:
         self._update_coordinate_display()
         
         # 自動保存処理
-        self._auto_save_coordinates()
+        if is_create_json:
+            self._auto_save_coordinates()
 
     def update_coordinate(self, index: int, display_x: int, display_y: int) -> bool:
         """座標を更新"""

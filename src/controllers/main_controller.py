@@ -687,7 +687,7 @@ class MainController:
         self.file_controller.reload_lot_info()
 
         # 対象ディレクトリの最新JSONファイルをチェックして自動読み込み
-        self._check_and_load_latest_json(selected_model, lot_number)
+        self._check_and_load_latest_json(self.lot_model.model, self.lot_model.lot_no)
 
     def setup_save_name_entry(self):
         """保存名を自動設定"""
@@ -1646,8 +1646,8 @@ class MainController:
             board_number = self.board_controller.get_current_board_number()
 
             # 既存のJSONファイルがあるかチェックして読み込み
-            self._load_existing_json_for_board(selected_model, lot_number, board_number)
-
+            if not self._load_existing_json_for_board(selected_model, lot_number, board_number):
+                self._check_and_load_latest_json(self.lot_model.model,self.lot_model.lot_no)
             # 保存された基盤のメッセージを表示
             prev_board = board_number - 1 if board_number > 1 else 1
 
@@ -1915,7 +1915,7 @@ class MainController:
             if success:
                 # UI状態をリセット
                 # self.coordinate_model.clear_coordinates()
-                self.coordinate_controller.clear_all_coordinates()
+                self.coordinate_controller.clear_all_coordinates(is_create_json=False)
                 self.image_model.clear_image()
                 
                 # ビューを更新
