@@ -4,7 +4,7 @@ import os
 import shutil
 import re
 from datetime import datetime, timedelta
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 from pathlib import Path
 import ctypes
 
@@ -14,7 +14,7 @@ class FileManager:
     社内製造ライン向けファイル管理クラス
     
     設計仕様：
-    - フォルダ構造: 日付/モデル名/ロット番号/
+    - フォルダ構造: ロット番号/
     - ファイル命名: <ロット番号>_<識別番号>.json
     - 履歴管理: history/フォルダに退避（削除禁止）
     - 権限管理: 検査担当者のみ削除・履歴操作可能
@@ -69,66 +69,97 @@ class FileManager:
     # ----------------------------
     # 社内製造ライン用フォルダ構造管理
     # ----------------------------
-    def get_lot_directory_path(self, date_str: str, model_name: str, lot_number: str) -> Path:
-        """設計書に従ったディレクトリパスを生成: 日付/モデル名/ロット番号/"""
-        return self.root_dir / date_str / model_name / lot_number
+    def get_lot_directory_path(self, lot_number: str) -> Path:
+        """設計書に従ったディレクトリパスを生成: ロット番号/"""
+        return self.root_dir / lot_number
     
-    def get_history_directory_path(self, date_str: str, model_name: str, lot_number: str) -> Path:
+    def get_history_directory_path(self, lot_number: str) -> Path:
         """履歴ディレクトリパスを生成"""
-        return self.get_lot_directory_path(date_str, model_name, lot_number) / "history"
+        return self.get_lot_directory_path(lot_number) / "history"
     
-    def get_backup_directory_path(self, date_str: str, model_name: str, lot_number: str) -> Path:
+    def get_backup_directory_path(self, lot_number: str) -> Path:
         """バックアップディレクトリパスを生成"""
-        return self.get_history_directory_path(date_str, model_name, lot_number) / "backup"
+        return self.get_history_directory_path(lot_number) / "backup"
     
-    def create_lot_directory_structure(self, date_str: str, model_name: str, lot_number: str) -> Path:
+    def create_lot_directory_structure(self, lot_number: str) -> Path:
         """ロット用ディレクトリ構造を作成"""
-        self.lot_dir = self.get_lot_directory_path(date_str, model_name, lot_number)
-        history_dir = self.get_history_directory_path(date_str, model_name, lot_number)
-        backup_dir = self.get_backup_directory_path(date_str, model_name, lot_number)
+        self.lot_dir = self.get_lot_directory_path(lot_number)
+        history_dir = self.get_history_directory_path(lot_number)
+        backup_dir = self.get_backup_directory_path(lot_number)
         
         # ディレクトリを作成
         self.lot_dir.mkdir(parents=True, exist_ok=True)
         history_dir.mkdir(parents=True, exist_ok=True)
         backup_dir.mkdir(parents=True, exist_ok=True)
 
-        # lotInfo.jsonを作成
-        self.reload_lot_info()
-
         return self.lot_dir
+
+    def create_defective_info_file(self, index:int, info_data: dict = None) -> str:
+        """不良情報ファイルを作成"""
+
+        if info_data is None:
+            info_data = self.create_defective_info_data()
+
+        defective_info_path = self.lot_dir / f"{index:04d}.json"
+        # 空のjsonファイルを作成
+        with open(defective_info_path, 'w', encoding='utf-8') as f:
+            json.dump(info_data, f, ensure_ascii=False, indent=4)
+        return str(defective_info_path)
+
+    def create_defective_info_data(self, model: str=None, coordinates: List[Tuple[int, int]]=None, image_path: str=None,
+                    coordinate_details: List[Dict[str, Any]]=None, lot_number: str=None,
+                    worker_no: str=None) -> Dict[str, Any]:
+        """保存用データを作成"""
+        return {
+            'model': model,
+            'coordinates': coordinates,
+            'image_path': image_path,
+            'coordinate_details': coordinate_details,
+            'lot_number': lot_number,
+            'worker_no': worker_no,
+            'created_at': datetime.now().isoformat(),
+            'total_coordinates': len(coordinates)
+        }
+    
+    def is_defective_info_file(self,index: int) -> bool:
+        """不良情報ファイルが存在するか判定"""
+        return (self.lot_dir / f"{index:04d}.json").is_file()
 
     def reload_lot_info(self) -> List[str]:
         """ロット情報を再読み込み"""
-        json_list = []
-        remove_list = []
+        json_set = set()
+        remove_set = set()
         # ロットディレクトリ内のJSONファイルをリストアップ
         # self.lot_dir配下のサブフォルダも含めてすべてのファイルをループ
         for json_file in self.lot_dir.rglob(f"*{self.file_extension}"):
             if json_file.is_file():
-                # 例: ファイル名が4桁+拡張子の場合のみ追加
+            # 例: ファイル名が4桁+拡張子の場合のみ追加
                 if re.match(r'^\d{4}\.json$', json_file.name):
-                    json_list.append(json_file.name)
+                    json_set.add(json_file.name)
                 elif re.match(r'^\d{4}_.*json$', json_file.name):
-                    remove_list.append(json_file.name)
+                    remove_set.add(json_file.name)
+        json_list = sorted(json_set)
+        remove_list = sorted(remove_set)
+
 
         # lotInfo.jsonファイルの内容を隠しファイルとして上書き保存（存在しなくても新規作成される）
         lot_info_path = self.lot_dir / "lotInfo.json"
-        with open(lot_info_path, 'w', encoding='utf-8') as f:
-            json.dump({"json_list": json_list,"remove_list": remove_list}, f, ensure_ascii=False, indent=4)
-        # Windowsの場合は隠し属性を付与
-        try:
-            FILE_ATTRIBUTE_HIDDEN = 0x02
-            ctypes.windll.kernel32.SetFileAttributesW(str(lot_info_path), FILE_ATTRIBUTE_HIDDEN)
-        except Exception:
-            pass
+        
+        # 隠しファイル対応の安全な書き込み
+        data = {"json_list": json_list, "remove_list": remove_list}
+        success = self.safe_write_json_file(lot_info_path, data, set_hidden=True)
+        
+        if not success:
+            print(f"[reload_lot_info] lotInfo.json書き込みに失敗しました: {lot_info_path}")
+            # 失敗してもプログラムは継続
         
         return json_list
 
-    def load_lot_info(self) -> Dict[str, List[str]]:
+    def load_json_info(self) -> Dict[str, List[str]]:
         """現在のロットのJSONファイル一覧を取得"""
         lot_info_path = self.lot_dir / "lotInfo.json"
         if not lot_info_path.is_file():
-            return {"json_list": [], "remove_list": []}
+            return None
 
         with open(lot_info_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
@@ -145,9 +176,9 @@ class FileManager:
         """設計書に従ったファイル名生成: <ロット番号>_<識別番号>.json"""
         return f"{lot_number}_{sequence_number:03d}.json"
     
-    def get_next_sequence_number(self, date_str: str, model_name: str, lot_number: str) -> int:
+    def get_next_sequence_number(self, lot_number: str) -> int:
         """次の識別番号を取得（1から開始）"""
-        lot_dir = self.get_lot_directory_path(date_str, model_name, lot_number)
+        lot_dir = self.get_lot_directory_path(lot_number)
         
         if not lot_dir.exists():
             return 1
@@ -226,7 +257,7 @@ class FileManager:
     # ----------------------------
     # ファイル検索機能（部分一致・設計書仕様）
     # ----------------------------
-    def search_files(self, query: str, date_str: str = None, model_name: str = None) -> List[Dict[str, str]]:
+    def search_files(self, query: str, lot_number: str = None) -> List[Dict[str, str]]:
         """
         ファイル検索（大文字小文字区別なし、部分一致）
         
@@ -238,10 +269,8 @@ class FileManager:
         
         try:
             # 検索対象ディレクトリを決定
-            if date_str and model_name:
-                search_root = self.root_dir / date_str / model_name
-            elif date_str:
-                search_root = self.root_dir / date_str
+            if lot_number:
+                search_root = self.root_dir / lot_number
             else:
                 search_root = self.root_dir
             
@@ -309,6 +338,90 @@ class FileManager:
             }
 
     # ----------------------------
+    # 隠しファイル対応ユーティリティ
+    # ----------------------------
+    def check_and_remove_hidden_attribute(self, file_path: Path) -> bool:
+        """隠しファイル属性をチェックして一時的に解除"""
+        try:
+            if not file_path.exists():
+                return False
+                
+            import subprocess
+            result = subprocess.run(['attrib', str(file_path)], capture_output=True, text=True)
+            if result.returncode == 0 and 'H' in result.stdout:
+                # 隠しファイル属性を解除
+                remove_result = subprocess.run(['attrib', '-H', str(file_path)], capture_output=True, text=True)
+                if remove_result.returncode == 0:
+                    print(f"[check_hidden] 隠しファイル属性を解除: {file_path}")
+                    return True
+                else:
+                    print(f"[check_hidden] 隠しファイル属性解除失敗: {remove_result.stderr}")
+                    return False
+            return False  # 隠しファイルではない
+            
+        except Exception as e:
+            print(f"[check_hidden] 隠しファイル属性チェックエラー: {e}")
+            return False
+    
+    def set_hidden_attribute(self, file_path: Path) -> bool:
+        """ファイルに隠しファイル属性を設定"""
+        try:
+            FILE_ATTRIBUTE_HIDDEN = 0x02
+            result = ctypes.windll.kernel32.SetFileAttributesW(str(file_path), FILE_ATTRIBUTE_HIDDEN)
+            if result:
+                print(f"[set_hidden] 隠しファイル属性を設定: {file_path}")
+                return True
+            else:
+                print(f"[set_hidden] 隠しファイル属性設定失敗: {file_path}")
+                return False
+        except Exception as e:
+            print(f"[set_hidden] 隠しファイル属性設定エラー: {e}")
+            return False
+    
+    def safe_write_json_file(self, file_path: Path, data: dict, set_hidden: bool = False, max_retries: int = 3) -> bool:
+        """隠しファイル対応の安全なJSON書き込み"""
+        import time
+        
+        # 既存ファイルが隠しファイルの場合は一時的に属性を解除
+        was_hidden = self.check_and_remove_hidden_attribute(file_path)
+        
+        # 書き込み処理（リトライ付き）
+        for attempt in range(max_retries):
+            try:
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    json.dump(data, f, ensure_ascii=False, indent=4)
+                
+                # 書き込み成功
+                print(f"[safe_write_json] ファイル書き込み成功: {file_path}")
+                
+                # 隠しファイル属性を設定（必要な場合）
+                if set_hidden or was_hidden:
+                    self.set_hidden_attribute(file_path)
+                
+                return True
+                
+            except PermissionError as pe:
+                print(f"[safe_write_json] 書き込み試行 {attempt + 1}/{max_retries} 失敗: {pe}")
+                if attempt < max_retries - 1:
+                    time.sleep(0.5)  # 0.5秒待機してリトライ
+                else:
+                    print(f"[safe_write_json] 全ての書き込み試行が失敗: {file_path}")
+                    # 失敗した場合でも元の隠しファイル属性を復元
+                    if was_hidden:
+                        self.set_hidden_attribute(file_path)
+                    return False
+            except Exception as e:
+                print(f"[safe_write_json] 書き込みエラー {attempt + 1}/{max_retries}: {e}")
+                if attempt == max_retries - 1:
+                    # 失敗した場合でも元の隠しファイル属性を復元
+                    if was_hidden:
+                        self.set_hidden_attribute(file_path)
+                    return False
+                time.sleep(0.2)
+        
+        return False
+
+    # ----------------------------
     # JSONファイル操作
     # ----------------------------
     def open_file(self, file_path: str) -> Dict[str, Any]:
@@ -325,16 +438,20 @@ class FileManager:
             raise Exception(f"JSONファイル読み込みエラー: {e}")
     
     def save_file(self, file_path: str, data: Dict[str, Any]) -> bool:
-        """JSONファイルを保存"""
+        """JSONファイルを保存（隠しファイル対応）"""
         try:
             file_path_obj = Path(file_path)
             file_path_obj.parent.mkdir(parents=True, exist_ok=True)
             
-            with open(file_path_obj, "w", encoding="utf-8") as f:
-                json.dump(data, f, ensure_ascii=False, indent=2)
+            # 隠しファイル対応の安全な書き込み
+            success = self.safe_write_json_file(file_path_obj, data, set_hidden=False)
             
-            self.log_action("save_file", file_path)
-            return True
+            if success:
+                self.log_action("save_file", file_path)
+                return True
+            else:
+                print(f"JSONファイル保存エラー: {file_path}")
+                return False
             
         except Exception as e:
             print(f"JSONファイル保存エラー: {e}")
@@ -343,7 +460,7 @@ class FileManager:
     # ----------------------------
     # 履歴管理（設計書仕様：削除禁止、履歴フォルダへ退避）
     # ----------------------------
-    def move_to_history(self, file_path: str, date_str: str = None, model_name: str = None, lot_number: str = None, worker_no: str = None) -> bool:
+    def move_to_history(self, file_path: str, lot_number: str = None, worker_no: str = None) -> bool:
         """
         ファイルを履歴フォルダに退避（削除の代わり）
         検査担当者のみ実行可能
@@ -357,8 +474,8 @@ class FileManager:
                 raise FileNotFoundError(f"ファイルが見つかりません: {file_path}")
             
             # 履歴ディレクトリを決定
-            if date_str and model_name and lot_number:
-                history_dir = self.get_history_directory_path(date_str, model_name, lot_number)
+            if lot_number:
+                history_dir = self.get_history_directory_path(lot_number)
             else:
                 # ファイルパスから推定
                 history_dir = file_path_obj.parent / "history"
@@ -389,7 +506,7 @@ class FileManager:
             print(f"履歴退避エラー: {e}")
             return False
 
-    def restore_latest(self, original_path: str, date_str: str = None, model_name: str = None, lot_number: str = None) -> bool:
+    def restore_latest(self, original_path: str, lot_number: str = None) -> bool:
         """
         最新履歴を復元（検査担当者のみ）
         """
@@ -400,8 +517,8 @@ class FileManager:
             original_path_obj = Path(original_path)
             
             # 履歴ディレクトリを決定
-            if date_str and model_name and lot_number:
-                history_dir = self.get_history_directory_path(date_str, model_name, lot_number)
+            if lot_number:
+                history_dir = self.get_history_directory_path(lot_number)
             else:
                 history_dir = original_path_obj.parent / "history"
             
@@ -435,9 +552,9 @@ class FileManager:
             print(f"復元エラー: {e}")
             return False
 
-    def get_history_files(self, date_str: str, model_name: str, lot_number: str) -> List[Dict[str, str]]:
+    def get_history_files(self, lot_number: str) -> List[Dict[str, str]]:
         """指定ロットの履歴ファイル一覧を取得"""
-        history_dir = self.get_history_directory_path(date_str, model_name, lot_number)
+        history_dir = self.get_history_directory_path(lot_number)
         
         if not history_dir.exists():
             return []
@@ -550,12 +667,12 @@ class FileManager:
     # ----------------------------
     # 便利なユーティリティメソッド
     # ----------------------------
-    def get_lot_files(self, date_str: str, model_name: str, lot_number: str, include_history: bool = False) -> List[Dict[str, str]]:
+    def get_lot_files(self, lot_number: str, include_history: bool = False) -> List[Dict[str, str]]:
         """指定ロットの全ファイルを取得"""
         files = []
         
         # メインディレクトリのファイル
-        lot_dir = self.get_lot_directory_path(date_str, model_name, lot_number)
+        lot_dir = self.get_lot_directory_path(lot_number)
         if lot_dir.exists():
             for json_file in lot_dir.glob(f"*{self.file_extension}"):
                 if json_file.is_file():
@@ -565,7 +682,7 @@ class FileManager:
         
         # 履歴ファイルも含める場合
         if include_history:
-            history_files = self.get_history_files(date_str, model_name, lot_number)
+            history_files = self.get_history_files(lot_number)
             for history_file in history_files:
                 history_file["type"] = "history"
                 files.append(history_file)

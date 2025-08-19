@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from ..models.coordinate_model import CoordinateModel
     from ..models.image_model import ImageModel
     from ..models.worker_model import WorkerModel
+    from ..models.lot_model import LotModel
     from ..views.coordinate_canvas_view import CoordinateCanvasView
     from ..views.main_view import MainView
     from ..views.sidebar_view import SidebarView
@@ -34,6 +35,7 @@ class MainController:
         worker_model: "WorkerModel",
         image_model: "ImageModel",
         board_model: "BoardModel",
+        lot_model: "LotModel",
         main_view: "MainView",
         canvas_view: "CoordinateCanvasView",
         sidebar_view: "SidebarView",
@@ -49,6 +51,7 @@ class MainController:
         self.worker_model = worker_model
         self.image_model = image_model
         self.board_model = board_model
+        self.lot_model = lot_model
 
         # ビュー
         self.main_view = main_view
@@ -155,6 +158,9 @@ class MainController:
         # 現在の作業者情報を保持
         self.current_worker_no = result["worker_no"]
         self.current_worker_name = result["worker_name"]
+
+        # 作業者情報をロットモデルに設定
+        self.lot_model.worker_no = self.current_worker_no
 
         # SidebarViewにも作業者番号を設定
         self.sidebar_view.set_worker_no(result["worker_no"])
@@ -376,7 +382,6 @@ class MainController:
             # 保存名を自動設定
             current_lot = self.current_lot_number or self.sidebar_view.get_lot_number()
             auto_save_name = self.file_controller.setup_save_name_entry(
-                self.current_date,
                 selected_model,
                 current_lot or "",
                 (
@@ -618,6 +623,14 @@ class MainController:
         self.sidebar_view.set_lot_number(lot_number)
         print(f"ロット番号を保存しました: {lot_number}")
 
+        # ロットモデルの更新
+        self.lot_model.set_all_properties(
+            model=self.main_view.get_selected_model(),
+            image_path=self.image_model.current_image_path,
+            lot_no=self.current_lot_number,
+            worker_no=self.current_worker_no
+        )
+
         # 現在の座標データがある場合は基盤データも保存
         current_coordinates = self.coordinate_controller.get_all_coordinates()
         if current_coordinates:
@@ -655,13 +668,15 @@ class MainController:
         selected_model = self.main_view.get_selected_model()
         if selected_model and not selected_model.startswith("画像"):
             auto_save_name = self.file_controller.setup_save_name_entry(
-                self.current_date,
                 selected_model,
                 lot_number,
                 "",  # 新しいロット番号なので保存名をリセット
             )
             if auto_save_name:
                 self.main_view.set_save_name(auto_save_name)
+
+        # lotInfo.jsonを作成
+        self.file_controller.reload_lot_info()
 
         # 対象ディレクトリの最新JSONファイルをチェックして自動読み込み
         self._check_and_load_latest_json(selected_model, lot_number)
@@ -679,7 +694,6 @@ class MainController:
             and current_lot_number
         ):
             auto_save_name = self.file_controller.setup_save_name_entry(
-                self.current_date,
                 selected_model,
                 current_lot_number,
                 "",  # 現在の保存名を空にして自動生成
@@ -921,7 +935,7 @@ class MainController:
                 # 保存名エントリを次の連番に更新
                 if save_dir:
                     auto_save_name = self.file_controller.setup_save_name_entry(
-                        self.current_date, current_model, lot_number, ""
+                        current_model, lot_number, ""
                     )
                     if auto_save_name:
                         self.sidebar_view.set_save_name(auto_save_name)
@@ -1698,7 +1712,7 @@ class MainController:
         try:
             # JSONファイルのパスを構築
             json_dir = self.file_controller.setup_json_save_dir(
-                self.current_date, model_name, lot_number
+                model_name, lot_number
             )
 
             if not json_dir:
@@ -1711,17 +1725,13 @@ class MainController:
             json_filepath = os.path.join(json_dir, json_filename)
 
             # JSONファイルが存在するかチェック
-            if not os.path.exists(json_filepath):
+            if not self.file_controller.is_defective_info_file(board_number):
                 print(
                     f"[JSONロード] 基盤 {board_number} のJSONファイルが見つかりません: {json_filepath}"
                 )
                 return False
 
             # JSONファイルからデータを読み込み
-            print(
-                f"[JSONロード] 基盤 {board_number} のJSONファイルを読み込み中: {json_filepath}"
-            )
-
             data = self.file_controller.load_json_data(json_filepath)
             parsed_data = self.file_controller.parse_loaded_data(data)
 
@@ -1754,49 +1764,36 @@ class MainController:
     def _check_and_load_latest_json(self, model_name: str, lot_number: str):
         """対象ディレクトリの最新のJSONファイルを検索して自動読み込み、次のインデックスを設定"""
     
-        # JSONファイルのディレクトリパスを構築
-        json_dir = self.file_controller.setup_json_save_dir(
-            self.current_date, model_name, lot_number
-        )
+        file_cont = self.file_controller
 
-        if not json_dir:
-            print(f"[最新JSON読み込み] ディレクトリが見つかりません")
-            return False
+        # 現在のjsonファイルのリストを取得
+        json_list_dict = self.file_controller.load_json_info()
 
-        if not os.path.exists(json_dir):
-            print(f"[最新JSON読み込み] ディレクトリが存在しません: {json_dir}")
-            return False
+        json_list = json_list_dict.get("json_list", [])
+        remove_list = json_list_dict.get("remove_list", [])
+        
+        # json_listとremove_listをマージ
+        all_json_files = json_list + remove_list
 
-        # ディレクトリ内の全JSONファイルを検索
-        json_files = []
-        for filename in os.listdir(json_dir):
-            if filename.endswith(".json") and filename[:4].isdigit():
-                try:
-                    index = int(filename[:4])
-                    json_files.append((index, filename))
-                except ValueError:
-                    continue
+        # maxIndexを取得
+        currentIndex = 0
+        for json_file in all_json_files:
+            try:
+                json_file_index = int(json_file[0:4])
+                currentIndex = max(currentIndex, json_file_index)
+            except ValueError:
+                continue
+        currentIndex = currentIndex + 1
 
-        if not json_files:
-            print(
-                f"[最新JSON読み込み] 数字インデックスのJSONファイルが見つかりません: {json_dir}"
-            )
-            return False
+        file_cont.create_defective_info_file(currentIndex)
 
-        # インデックスが最大のファイルを取得
-        json_files.sort(key=lambda x: x[0])
-        max_index = json_files[-1][0]
+        # lotInfo.jsonを更新
+        self.file_controller.reload_lot_info()
 
-        self.board_controller.set_current_board_number(max_index)
+        # 現在の基板番号を設定
+        self.board_controller.set_current_board_number(currentIndex)
 
-        self._switch_to_next_board_with_validation(
-            selected_model=model_name,
-            lot_number=lot_number,
-            worker_no=self.current_worker_no,
-            current_date=self.current_date,
-        )
-
-    def load_start_json(self):
+    def load_start_json(self):  
         """閲覧モード用: ロット番号に基づいて開始JSONファイルを読み込み"""
         import re
 

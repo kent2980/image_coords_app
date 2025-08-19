@@ -8,6 +8,7 @@ from .board_model import BoardModel
 from .coordinate_model import CoordinateModel
 from .image_model import ImageModel
 from .worker_model import WorkerModel
+from .lot_model import LotModel
 
 __all__ = [
     "CoordinateModel",
@@ -15,4 +16,5 @@ __all__ = [
     "WorkerModel",
     "ImageModel",
     "BoardModel",
+    "LotModel",
 ]

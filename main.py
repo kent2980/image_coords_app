@@ -23,6 +23,7 @@ from src.models import (
     CoordinateModel,
     ImageModel,
     WorkerModel,
+    LotModel,
 )
 from src.views import CoordinateCanvasView, MainView, SidebarView
 from src.views.dialogs import DateSelectDialog, SettingsDialog, WorkerInputDialog
@@ -77,6 +78,9 @@ class ImageCoordsApp:
         # 基盤モデル
         self.board_model = BoardModel()
 
+        # ロットモデル
+        self.lot_model = LotModel()
+
     def _initialize_views(self):
         """ビューの初期化"""
         # メインビュー
@@ -99,7 +103,7 @@ class ImageCoordsApp:
         """コントローラーの初期化"""
         # ファイルコントローラー
         self.file_controller = FileController(
-            self.coordinate_model, self.settings_model, self.worker_model
+            self.coordinate_model, self.settings_model, self.worker_model, self.board_model,self.lot_model
         )
 
         # 座標コントローラー
@@ -122,6 +126,7 @@ class ImageCoordsApp:
             worker_model=self.worker_model,
             image_model=self.image_model,
             board_model=self.board_model,
+            lot_model=self.lot_model,
             main_view=self.main_view,
             canvas_view=self.canvas_view,
             sidebar_view=self.sidebar_view,
