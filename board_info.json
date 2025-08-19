@@ -352,16 +352,20 @@
     "lot_number": "1234567-10",
     "current_board": 2,
     "boards_data": {
-      "2": {
-        "board_number": 2,
+      "1": {
+        "board_number": 1,
         "coordinates": [
           [
-            1082,
-            546
+            939,
+            410
           ],
           [
-            1343,
-            558
+            1291,
+            681
+          ],
+          [
+            1106,
+            349
           ]
         ],
         "coordinate_details": [
@@ -378,22 +382,27 @@
             "defect": "",
             "repaired": "いいえ",
             "comment": ""
+          },
+          {
+            "item_number": "3",
+            "reference": "r744",
+            "defect": "",
+            "repaired": "いいえ",
+            "comment": ""
           }
         ],
         "lot_number": "1234567-10",
         "worker_no": "12260",
         "image_path": "C:/Users/kentaroyoshida/Pictures/image_coords_app\\Y8470680R_AAE004547-CAA_MAIN_A面.jpg",
         "model_name": "Y8470680R_AAE004547-CAA_MAIN_A面",
-        "created_at": "2025-08-18T17:06:57.073934",
-        "updated_at": "2025-08-18T17:06:57.073934",
-        "total_coordinates": 2
+        "created_at": "2025-08-18T17:27:06.675885",
+        "updated_at": "2025-08-18T17:27:06.675885",
+        "total_coordinates": 3
       }
     },
     "board_history": [
-      1,
-      2,
-      3
+      1
     ],
-    "updated_at": "2025-08-18T17:07:07.632387"
+    "updated_at": "2025-08-18T17:27:06.689975"
   }
 }
