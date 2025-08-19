@@ -123,7 +123,7 @@ class BoardController:
                     # JSON保存に失敗してもセッション保存は成功しているので継続
 
             # 次の基盤番号を取得
-            next_board_number = self.board_model.get_next_board_number()
+            next_board_number = self.file_controller.get_next_board_number(self.get_current_board_number())
 
             # 基盤を切り替え
             self.board_model.set_current_board(next_board_number)
@@ -155,7 +155,7 @@ class BoardController:
     ) -> bool:
         """前の基盤に切り替え"""
         try:
-            previous_board_number = self.board_model.get_previous_board_number()
+            previous_board_number = self.file_controller.get_previous_board_number(self.get_current_board_number())
 
             if previous_board_number is None:
                 print("これが最初の基盤です")

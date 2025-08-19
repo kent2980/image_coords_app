@@ -596,6 +596,55 @@ class FileController:
 
         return self.file_manager.create_defective_info_file(index, info_data)
 
+    def get_next_board_number(self, index:int) -> int:
+        """次のボード番号を取得"""
+        # jsonInfoからデータ取得
+        json_data = self.load_json_info()
+
+        # 存在するjsonファイルのリストを取得
+        json_list = json_data.get("json_list",[])
+
+        # jsonファイル名を生成
+        file_name = f"{index:04d}.json"
+
+        # json_listからfile_nameを探す
+        file_name_index = json_list.index(file_name) if file_name in json_list else -1
+
+        # file_name_indexが-1の場合は次のファイル名がないためエラー
+        if file_name_index == -1:
+            raise ValueError("ファイル名が見つかりません")
+
+        # 次のファイル名を取得
+        next_file_name = json_list[file_name_index + 1]
+
+        # ファイル名から番号を抽出して整数に変換
+        return int(next_file_name.split(".")[0])
+
+    def get_previous_board_number(self, index: int) -> int:
+        """前のボード番号を取得"""
+        # jsonInfoからデータ取得
+        json_data = self.load_json_info()
+
+        # 存在するjsonファイルのリストを取得
+        json_list = json_data.get("json_list",[])
+
+        # jsonファイル名を生成
+        file_name = f"{index:04d}.json"
+
+        # json_listからfile_nameを探す
+        file_name_index = json_list.index(file_name) if file_name in json_list else -1
+
+        # file_name_indexが-1の場合またはインデックスが0の場合は前のファイル名がないためエラー
+        if file_name_index <= 0:
+            raise ValueError("前のファイルが見つかりません")
+
+        # 前のファイル名を取得
+        previous_file_name = json_list[file_name_index - 1]
+
+        # ファイル名から番号を抽出して整数に変換
+        return int(previous_file_name.split(".")[0])
+
+
     def show_info_message(self, message: str, title: str = "情報"):
         """情報メッセージを表示"""
         from tkinter import messagebox
