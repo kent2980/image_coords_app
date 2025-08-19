@@ -25,6 +25,12 @@ class CoordinateController:
         self.canvas_view: Optional["CoordinateCanvasView"] = None
         self.sidebar_view: Optional["SidebarView"] = None
         self.main_view: Optional["MainView"] = None
+        
+        # ファイルコントローラーへの参照（自動保存用）
+        self.file_controller = None
+        
+        # 現在の基盤番号（自動保存用）
+        self.current_board_number = 1
 
     def set_canvas_view(self, canvas_view: "CoordinateCanvasView") -> None:
         """キャンバスビューを設定"""
@@ -37,6 +43,14 @@ class CoordinateController:
     def set_main_view(self, main_view: "MainView") -> None:
         """メインビューを設定"""
         self.main_view = main_view
+    
+    def set_file_controller(self, file_controller) -> None:
+        """ファイルコントローラーを設定"""
+        self.file_controller = file_controller
+    
+    def set_current_board_number(self, board_number: int) -> None:
+        """現在の基盤番号を設定"""
+        self.current_board_number = board_number
 
     def add_coordinate(self, display_x: int, display_y: int) -> int:
         """座標を追加（表示座標から元座標に変換して保存）"""
@@ -54,6 +68,9 @@ class CoordinateController:
 
         # メインビューの座標表示を更新
         self._update_coordinate_display()
+        
+        # 自動保存処理
+        self._auto_save_coordinates()
 
         return index
 
@@ -65,6 +82,9 @@ class CoordinateController:
             
             # メインビューの座標表示を更新
             self._update_coordinate_display()
+            
+            # 自動保存処理
+            self._auto_save_coordinates()
             
             return True
         return False
@@ -78,6 +98,9 @@ class CoordinateController:
 
         # メインビューの座標表示を更新（クリア）
         self._update_coordinate_display()
+        
+        # 自動保存処理
+        self._auto_save_coordinates()
 
     def update_coordinate(self, index: int, display_x: int, display_y: int) -> bool:
         """座標を更新"""
@@ -92,6 +115,9 @@ class CoordinateController:
             
             # メインビューの座標表示を更新
             self._update_coordinate_display()
+            
+            # 自動保存処理
+            self._auto_save_coordinates()
             
             return True
         return False
@@ -154,7 +180,11 @@ class CoordinateController:
         """現在選択中の座標の詳細情報を更新"""
         current_index = self.coordinate_model.current_index
         if current_index >= 0:
-            return self.coordinate_model.set_coordinate_detail(current_index, detail)
+            result = self.coordinate_model.set_coordinate_detail(current_index, detail)
+            if result:
+                # 自動保存処理
+                self._auto_save_coordinates()
+            return result
         return False
 
     def clear_coordinates(self) -> None:
@@ -461,5 +491,37 @@ class CoordinateController:
             
         except Exception as e:
             print(f"[ERROR] 座標表示更新エラー: {e}")
+            import traceback
+            traceback.print_exc()
+    
+    def _auto_save_coordinates(self) -> None:
+        """座標データを自動保存"""
+        try:
+            # FileControllerが設定されていない場合は何もしない
+            if not self.file_controller:
+                print("[DEBUG] FileControllerが設定されていません - 自動保存をスキップ")
+                return
+                
+            # 座標データと詳細情報を取得
+            coordinates = self.coordinate_model.coordinates
+            coordinate_details = self.coordinate_model.coordinate_details
+            
+            # 座標がない場合もファイルを更新（空の状態で保存）
+            print(f"[DEBUG] 自動保存実行: {len(coordinates)}個の座標, 基盤番号: {self.current_board_number}")
+            
+            # FileControllerを使用してJSONファイルを更新
+            file_path = self.file_controller.create_defective_info_file(
+                self.current_board_number, 
+                coordinates, 
+                coordinate_details
+            )
+            
+            if file_path:
+                print(f"[DEBUG] 自動保存成功: {file_path}")
+            else:
+                print("[WARNING] 自動保存に失敗しました")
+                
+        except Exception as e:
+            print(f"[ERROR] 自動保存エラー: {e}")
             import traceback
             traceback.print_exc()

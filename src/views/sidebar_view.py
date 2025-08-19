@@ -44,6 +44,9 @@ class SidebarView:
 
         # コールバック関数
         self.callbacks: Dict[str, Callable] = {}
+        
+        # CoordinateControllerへの参照（自動保存用）
+        self.coordinate_controller = None
 
         # 不良項目リスト（デフォルト）
         self.defect_items = [
@@ -305,6 +308,8 @@ class SidebarView:
         # スクロールバー
         scrollbar = tk.Scrollbar(text_frame, command=self.comment_text.yview)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.comment_text.config(yscrollcommand=scrollbar.set)
+        
         # 変更イベントバインド
         self._bind_change_events()
 
@@ -315,15 +320,50 @@ class SidebarView:
         self.defect_var.trace_add("write", self._on_data_changed)
         if hasattr(self, "repaired_var"):
             self.repaired_var.trace_add("write", self._on_data_changed)
+        
+        # コメントフィールドの変更を監視
+        if hasattr(self, "comment_text") and self.comment_text:
+            self.comment_text.bind('<KeyRelease>', self._on_comment_changed)
+            self.comment_text.bind('<FocusOut>', self._on_comment_changed)
 
     def _on_data_changed(self, *args):
         """データ変更時のコールバック"""
         if "on_form_data_changed" in self.callbacks:
             self.callbacks["on_form_data_changed"]()
+        
+        # 座標詳細情報の自動保存
+        self._auto_save_coordinate_detail()
+    
+    def _on_comment_changed(self, event=None):
+        """コメントフィールド変更時のコールバック"""
+        # 座標詳細情報の自動保存
+        self._auto_save_coordinate_detail()
+    
+    def _auto_save_coordinate_detail(self):
+        """座標詳細情報を自動保存"""
+        try:
+            # CoordinateControllerが設定されていない場合は何もしない
+            if not self.coordinate_controller:
+                return
+            
+            # 現在のフォームデータを取得
+            detail = self.get_coordinate_detail()
+            
+            # CoordinateControllerを通じて詳細情報を更新（自動保存も実行される）
+            self.coordinate_controller.update_current_coordinate_detail(detail)
+            
+        except Exception as e:
+            print(f"[ERROR] 座標詳細自動保存エラー: {e}")
+            import traceback
+            traceback.print_exc()
 
     def set_callbacks(self, callbacks: Dict[str, Callable]):
         """コールバック関数を設定"""
         self.callbacks.update(callbacks)
+    
+    def set_coordinate_controller(self, coordinate_controller) -> None:
+        """CoordinateControllerを設定"""
+        self.coordinate_controller = coordinate_controller
 
     def set_readonly_mode(self, readonly: bool):
         """読み取り専用モードを設定"""

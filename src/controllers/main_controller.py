@@ -114,11 +114,15 @@ class MainController:
         self.coordinate_controller.set_canvas_view(self.canvas_view)
         self.coordinate_controller.set_sidebar_view(self.sidebar_view)
         self.coordinate_controller.set_main_view(self.main_view)
+        self.coordinate_controller.set_file_controller(self.file_controller)
         self.board_controller.set_sidebar_view(self.sidebar_view)
         self.board_controller.set_main_view(self.main_view)
 
         # SidebarViewにMainViewの参照を設定
         self.sidebar_view.set_main_view_reference(self.main_view)
+        
+        # SidebarViewにCoordinateControllerの参照を設定（自動保存用）
+        self.sidebar_view.set_coordinate_controller(self.coordinate_controller)
 
         # ビューのコールバックを設定
         self._setup_view_callbacks()
@@ -266,6 +270,10 @@ class MainController:
 
         # Undo/Redoボタンの状態を更新
         self._update_undo_redo_state()
+        
+        # CoordinateControllerに初期基盤番号を設定
+        initial_board_number = self.board_controller.get_current_board_number()
+        self.coordinate_controller.set_current_board_number(initial_board_number)
 
     def _apply_settings(self):
         """設定を適用"""
@@ -1400,6 +1408,9 @@ class MainController:
 
                 next_board = board_number + 1
 
+                # CoordinateControllerに新しい基盤番号を通知
+                self.coordinate_controller.set_current_board_number(board_number)
+
                 # Undo/Redoボタンの状態を更新
                 self._update_undo_redo_state()
             else:
@@ -1639,6 +1650,9 @@ class MainController:
 
             # 保存された基盤のメッセージを表示
             prev_board = board_number - 1 if board_number > 1 else 1
+
+            # CoordinateControllerに新しい基盤番号を通知
+            self.coordinate_controller.set_current_board_number(board_number)
 
             # Undo/Redoボタンの状態を更新
             self._update_undo_redo_state()

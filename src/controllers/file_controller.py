@@ -6,18 +6,24 @@ import os
 import json
 from tkinter import filedialog, messagebox
 from datetime import datetime
-from typing import Dict, Any, List, Tuple, Optional
+from typing import Dict, Any, List, Tuple, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..models.coordinate_model import CoordinateModel
+    from ..models.app_settings_model import AppSettingsModel
+    from ..models.worker_model import WorkerModel
+    from ..models.board_model import BoardModel
+    from ..models.lot_model import LotModel
 from pathlib import Path
 
 # FileManagerクラスをインポート
 from src.utils.file_manager_class import FileManager
-from src.models import CoordinateModel,WorkerModel,AppSettingsModel,BoardModel,LotModel
 
 
 class FileController:
     """ファイル操作を管理するコントローラー（FileManager統合版）"""
 
-    def __init__(self, coordinate_model: CoordinateModel, settings_model: AppSettingsModel, worker_model: WorkerModel, board_model: BoardModel, lot_model: LotModel):
+    def __init__(self, coordinate_model: "CoordinateModel", settings_model: "AppSettingsModel", worker_model: "WorkerModel", board_model: "BoardModel", lot_model: "LotModel"):
         self.coordinate_model = coordinate_model
         self.settings_model = settings_model
         self.worker_model = worker_model
@@ -574,7 +580,7 @@ class FileController:
     def load_json_info(self) -> Dict[str,List[str]]:
         return self.file_manager.load_json_info()
 
-    def create_defective_info_file(self, index: int, coordinates:List[Tuple[int, int]], coordinate_details:List[Dict[str, Any]]) -> str:
+    def create_defective_info_file(self, index: int, coordinates:List[Tuple[int, int]]=None, coordinate_details:List[Dict[str, Any]]=None) -> str:
         """不良情報ファイルを作成"""
         if not self.ensure_file_manager():
             return ""
@@ -584,7 +590,7 @@ class FileController:
             coordinates=coordinates,
             image_path=self.lot_model.image_path,
             coordinate_details=coordinate_details,
-            lot_number=self.lot_model.lot_number,
+            lot_number=self.lot_model.lot_no,
             worker_no=self.lot_model.worker_no
         )
 

@@ -110,6 +110,10 @@ class FileManager:
                     coordinate_details: List[Dict[str, Any]]=None, lot_number: str=None,
                     worker_no: str=None) -> Dict[str, Any]:
         """保存用データを作成"""
+        if coordinates is None:
+            coordinatesSize = 0;
+        else:
+            coordinatesSize = len(coordinates)
         return {
             'model': model,
             'coordinates': coordinates,
@@ -118,7 +122,7 @@ class FileManager:
             'lot_number': lot_number,
             'worker_no': worker_no,
             'created_at': datetime.now().isoformat(),
-            'total_coordinates': len(coordinates)
+            'total_coordinates': coordinatesSize
         }
     
     def is_defective_info_file(self,index: int) -> bool:
