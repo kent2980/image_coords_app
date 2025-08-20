@@ -92,14 +92,6 @@
         "documentation": {}
     },
     {
-        "label": "datetime",
-        "importPath": "datetime",
-        "description": "datetime",
-        "isExtraImport": true,
-        "detail": "datetime",
-        "documentation": {}
-    },
-    {
         "label": "date",
         "importPath": "datetime",
         "description": "datetime",
@@ -276,6 +268,14 @@
         "documentation": {}
     },
     {
+        "label": "TYPE_CHECKING",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
         "label": "Any",
         "importPath": "typing",
         "description": "typing",
@@ -309,6 +309,14 @@
     },
     {
         "label": "Tuple",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Optional",
         "importPath": "typing",
         "description": "typing",
         "isExtraImport": true,
@@ -862,6 +870,46 @@
         "documentation": {}
     },
     {
+        "label": "Path",
+        "importPath": "pathlib",
+        "description": "pathlib",
+        "isExtraImport": true,
+        "detail": "pathlib",
+        "documentation": {}
+    },
+    {
+        "label": "SQLModel",
+        "importPath": "sqlmodel",
+        "description": "sqlmodel",
+        "isExtraImport": true,
+        "detail": "sqlmodel",
+        "documentation": {}
+    },
+    {
+        "label": "create_engine",
+        "importPath": "sqlmodel",
+        "description": "sqlmodel",
+        "isExtraImport": true,
+        "detail": "sqlmodel",
+        "documentation": {}
+    },
+    {
+        "label": "SQLModel",
+        "importPath": "sqlmodel",
+        "description": "sqlmodel",
+        "isExtraImport": true,
+        "detail": "sqlmodel",
+        "documentation": {}
+    },
+    {
+        "label": "Field",
+        "importPath": "sqlmodel",
+        "description": "sqlmodel",
+        "isExtraImport": true,
+        "detail": "sqlmodel",
+        "documentation": {}
+    },
+    {
         "label": "configparser",
         "kind": 6,
         "isExtraImport": true,
@@ -904,12 +952,37 @@
         "documentation": {}
     },
     {
-        "label": "shutil",
+        "label": "ttkbootstrap",
         "kind": 6,
         "isExtraImport": true,
-        "importPath": "shutil",
-        "description": "shutil",
-        "detail": "shutil",
+        "importPath": "ttkbootstrap",
+        "description": "ttkbootstrap",
+        "detail": "ttkbootstrap",
+        "documentation": {}
+    },
+    {
+        "label": "*",
+        "importPath": "ttkbootstrap.constants",
+        "description": "ttkbootstrap.constants",
+        "isExtraImport": true,
+        "detail": "ttkbootstrap.constants",
+        "documentation": {}
+    },
+    {
+        "label": "*",
+        "importPath": "ttkbootstrap.constants",
+        "description": "ttkbootstrap.constants",
+        "isExtraImport": true,
+        "detail": "ttkbootstrap.constants",
+        "documentation": {}
+    },
+    {
+        "label": "traceback",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "traceback",
+        "description": "traceback",
+        "detail": "traceback",
         "documentation": {}
     },
     {
@@ -978,6 +1051,14 @@
     },
     {
         "label": "WorkerModel",
+        "importPath": "src.models",
+        "description": "src.models",
+        "isExtraImport": true,
+        "detail": "src.models",
+        "documentation": {}
+    },
+    {
+        "label": "LotModel",
         "importPath": "src.models",
         "description": "src.models",
         "isExtraImport": true,
@@ -1118,7 +1199,7 @@
         "kind": 6,
         "importPath": "src.controllers.board_controller",
         "description": "src.controllers.board_controller",
-        "peekOfCode": "class BoardController:\n    \"\"\"基盤管理を行うコントローラー\"\"\"\n    def __init__(\n        self,\n        board_model: \"BoardModel\",\n        coordinate_model: \"CoordinateModel\",\n        image_model: \"ImageModel\",\n        file_controller: \"FileController\",\n    ):\n        self.board_model = board_model",
+        "peekOfCode": "class BoardController:\n    \"\"\"基盤管理を行うコントローラー\"\"\"\n    def __init__(\n        self,\n        board_model: \"BoardModel\",\n        coordinate_model: \"CoordinateModel\",\n        image_model: \"ImageModel\",\n    ):\n        self.board_model = board_model\n        self.coordinate_model = coordinate_model",
         "detail": "src.controllers.board_controller",
         "documentation": {}
     },
@@ -1127,7 +1208,7 @@
         "kind": 6,
         "importPath": "src.controllers.coordinate_controller",
         "description": "src.controllers.coordinate_controller",
-        "peekOfCode": "class CoordinateController:\n    \"\"\"座標操作を管理するコントローラー\"\"\"\n    def __init__(self, coordinate_model: \"CoordinateModel\", image_model: \"ImageModel\"):\n        self.coordinate_model = coordinate_model\n        self.image_model = image_model\n        # ビューへの参照（後で設定）\n        self.canvas_view: Optional[\"CoordinateCanvasView\"] = None\n        self.sidebar_view: Optional[\"SidebarView\"] = None\n        self.main_view: Optional[\"MainView\"] = None\n    def set_canvas_view(self, canvas_view: \"CoordinateCanvasView\") -> None:",
+        "peekOfCode": "class CoordinateController:\n    \"\"\"座標操作を管理するコントローラー\"\"\"\n    def __init__(self, coordinate_model: \"CoordinateModel\", image_model: \"ImageModel\"):\n        self.coordinate_model = coordinate_model\n        self.image_model = image_model\n        # ビューへの参照（後で設定）\n        self.canvas_view: Optional[\"CoordinateCanvasView\"] = None\n        self.sidebar_view: Optional[\"SidebarView\"] = None\n        self.main_view: Optional[\"MainView\"] = None\n        # 現在の基盤番号（自動保存用）",
         "detail": "src.controllers.coordinate_controller",
         "documentation": {}
     },
@@ -1136,7 +1217,7 @@
         "kind": 6,
         "importPath": "src.controllers.file_controller",
         "description": "src.controllers.file_controller",
-        "peekOfCode": "class FileController:\n    \"\"\"ファイル操作を管理するコントローラー\"\"\"\n    def __init__(self, coordinate_model, settings_model, worker_model):\n        self.coordinate_model = coordinate_model\n        self.settings_model = settings_model\n        self.worker_model = worker_model\n        # 現在の保存ディレクトリ\n        self.save_dir = None\n        # 現在のJSONファイルパス\n        self.current_json_path = None",
+        "peekOfCode": "class FileController:\n    \"\"\"ファイル操作を管理するコントローラー（FileManager統合版）\"\"\"\n    def __init__(self, coordinate_model: \"CoordinateModel\", settings_model: \"AppSettingsModel\", worker_model: \"WorkerModel\", board_model: \"BoardModel\", lot_model: \"LotModel\"):\n        self.coordinate_model = coordinate_model\n        self.settings_model = settings_model\n        self.worker_model = worker_model\n        self.board_model = board_model\n        self.lot_model = lot_model\n        # 現在の保存ディレクトリ\n        self.save_dir = None",
         "detail": "src.controllers.file_controller",
         "documentation": {}
     },
@@ -1145,8 +1226,62 @@
         "kind": 6,
         "importPath": "src.controllers.main_controller",
         "description": "src.controllers.main_controller",
-        "peekOfCode": "class MainController:\n    \"\"\"メインアプリケーションコントローラー\"\"\"\n    def __init__(\n        self,\n        coordinate_model: \"CoordinateModel\",\n        settings_model: \"AppSettingsModel\",\n        worker_model: \"WorkerModel\",\n        image_model: \"ImageModel\",\n        board_model: \"BoardModel\",\n        main_view: \"MainView\",",
+        "peekOfCode": "class MainController:\n    \"\"\"メインアプリケーションコントローラー\"\"\"\n    def __init__(\n        self,\n        coordinate_model: \"CoordinateModel\",\n        settings_model: \"AppSettingsModel\",\n        worker_model: \"WorkerModel\",\n        image_model: \"ImageModel\",\n        board_model: \"BoardModel\",\n        lot_model: \"LotModel\",",
         "detail": "src.controllers.main_controller",
+        "documentation": {}
+    },
+    {
+        "label": "init_db",
+        "kind": 2,
+        "importPath": "src.db.init_db",
+        "description": "src.db.init_db",
+        "peekOfCode": "def init_db():\n    SQLModel.metadata.create_all(engine)\nif __name__ == \"__main__\":\n    init_db()\n    print(\"DB初期化完了\")",
+        "detail": "src.db.init_db",
+        "documentation": {}
+    },
+    {
+        "label": "DB_URL",
+        "kind": 5,
+        "importPath": "src.db.init_db",
+        "description": "src.db.init_db",
+        "peekOfCode": "DB_URL = \"sqlite:///app_data.db\"\nengine = create_engine(DB_URL, echo=True)\ndef init_db():\n    SQLModel.metadata.create_all(engine)\nif __name__ == \"__main__\":\n    init_db()\n    print(\"DB初期化完了\")",
+        "detail": "src.db.init_db",
+        "documentation": {}
+    },
+    {
+        "label": "engine",
+        "kind": 5,
+        "importPath": "src.db.init_db",
+        "description": "src.db.init_db",
+        "peekOfCode": "engine = create_engine(DB_URL, echo=True)\ndef init_db():\n    SQLModel.metadata.create_all(engine)\nif __name__ == \"__main__\":\n    init_db()\n    print(\"DB初期化完了\")",
+        "detail": "src.db.init_db",
+        "documentation": {}
+    },
+    {
+        "label": "Lot",
+        "kind": 6,
+        "importPath": "src.db.models",
+        "description": "src.db.models",
+        "peekOfCode": "class Lot(SQLModel, table=True):\n    id: Optional[int] = Field(default=None, primary_key=True)\n    model: str\n    image_path: str\n    lot_no: str\n    worker_no: str\nclass Worker(SQLModel, table=True):\n    id: Optional[int] = Field(default=None, primary_key=True)\n    name: str\n    worker_no: str",
+        "detail": "src.db.models",
+        "documentation": {}
+    },
+    {
+        "label": "Worker",
+        "kind": 6,
+        "importPath": "src.db.models",
+        "description": "src.db.models",
+        "peekOfCode": "class Worker(SQLModel, table=True):\n    id: Optional[int] = Field(default=None, primary_key=True)\n    name: str\n    worker_no: str\nclass Coordinate(SQLModel, table=True):\n    id: Optional[int] = Field(default=None, primary_key=True)\n    lot_id: int\n    x: int\n    y: int\n    detail: Optional[str] = None",
+        "detail": "src.db.models",
+        "documentation": {}
+    },
+    {
+        "label": "Coordinate",
+        "kind": 6,
+        "importPath": "src.db.models",
+        "description": "src.db.models",
+        "peekOfCode": "class Coordinate(SQLModel, table=True):\n    id: Optional[int] = Field(default=None, primary_key=True)\n    lot_id: int\n    x: int\n    y: int\n    detail: Optional[str] = None\n# 必要に応じて他のモデルも追加可能",
+        "detail": "src.db.models",
         "documentation": {}
     },
     {
@@ -1186,6 +1321,15 @@
         "documentation": {}
     },
     {
+        "label": "LotModel",
+        "kind": 6,
+        "importPath": "src.models.lot_model",
+        "description": "src.models.lot_model",
+        "peekOfCode": "class LotModel:\n    \"\"\"ロット情報を管理するモデル\"\"\"\n    def __init__(self, model:str=\"\", image_path:str=\"\", lot_no:str=\"\", worker_no:str=\"\"):\n        self._model = model\n        self._image_path = image_path\n        self._lot_no = lot_no\n        self._worker_no = worker_no\n    @property\n    def model(self) -> str:\n        if self.is_settings_complete():",
+        "detail": "src.models.lot_model",
+        "documentation": {}
+    },
+    {
         "label": "WorkerModel",
         "kind": 6,
         "importPath": "src.models.worker_model",
@@ -1195,12 +1339,39 @@
         "documentation": {}
     },
     {
-        "label": "FileManager",
+        "label": "MainApp",
         "kind": 6,
-        "importPath": "src.utils.file_manager_class",
-        "description": "src.utils.file_manager_class",
-        "peekOfCode": "class FileManager:\n    \"\"\"\n    ファイル管理を行うクラス\n    ### 機能:\n    - ファイルの検索\n    - JSONファイルの読み込み\n    - ファイルの履歴管理\n    - 操作ログの記録\n    - ファイルのバックアップ\n    - ファイルのロック管理",
-        "detail": "src.utils.file_manager_class",
+        "importPath": "src.ui.main_ttk",
+        "description": "src.ui.main_ttk",
+        "peekOfCode": "class MainApp(tb.Window):\n    def __init__(self):\n        super().__init__(themename=\"cosmo\")\n        self.title(\"Image Coords App (ttkbootstrap版)\")\n        self.geometry(\"900x600\")\n        self._setup_ui()\n    def _setup_ui(self):\n        frame = tb.Frame(self, padding=20)\n        frame.pack(fill=BOTH, expand=True)\n        label = tb.Label(frame, text=\"座標管理システム\", font=(\"Arial\", 20, \"bold\"))",
+        "detail": "src.ui.main_ttk",
+        "documentation": {}
+    },
+    {
+        "label": "TtkBootstrapApp",
+        "kind": 6,
+        "importPath": "src.ui.ttk_bootstrap_app",
+        "description": "src.ui.ttk_bootstrap_app",
+        "peekOfCode": "class TtkBootstrapApp:\n    \"\"\"ttkbootstrap版メインアプリケーション\"\"\"\n    def __init__(self, theme: str = \"flatly\"):\n        \"\"\"\n        アプリケーションを初期化\n        Args:\n            theme: ttkbootstrapテーマ名\n                  - flatly (デフォルト、モダンでクリーンなデザイン)\n                  - darkly (ダークテーマ)\n                  - pulse (赤アクセント)",
+        "detail": "src.ui.ttk_bootstrap_app",
+        "documentation": {}
+    },
+    {
+        "label": "create_app",
+        "kind": 2,
+        "importPath": "src.ui.ttk_bootstrap_app",
+        "description": "src.ui.ttk_bootstrap_app",
+        "peekOfCode": "def create_app(theme: str = \"flatly\") -> TtkBootstrapApp:\n    \"\"\"ttkbootstrapアプリケーションを作成\"\"\"\n    return TtkBootstrapApp(theme)\ndef main():\n    \"\"\"メイン関数 - アプリケーションの実行例\"\"\"\n    app = create_app(\"flatly\")  # モダンなフラットデザイン\n    app.run()\nif __name__ == \"__main__\":\n    main()",
+        "detail": "src.ui.ttk_bootstrap_app",
+        "documentation": {}
+    },
+    {
+        "label": "main",
+        "kind": 2,
+        "importPath": "src.ui.ttk_bootstrap_app",
+        "description": "src.ui.ttk_bootstrap_app",
+        "peekOfCode": "def main():\n    \"\"\"メイン関数 - アプリケーションの実行例\"\"\"\n    app = create_app(\"flatly\")  # モダンなフラットデザイン\n    app.run()\nif __name__ == \"__main__\":\n    main()",
+        "detail": "src.ui.ttk_bootstrap_app",
         "documentation": {}
     },
     {
@@ -1280,7 +1451,7 @@
         "kind": 6,
         "importPath": "src.views.main_view",
         "description": "src.views.main_view",
-        "peekOfCode": "class CallbackTypes(TypedDict, total=False):\n    \"\"\"コールバック関数の型定義辞書\"\"\"\n    # ファイル操作\n    open_file: CallbackProtocol\n    save_file: CallbackProtocol\n    exit_app: CallbackProtocol\n    # 編集操作\n    undo_action: CallbackProtocol\n    redo_action: CallbackProtocol\n    clear_coordinates: CallbackProtocol",
+        "peekOfCode": "class CallbackTypes(TypedDict, total=False):\n    \"\"\"コールバック関数の型定義辞書\"\"\"\n    # ファイル操作\n    open_file: CallbackProtocol\n    save_file: CallbackProtocol\n    exit_app: CallbackProtocol\n    delete_file: CallbackProtocol\n    # 編集操作\n    undo_action: CallbackProtocol\n    redo_action: CallbackProtocol",
         "detail": "src.views.main_view",
         "documentation": {}
     },
