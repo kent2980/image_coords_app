@@ -3,9 +3,9 @@ View Layer
 ユーザーインターフェースを管理するビュー層
 """
 
-from .main_view_ttk import MainView
-from .coordinate_canvas_view_ttk import CoordinateCanvasView
-from .sidebar_view_ttk import SidebarView
+from .main_view import MainView
+from .coordinate_canvas_view import CoordinateCanvasView
+from .sidebar_view import SidebarView
 
 __all__ = [
     'MainView',

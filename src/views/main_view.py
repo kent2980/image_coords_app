@@ -682,6 +682,26 @@ class MainView:
                 callback = self.get_callback("load_start_json")
                 if callback:
                     callback()
+    
+    def _on_item_tag_change(self):
+        """現品票切り替え処理"""
+        print("[DEBUG] 現品票切り替えが要求されました")
+        if self.get_current_mode() == "編集":
+            # 入力結果の取得
+            result = self.show_item_tag_switch_dialog()
+            self._model = result.get("model", None)
+            self._lot_number = result.get("lot_number", None)
+            if self.has_callback("on_lot_number_save"):
+                callback = self.get_callback("on_lot_number_save")
+                if callback:
+                    callback()
+        elif self.get_current_mode() == "閲覧":
+            result = self._show_lot_number_input_dialog()
+            if self.has_callback("load_start_json"):
+                callback = self.get_callback("load_start_json")
+                if callback:
+                    callback()
+
 
     def show_message(self, message: str, title: str = "情報"):
         """メッセージを表示"""
@@ -733,6 +753,37 @@ class MainView:
             traceback.print_exc()
             self.show_error(f"ダイアログ表示中にエラーが発生しました:\n{str(e)}")
             return None
+
+    def _show_lot_number_input_dialog(self):
+        """閲覧モード用の指図入力ダイアログを表示"""
+        import re
+        import tkinter as tk
+        from tkinter import ttk
+
+        class LotNumberInputDialog:
+            def __init__(self, parent):
+                self.result = None
+                self.dialog = tk.Toplevel(parent)
+                self.dialog.title("指図番号入力")
+                self.dialog.geometry("350x200")
+                self.dialog.resizable(False, False)
+                self.dialog.transient(parent)
+                self.dialog.grab_set()
+
+                # ダイアログを中央に配置
+                self.dialog.update_idletasks()
+                x = (self.dialog.winfo_screenwidth() - self.dialog.winfo_width()) // 2
+                y = (self.dialog.winfo_screenheight() - self.dialog.winfo_height()) // 2
+                self.dialog.geometry(f"+{x}+{y}")
+
+                self._create_widgets()
+
+                # Enterキーでの確定
+                self.dialog.bind("<Return>", lambda e: self._on_ok())
+
+                # 初期フォーカス
+                self.lot_number_entry.focus_set()
+
 
     def setup_menu_buttons(self):
         """メニューボタンを設定（旧コードと同じ配置）"""

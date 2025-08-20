@@ -63,7 +63,7 @@ class ItemTagSwitchDialog:
         
         tk.Label(
             product_frame,
-            text="製番:",
+            text="品目コード:",
             font=("Arial", 10),
             width=8,
             anchor="w"

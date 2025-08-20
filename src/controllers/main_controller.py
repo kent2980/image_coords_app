@@ -74,6 +74,9 @@ class MainController:
         # 現在のロット番号
         self.current_lot_number: Optional[str] = None
 
+        # 現在のモデル名
+        self.current_model: Optional[str] = None
+
         # 前回選択されたモデル（変更検出用）
         self.previous_model: Optional[str] = None
 
@@ -255,7 +258,7 @@ class MainController:
         self.main_view.setup_top_controls()
 
         # メニューを設定
-        # self.main_view.setup_menu_buttons()
+        self.main_view.setup_menu_buttons()
 
         # 日付表示を更新
         self.main_view.update_date_label(self.current_date.strftime("%Y-%m-%d"))
@@ -606,11 +609,6 @@ class MainController:
             self.main_view.show_error("作業者が設定されていません。")
             return
 
-        # サイドバーのモデル名を更新
-        selected_model = self.main_view.get_selected_model()
-        product_number = selected_model.split("_")[0]
-        self.sidebar_view.set_product_number(product_number)
-
         # ロット番号を取得
         lot_number = self.main_view.get_lot_number().strip()
         if not lot_number:
@@ -627,66 +625,9 @@ class MainController:
 
         # ロット番号を保存
         self.current_lot_number = lot_number  # MainControllerのロット番号も更新
-        self.sidebar_view.set_lot_number(lot_number)
+        self.current_model = self.main_view.get_selected_model()
+
         print(f"ロット番号を保存しました: {lot_number}")
-
-        # ロットモデルの更新
-        self.lot_model.set_all_properties(
-            model=self.main_view.get_selected_model(),
-            image_path=self.image_model.current_image_path,
-            lot_no=self.current_lot_number,
-            worker_no=self.current_worker_no
-        )
-
-        # 現在の座標データがある場合は基盤データも保存
-        current_coordinates = self.coordinate_controller.get_all_coordinates()
-        if current_coordinates:
-            try:
-                # 座標詳細情報を取得
-                coordinate_details = self.coordinate_controller.get_all_coordinate_details()
-                
-                # 現在の基盤データを保存
-                success = self.board_model.save_board_data(
-                    self.board_model.current_board_number,
-                    current_coordinates,
-                    coordinate_details,
-                    lot_number,
-                    self.current_worker_no or "",
-                    self.image_model.current_image_path or "",
-                    selected_model,
-                )
-                
-                if success:
-                    print(f"ロット番号設定時に基盤 {self.board_model.current_board_number} のデータを保存しました")
-                    
-                    # 基盤情報をファイルにも保存
-                    date_str = self.current_date.strftime("%Y-%m-%d")
-                    self.board_model.save_board_info_to_file(date_str, selected_model, lot_number)
-                else:
-                    print(f"基盤データの保存に失敗しました")
-                    
-            except Exception as e:
-                print(f"基盤データ保存エラー: {e}")
-
-        # ロット番号入力フィールドをクリア
-        self.main_view.clear_lot_number()
-
-        # 保存名を自動更新（ロット番号変更時）
-        selected_model = self.main_view.get_selected_model()
-        if selected_model and not selected_model.startswith("画像"):
-            auto_save_name = self.file_controller.setup_save_name_entry(
-                selected_model,
-                lot_number,
-                "",  # 新しいロット番号なので保存名をリセット
-            )
-            if auto_save_name:
-                self.main_view.set_save_name(auto_save_name)
-
-        # lotInfo.jsonを作成
-        self.file_controller.reload_lot_info()
-
-        # 対象ディレクトリの最新JSONファイルをチェックして自動読み込み
-        self._check_and_load_latest_json(self.lot_model.model, self.lot_model.lot_no)
 
     def setup_save_name_entry(self):
         """保存名を自動設定"""
@@ -1091,86 +1032,15 @@ class MainController:
             if mode == "編集":
                 # 編集モード：製番と指図を入力するダイアログ
                 result = self.main_view.show_item_tag_switch_dialog()
+                self.current_model = result[0]
+                self.current_lot_number = result[1]
             elif mode == "閲覧":
                 # 閲覧モード：指図入力のみのダイアログを表示
                 result = self._show_lot_number_input_dialog()
             else:
                 result = None
 
-            print(f"[DEBUG] ダイアログの結果: {result}")
-
-            if result:
-                if mode == "編集":
-                    product_number, lot_number = result
-                    print(
-                        f"[現品票切り替え] 製番: {product_number}, 指図: {lot_number}"
-                    )
-
-                    # 現在のロット番号を更新
-                    self.current_lot_number = lot_number
-
-                    # 現在の座標データがある場合は基盤データも保存
-                    current_coordinates = self.coordinate_controller.get_all_coordinates()
-                    selected_model = self.main_view.get_selected_model()
-                    if current_coordinates and selected_model and not selected_model.startswith("画像"):
-                        try:
-                            # 座標詳細情報を取得
-                            coordinate_details = self.coordinate_controller.get_all_coordinate_details()
-                            
-                            # 現在の基盤データを保存
-                            success = self.board_model.save_board_data(
-                                self.board_model.current_board_number,
-                                current_coordinates,
-                                coordinate_details,
-                                lot_number,
-                                self.current_worker_no or "",
-                                self.image_model.current_image_path or "",
-                                selected_model,
-                            )
-                            
-                            if success:
-                                print(f"現品票切り替え時に基盤 {self.board_model.current_board_number} のデータを保存しました")
-                                
-                                # 基盤情報をファイルにも保存
-                                date_str = self.current_date.strftime("%Y-%m-%d")
-                                self.board_model.save_board_info_to_file(date_str, selected_model, lot_number)
-                            else:
-                                print(f"基盤データの保存に失敗しました")
-                                
-                        except Exception as e:
-                            print(f"基盤データ保存エラー: {e}")
-
-                    # 製番に基づいてモデル切り替え処理を実行
-                    print(f"[DEBUG] 製番 '{product_number}' でモデル検索を開始")
-                    self._switch_model_by_product_number(product_number)
-
-                    # サイドバーの製番と指図番号を更新
-                    if hasattr(self, "sidebar_view") and self.sidebar_view:
-                        self.sidebar_view.set_product_number(product_number)
-                        self.sidebar_view.set_lot_number(lot_number)
-                        print(
-                            f"[DEBUG] サイドバーに製番と指図番号を設定しました: 製番={product_number}, 指図={lot_number}"
-                        )
-
-                elif mode == "閲覧":
-                    lot_number = result
-                    # 対応するディレクトリパスを取得
-                    dir_path = self.file_controller.get_lot_number_directory(lot_number)
-                    if dir_path:
-                        print(
-                            f"[DEBUG] ロット番号 '{lot_number}' に対応するディレクトリ: {dir_path}"
-                        )
-                        # JSONファイルを自動的に読み込む
-                        file_path = os.path.join(dir_path, "0001.json")
-                        try:
-                            self.load_json(file_path=file_path)
-                        except Exception as e:
-                            print(f"[DEBUG] JSONファイル読み込みエラー: {e}")
-                            self.main_view.show_error(
-                                f"JSONファイルの読み込みに失敗しました:\n{str(e)}"
-                            )
-            else:
-                print("[DEBUG] ダイアログがキャンセルされました")
+            print(f"[DEBUG] ダイアログの結果: {result[0]}")
 
         except Exception as e:
             print(f"現品票切り替えエラー: {e}")
