@@ -5,9 +5,11 @@
 
 import json
 import os
+import pathlib
 import re
 import tkinter as tk
 from datetime import date, datetime
+from pathlib import Path
 from tkinter import messagebox
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
@@ -87,6 +89,9 @@ class MainController:
 
         # モデルデータ
         self.model_data: List[Any] = []
+
+        # 現在作業中のjsonファイル
+        self.current_json_file: Path = None
 
         # 初期化フラグ
         self.is_initialized: bool = False
@@ -1053,55 +1058,7 @@ class MainController:
 
     def prev_board(self):
         """前の基板を選択"""
-        print("[ボタン] 前の基板が選択されました")
-
-        try:
-            # 現在のモデル、ロット番号、作業者情報を取得
-            selected_model = self.main_view.get_selected_model()
-            lot_number = self.current_lot_number or self.sidebar_view.get_lot_number()
-
-            if (
-                not selected_model
-                or selected_model.startswith("画像")
-                or not lot_number
-            ):
-                messagebox.showwarning(
-                    "基盤切り替えエラー",
-                    "モデルとロット番号が設定されていません。\n基盤切り替えにはモデルとロット番号が必要です。",
-                )
-                return
-
-            # 前の基盤に切り替え
-            success = self.board_controller.switch_to_previous_board(
-                self.current_date, selected_model, lot_number, self.current_worker_no
-            )
-
-            if success:
-                board_number = self.board_controller.get_current_board_number()
-
-                # 既存のJSONファイルがあるかチェックして読み込み
-                self._load_existing_json_for_board(
-                    selected_model, lot_number, board_number
-                )
-
-                # 座標表示を更新
-                self._redraw_coordinates_for_new_scale()
-
-                next_board = board_number + 1
-
-                # CoordinateControllerに新しい基盤番号を通知
-                self.coordinate_controller.set_current_board_number(board_number)
-
-                # Undo/Redoボタンの状態を更新
-                self._update_undo_redo_state()
-            else:
-                messagebox.showinfo("基盤切り替え", "これが最初の基盤です。")
-
-        except Exception as e:
-            print(f"前の基盤切り替えエラー: {e}")
-            messagebox.showerror(
-                "エラー", f"前の基盤への切り替え中にエラーが発生しました:\n{str(e)}"
-            )
+        pass
 
     def next_board(self):
         """次の基板を選択"""
@@ -1426,13 +1383,20 @@ class MainController:
         self.file_controller.init_lot_number_directory(self.current_lot_number)
         # ロックファイル作成
         self.file_controller.create_lot_number_dir_lock_file()
-        # ディレクトリ内のJSONファイル名を取得
-        json_files = self.file_controller.get_lot_dir_json_list()
+        # ディレクトリ内のdataファイル名を取得
+        data_files = self.file_controller.get_lot_dir_data_list()
         # 最大インデックスを取得
-        max_index = self.file_controller.get_max_json_index(json_files)
-        # インデックス用のJSONファイルを作成
-        self.file_controller.create_index_json_file(max_index)
+        max_index = self.file_controller.get_max_data_index(data_files)
+        # インデックス用のdataファイルを作成
+        self.current_data_file = self.file_controller.create_index_data_file(max_index)
         # main_viewの基盤選択ラベルを更新
         self.main_view.set_board_index_text(max_index + 1, max_index + 1)
+        # lotInfo.jsonを生成
+        self.file_controller.create_lot_info(
+            self.current_model,
+            self.image_model.current_image_path,
+            self.current_lot_number,
+            self._current_worker_no,
+        )
 
     # endregion

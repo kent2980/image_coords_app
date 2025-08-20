@@ -9,6 +9,8 @@ from datetime import datetime
 from tkinter import filedialog, messagebox
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
+from src.db.models import Lot
+
 if TYPE_CHECKING:
     from ..models.coordinate_model import CoordinateModel
     from ..models.app_settings_model import AppSettingsModel
@@ -88,14 +90,17 @@ class FileController:
             return lock_file_path.exists()
         return False
 
-    def create_index_json_file(self, index: int):
-        """インデックス用のJSONファイルを作成"""
+    def create_index_data_file(self, index: int) -> Path:
+        """インデックス用のdataファイルを作成"""
         next_index = index + 1
         # 0埋め4桁のインデックスを作成
         index_str = f"{next_index:04d}"
         json_data = {"index": index_str}
 
-        json_path = self.lot_directory / f"{index_str}.json"
+        if not self.lot_directory:
+            raise ValueError("ロットディレクトリが設定されていません。")
+
+        json_path = self.lot_directory / f"{index_str}.data"
         with open(json_path, "w", encoding="utf-8") as f:
             json.dump(json_data, f, ensure_ascii=False, indent=4)
 
@@ -103,24 +108,52 @@ class FileController:
 
         return json_path
 
-    def get_lot_dir_json_list(self) -> List[Path]:
-        """ロットディレクトリ内のJSONファイル一覧を取得"""
+    def get_lot_dir_data_list(self) -> List[Path]:
+        """ロットディレクトリ内のdataファイル一覧を取得"""
         if not self.lot_directory:
             return []
 
-        json_files = list(self.lot_directory.glob("*.json"))
-        return [file for file in json_files if file.is_file()]
+        data_files = list(self.lot_directory.glob("*.data"))
+        return [file for file in data_files if file.is_file()]
 
-    def get_max_json_index(self, json_list: List[Path]) -> int:
-        """JSONファイルの最大インデックスを取得"""
+    def get_max_data_index(self, data_list: List[Path]) -> int:
+        """dataファイルの最大インデックスを取得"""
         max_index = 0
-        for json_file in json_list:
+        for data_file in data_list:
             try:
                 index = int(
-                    json_file.stem.split("_")[0]
+                    data_file.stem.split("_")[0]
                 )  # ファイル名からインデックスを取得
                 if index > max_index:
                     max_index = index
             except ValueError:
                 continue
         return max_index
+
+    def save_data_file(self, data_path: Path, data: Dict[str, Any]) -> bool:
+        """dataデータをファイルに保存"""
+        try:
+            with open(data_path, "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False, indent=4)
+            return True
+        except Exception as e:
+            print(f"data保存エラー: {e}")
+            return False
+
+    def create_lot_info(
+        self, model: str, image_path: str, lot_no: str, worker_no: str
+    ) -> bool:
+        """ロットデータを保存"""
+        try:
+            lot_data: Lot = Lot(
+                model=model,
+                image_path=image_path,
+                lot_no=lot_no,
+                worker_no=worker_no,
+            )
+            with open(self.lot_directory / "lotInfo.json", "w", encoding="utf-8") as f:
+                json.dump(lot_data.model_dump(), f, ensure_ascii=False, indent=4)
+            return True
+        except Exception as e:
+            print(f"ロットデータ保存エラー: {e}")
+            return False

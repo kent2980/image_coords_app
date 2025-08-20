@@ -870,6 +870,31 @@
         "documentation": {}
     },
     {
+        "label": "Lot",
+        "importPath": "src.db.models",
+        "description": "src.db.models",
+        "isExtraImport": true,
+        "detail": "src.db.models",
+        "documentation": {}
+    },
+    {
+        "label": "pathlib",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "pathlib",
+        "description": "pathlib",
+        "detail": "pathlib",
+        "documentation": {}
+    },
+    {
+        "label": "Path",
+        "importPath": "pathlib",
+        "description": "pathlib",
+        "isExtraImport": true,
+        "detail": "pathlib",
+        "documentation": {}
+    },
+    {
         "label": "Path",
         "importPath": "pathlib",
         "description": "pathlib",
@@ -903,7 +928,7 @@
         "documentation": {}
     },
     {
-        "label": "SQLModel",
+        "label": "Field",
         "importPath": "sqlmodel",
         "description": "sqlmodel",
         "isExtraImport": true,
@@ -911,7 +936,7 @@
         "documentation": {}
     },
     {
-        "label": "Field",
+        "label": "SQLModel",
         "importPath": "sqlmodel",
         "description": "sqlmodel",
         "isExtraImport": true,
@@ -1271,7 +1296,7 @@
         "kind": 6,
         "importPath": "src.db.models",
         "description": "src.db.models",
-        "peekOfCode": "class Lot(SQLModel, table=True):\n    id: Optional[int] = Field(default=None, primary_key=True)\n    model: str\n    image_path: str\n    lot_no: str\n    worker_no: str\nclass Worker(SQLModel, table=True):\n    id: Optional[int] = Field(default=None, primary_key=True)\n    name: str\n    worker_no: str",
+        "peekOfCode": "class Lot(SQLModel, table=True):\n    \"\"\"ロットデータモデル\"\"\"\n    id: Optional[int] = Field(default=None, primary_key=True)\n    model: str\n    image_path: str\n    lot_no: str\n    worker_no: str\nclass Worker(SQLModel, table=True):\n    \"\"\"作業者データモデル\"\"\"\n    id: Optional[int] = Field(default=None, primary_key=True)",
         "detail": "src.db.models",
         "documentation": {}
     },
@@ -1280,7 +1305,7 @@
         "kind": 6,
         "importPath": "src.db.models",
         "description": "src.db.models",
-        "peekOfCode": "class Worker(SQLModel, table=True):\n    id: Optional[int] = Field(default=None, primary_key=True)\n    name: str\n    worker_no: str\nclass Coordinate(SQLModel, table=True):\n    id: Optional[int] = Field(default=None, primary_key=True)\n    lot_id: int\n    x: int\n    y: int\n    detail: Optional[str] = None",
+        "peekOfCode": "class Worker(SQLModel, table=True):\n    \"\"\"作業者データモデル\"\"\"\n    id: Optional[int] = Field(default=None, primary_key=True)\n    name: str\n    worker_no: str\nclass Coordinate(SQLModel, table=True):\n    \"\"\"座標データモデル\"\"\"\n    id: Optional[int] = Field(default=None, primary_key=True)\n    lot_id: int\n    x: int",
         "detail": "src.db.models",
         "documentation": {}
     },
@@ -1289,7 +1314,7 @@
         "kind": 6,
         "importPath": "src.db.models",
         "description": "src.db.models",
-        "peekOfCode": "class Coordinate(SQLModel, table=True):\n    id: Optional[int] = Field(default=None, primary_key=True)\n    lot_id: int\n    x: int\n    y: int\n    detail: Optional[str] = None\n# 必要に応じて他のモデルも追加可能",
+        "peekOfCode": "class Coordinate(SQLModel, table=True):\n    \"\"\"座標データモデル\"\"\"\n    id: Optional[int] = Field(default=None, primary_key=True)\n    lot_id: int\n    x: int\n    y: int\n    reference: Optional[str] = Field(default=None, description=\"リファレンス\")\n    defect_name: Optional[str] = Field(default=None, description=\"不具合名\")\n    serial: Optional[str] = Field(default=None, description=\"シリアル番号\")\n    comment: Optional[str] = Field(default=None, description=\"コメント\")",
         "detail": "src.db.models",
         "documentation": {}
     },

@@ -167,7 +167,7 @@ class SidebarView:
         value_label = tk.Label(
             info_frame,
             text=value_text,
-            font=("Arial", 10, "bold"),
+            font=("Arial", 14, "bold"),
             bg="#f5f5f5",
             fg=fg_color,
             anchor="w",
