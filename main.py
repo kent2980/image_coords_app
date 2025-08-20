@@ -116,7 +116,6 @@ class ImageCoordsApp:
             self.board_model,
             self.coordinate_model,
             self.image_model,
-            self.file_controller,
         )
 
         # メインコントローラー（他のコントローラーを統括）

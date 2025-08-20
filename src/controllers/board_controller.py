@@ -8,7 +8,6 @@ from datetime import date
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 if TYPE_CHECKING:
-    from ..controllers.file_controller import FileController
     from ..models.board_model import BoardModel
     from ..models.coordinate_model import CoordinateModel
     from ..models.image_model import ImageModel
@@ -24,12 +23,10 @@ class BoardController:
         board_model: "BoardModel",
         coordinate_model: "CoordinateModel",
         image_model: "ImageModel",
-        file_controller: "FileController",
     ):
         self.board_model = board_model
         self.coordinate_model = coordinate_model
         self.image_model = image_model
-        self.file_controller = file_controller
 
         # ビューへの参照（後で設定）
         self.sidebar_view: Optional["SidebarView"] = None
@@ -55,10 +52,6 @@ class BoardController:
         """画像モデルを設定"""
         self.image_model = image_model
 
-    def set_file_controller(self, file_controller: "FileController") -> None:
-        """ファイルコントローラーを設定"""
-        self.file_controller = file_controller
-
     def set_current_board_number(self, board_number: int) -> None:
         """現在の基盤番号を設定"""
         if board_number > 0:
@@ -79,19 +72,10 @@ class BoardController:
 
     def get_board_max_number(self, mode: str, is_delete: bool) -> int:
         """現在のデータディレクトリに存在するJSONファイルの数を返却します"""
-
-        json_files = self.file_controller.get_json_lists()
-        if len(json_files) == 0:
-            return 0
-        if is_delete:
-            return len(json_files)
-        if mode == "編集":
-            return len(json_files) + 1
-        else:
-            return len(json_files) 
+        pass
 
     def switch_to_next_board(
-        self, current_date: date, model_name: str, lot_number: str, worker_no: str
+        self, current_date: date, model_name: str, lot_number: str, worker_no: str,next_board_number:int
     ) -> bool:
         """次の基盤に切り替え"""
         try:
@@ -122,9 +106,6 @@ class BoardController:
                     print("現在の基盤のJSONファイル保存に失敗しました")
                     # JSON保存に失敗してもセッション保存は成功しているので継続
 
-            # 次の基盤番号を取得
-            next_board_number = self.file_controller.get_next_board_number(self.get_current_board_number())
-
             # 基盤を切り替え
             self.board_model.set_current_board(next_board_number)
 
@@ -151,12 +132,10 @@ class BoardController:
             return False
 
     def switch_to_previous_board(
-        self, current_date: date, model_name: str, lot_number: str, worker_no: str
+        self, current_date: date, model_name: str, lot_number: str, worker_no: str,previous_board_number:int
     ) -> bool:
         """前の基盤に切り替え"""
         try:
-            previous_board_number = self.file_controller.get_previous_board_number(self.get_current_board_number())
-
             if previous_board_number is None:
                 print("これが最初の基盤です")
                 return False
@@ -213,14 +192,11 @@ class BoardController:
             return False
 
     def delete_current_board(
-        self, current_date: date, model_name: str, lot_number: str
+        self, current_date: date, model_name: str, lot_number: str,json_path:str
     ) -> bool:
         """現在の基盤を削除"""
         try:
             current_board_number = self.board_model.current_board_number
-            
-            # 現在のJSONパスを取得
-            json_path = self.file_controller.get_current_json_path()
 
             # JSONファイルを削除
             if json_path:
@@ -233,19 +209,8 @@ class BoardController:
             # 座標データをクリア
             self.coordinate_model.clear_coordinates()
 
-            # 削除後の基盤番号を決定
-            board_list = self.file_controller.get_json_lists()
-
-            if board_list:
-                # 残っている基盤がある場合は最後の基盤に切り替え
-                board_count = len(board_list)
-                self.board_model.set_current_board(board_count)
-                self._load_board_data(board_count)
-                new_board_number = board_count
-            else:
-                # 基盤が全て削除された場合は基盤1に戻る
-                self.board_model.set_current_board(1)
-                new_board_number = 1
+            # 新しい基盤番号を取得
+            new_board_number = self.get_new_board_number()
 
             # サイドバーの表示を更新
             if self.sidebar_view:
@@ -265,9 +230,12 @@ class BoardController:
         except Exception as e:
             print(f"基盤削除エラー: {e}")
             return False
+    
+    def get_new_board_number(self):
+        pass
 
     def save_all_boards_to_json(
-        self, current_date: date, model_name: str, lot_number: str, worker_no: str
+        self, current_date: date, model_name: str, lot_number: str, worker_no: str,save_dir:str
     ) -> bool:
         """全基盤をJSONファイルに保存"""
         try:
@@ -283,16 +251,6 @@ class BoardController:
                 if not success:
                     print("現在の基盤データの保存に失敗しました")
 
-            # 保存ディレクトリを取得
-            date_str = current_date.strftime("%Y-%m-%d")
-            save_dir = self.file_controller.setup_json_save_dir(
-                current_date, model_name, lot_number
-            )
-
-            if not save_dir:
-                print("保存ディレクトリの作成に失敗しました")
-                return False
-
             # 全基盤データを保存
             boards_data = self.board_model.boards_data
             saved_count = 0
@@ -303,22 +261,7 @@ class BoardController:
                 file_path = os.path.join(save_dir, filename)
 
                 # JSONデータを作成
-                save_data = self.file_controller.create_save_data(
-                    board_data.get("model", model_name),
-                    board_data["coordinates"],
-                    board_data["image_path"],
-                    board_data["coordinate_details"],
-                    board_data["lot_number"],
-                    board_data["worker_no"],
-                )
-
-                # 基盤番号を追加
-                save_data["board_number"] = board_number
-
-                # JSONファイルに保存
-                if self.file_controller.save_json_data(file_path, save_data):
-                    saved_count += 1
-                    print(f"基盤 {board_number} を保存しました: {filename}")
+                self.save_board_data()
 
             print(f"全 {saved_count} 基盤をJSONファイルに保存しました")
             return saved_count > 0
@@ -326,6 +269,9 @@ class BoardController:
         except Exception as e:
             print(f"全基盤JSON保存エラー: {e}")
             return False
+    
+    def save_board_data(self):
+        pass
 
     def load_board_session(
         self, current_date: date, model_name: str, lot_number: str
@@ -484,17 +430,10 @@ class BoardController:
         worker_no: str,
         coordinates: List[Tuple[int, int]],
         coordinate_details: List[Dict[str, Any]],
+        save_dir:str
     ) -> bool:
         """現在の基盤をJSONファイルに保存"""
         try:
-            # 保存ディレクトリを取得
-            save_dir = self.file_controller.setup_json_save_dir(
-                current_date, model_name, lot_number
-            )
-
-            if not save_dir:
-                print("JSONファイル保存ディレクトリの作成に失敗しました")
-                return False
 
             # 現在の基盤番号でファイル名を生成（4桁ゼロパディング）
             current_board_number = self.board_model.current_board_number
@@ -504,17 +443,8 @@ class BoardController:
             # 画像パスを取得
             image_path = self.image_model.current_image_path or ""
 
-            # 保存データを作成
-            save_data = self.file_controller.create_save_data(
-                model_name, coordinates, image_path, coordinate_details, lot_number, worker_no
-            )
-
-            # 基盤番号を追加
-            save_data["board_number"] = current_board_number
-
             # JSONファイルに保存
-            success = self.file_controller.save_json_data(file_path, save_data)
-
+            success = self.save_board_data()
             if success:
                 print(
                     f"基盤 {current_board_number} をJSONファイルに保存しました: {filename}"
@@ -553,8 +483,6 @@ class BoardController:
             max_number = self.get_board_max_number(mode,is_delete)
             # 現在の基盤番号を更新
             self.main_view.set_board_index_text(board_number, max_number)
-            # 現在のJSONファイルのパスを設定する
-            self.file_controller.set_current_json_path(board_number)
         except Exception as e:
             print(f"[ERROR] 基盤表示更新エラー: {e}")
             import traceback
