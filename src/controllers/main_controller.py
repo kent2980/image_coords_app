@@ -3,12 +3,13 @@
 アプリケーション全体の制御と他のコントローラーとの連携を管理
 """
 
+import json
 import os
+import re
 import tkinter as tk
 from datetime import date, datetime
 from tkinter import messagebox
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
-import json
 
 if TYPE_CHECKING:
     from ..controllers.board_controller import BoardController
@@ -18,8 +19,8 @@ if TYPE_CHECKING:
     from ..models.board_model import BoardModel
     from ..models.coordinate_model import CoordinateModel
     from ..models.image_model import ImageModel
-    from ..models.worker_model import WorkerModel
     from ..models.lot_model import LotModel
+    from ..models.worker_model import WorkerModel
     from ..views.coordinate_canvas_view import CoordinateCanvasView
     from ..views.main_view import MainView
     from ..views.sidebar_view import SidebarView
@@ -77,6 +78,9 @@ class MainController:
         # 現在のモデル名
         self.current_model: Optional[str] = None
 
+        # 画像フォルダ内のモデルリスト
+        self.model_list: List[Dict[str, str]] = None
+
         # 前回選択されたモデル（変更検出用）
         self.previous_model: Optional[str] = None
 
@@ -90,6 +94,44 @@ class MainController:
         # 環境変数 DEBUG=1 でデバッグモードを有効化
         self.debug_mode: bool = os.getenv("DEBUG", "0") == "1"
 
+    # セッター関数
+    @property
+    def current_lot_number(self):
+        return getattr(self, "_current_lot_number", None)
+
+    @current_lot_number.setter
+    def current_lot_number(self, value: str):
+        self.sidebar_view.set_lot_number(value)
+        self._current_lot_number = value
+
+    @property
+    def current_worker_name(self):
+        return getattr(self, "_current_worker_name", None)
+
+    @current_worker_name.setter
+    def current_worker_name(self, value: str):
+        self.sidebar_view.update_worker_label(value)
+        self._current_worker_name = value
+
+    @property
+    def current_worker_no(self):
+        return getattr(self, "_current_worker_no", None)
+
+    @current_worker_no.setter
+    def current_worker_no(self, value: str):
+        self.sidebar_view.set_worker_no(value)
+        self._current_worker_no = value
+
+    @property
+    def current_model(self):
+        return getattr(self, "_current_model", None)
+
+    @current_model.setter
+    def current_model(self, value: str):
+        self.sidebar_view.set_product_number(value)
+        self._current_model = value
+
+    # アプリケーションの初期化
     def initialize_application(self):
         """アプリケーションを初期化"""
         if self.is_initialized:
@@ -102,11 +144,6 @@ class MainController:
             # デバッグモード時はデフォルト作業者情報を設定
             self.current_worker_no = "DEBUG"
             self.current_worker_name = "デバッグユーザー"
-
-            # サイドバーにデバッグ作業者情報を設定
-            worker_text = f"作業者: {self.current_worker_name}"
-            self.sidebar_view.update_worker_label(worker_text)
-            self.sidebar_view.set_worker_no(self.current_worker_no)
 
             print("[DEBUG] デバッグモード: 作業者入力をスキップしました")
 
@@ -122,7 +159,7 @@ class MainController:
 
         # SidebarViewにMainViewの参照を設定
         self.sidebar_view.set_main_view_reference(self.main_view)
-        
+
         # SidebarViewにCoordinateControllerの参照を設定（自動保存用）
         self.sidebar_view.set_coordinate_controller(self.coordinate_controller)
 
@@ -272,7 +309,7 @@ class MainController:
 
         # Undo/Redoボタンの状態を更新
         self._update_undo_redo_state()
-        
+
         # CoordinateControllerに初期基盤番号を設定
         initial_board_number = self.board_controller.get_current_board_number()
         self.coordinate_controller.set_current_board_number(initial_board_number)
@@ -287,15 +324,15 @@ class MainController:
     def _update_model_options(self):
         """モデル選択肢を更新（旧コード互換機能）"""
         # CoordinateControllerのload_models_from_fileメソッドを使用
-        model_data = self.coordinate_controller.load_models_from_file(
+        self.model_list = self.coordinate_controller.load_models_from_file(
             self.settings_model
         )
 
         # MainViewのモデル選択肢を更新
-        self.main_view.update_model_options(model_data)
+        self.main_view.update_model_options(self.model_list)
 
         # サイドバーには従来通りモデル名のみを渡す（互換性のため）
-        model_names = [list(item.keys())[0] for item in model_data if item]
+        model_names = [list(item.keys())[0] for item in self.model_list if item]
         if not model_names:
             model_names = ["画像ディレクトリが未設定"]
 
@@ -557,13 +594,17 @@ class MainController:
                     or self.sidebar_view.get_lot_number()
                 )
                 worker_no = form_data.get("worker_no") or self.current_worker_no
-                
+
                 # 現在のモデル名を取得
                 current_model = self.main_view.get_selected_model() or ""
 
                 # 自動更新保存
                 if self.file_controller.save_coordinates_with_auto_update(
-                    coordinates, coordinate_details, lot_number, worker_no, current_model
+                    coordinates,
+                    coordinate_details,
+                    lot_number,
+                    worker_no,
+                    current_model,
                 ):
                     print(
                         f"JSONファイルを自動更新しました: {self.file_controller.current_json_path}"
@@ -598,7 +639,10 @@ class MainController:
 
     def load_models_from_file(self):
         """モデルデータをファイルから読み込む"""
-        return self.coordinate_controller.load_models_from_file(self.settings_model)
+        self.model_list = self.coordinate_controller.load_models_from_file(
+            self.settings_model
+        )
+        return self.model_list
 
     def on_lot_number_save(self):
         """ロット番号保存処理"""
@@ -1009,13 +1053,16 @@ class MainController:
         """基盤表示を更新"""
         try:
             # BoardControllerの_update_board_display()メソッドを呼び出し
-            if hasattr(self.board_controller, '_update_board_display'):
+            if hasattr(self.board_controller, "_update_board_display"):
                 self.board_controller._update_board_display()
             else:
-                print("[DEBUG] BoardController._update_board_displayメソッドが見つかりません")
+                print(
+                    "[DEBUG] BoardController._update_board_displayメソッドが見つかりません"
+                )
         except Exception as e:
             print(f"基盤表示更新エラー: {e}")
             import traceback
+
             traceback.print_exc()
 
     def on_item_tag_change(self):
@@ -1032,7 +1079,9 @@ class MainController:
             if mode == "編集":
                 # 編集モード：製番と指図を入力するダイアログ
                 result = self.main_view.show_item_tag_switch_dialog()
-                self.current_model = result[0]
+                model_number = result[0]
+                # 製番からモデル名を検索
+                self.current_model = self._find_model_by_product_number(model_number)
                 self.current_lot_number = result[1]
             elif mode == "閲覧":
                 # 閲覧モード：指図入力のみのダイアログを表示
@@ -1210,6 +1259,36 @@ class MainController:
         except Exception as e:
             print(f"モデル切り替えエラー: {e}")
 
+    def _find_model_by_product_number(self, product_number: str) -> Optional[str]:
+        """製番からモデル名を検索する
+
+        Args:
+            product_number: 製番（例: "12345"）
+
+        Returns:
+            マッチしたモデル名、見つからない場合はNone
+        """
+        if not product_number or not self.model_list:
+            return None
+
+        model_regex = rf"^{product_number}.*$"
+
+        # モデルリストから製番に一致するモデル名を検索
+        for item in self.model_list:
+            if not item:
+                continue
+            model_name = list(item.keys())[0]
+            if re.match(model_regex, model_name):
+                print(
+                    f"[製番検索] 製番 '{product_number}' → モデル '{model_name}' が見つかりました"
+                )
+                return model_name
+
+        print(
+            f"[製番検索] 製番 '{product_number}' に一致するモデルが見つかりませんでした"
+        )
+        return None
+
     # メニューコールバック関数
     def new_project(self):
         """新しいプロジェクトを作成"""
@@ -1302,7 +1381,7 @@ class MainController:
                 "基盤切り替えエラー",
                 "現在の基盤には座標データがありません。\n基盤を切り替えるには座標データが必要です。",
             )
-            return 
+            return
 
         try:
             # 次の基板への切り替えを実行
@@ -1372,7 +1451,7 @@ class MainController:
                     messagebox.showinfo(
                         "基板削除", f"基板を削除しました。現在の基板: {board_number}"
                     )
-                        
+
                 else:
                     messagebox.showerror("エラー", "基板削除に失敗しました。")
 
@@ -1515,8 +1594,12 @@ class MainController:
             board_number = self.board_controller.get_current_board_number()
 
             # 既存のJSONファイルがあるかチェックして読み込み
-            if not self._load_existing_json_for_board(selected_model, lot_number, board_number):
-                self._check_and_load_latest_json(self.lot_model.model,self.lot_model.lot_no)
+            if not self._load_existing_json_for_board(
+                selected_model, lot_number, board_number
+            ):
+                self._check_and_load_latest_json(
+                    self.lot_model.model, self.lot_model.lot_no
+                )
             # 保存された基盤のメッセージを表示
             prev_board = board_number - 1 if board_number > 1 else 1
 
@@ -1594,9 +1677,7 @@ class MainController:
         """指定された基盤のJSONファイルが存在する場合に読み込み"""
         try:
             # JSONファイルのパスを構築
-            json_dir = self.file_controller.setup_json_save_dir(
-                model_name, lot_number
-            )
+            json_dir = self.file_controller.setup_json_save_dir(model_name, lot_number)
 
             if not json_dir:
                 print(
@@ -1646,7 +1727,7 @@ class MainController:
 
     def _check_and_load_latest_json(self, model_name: str, lot_number: str):
         """対象ディレクトリの最新のJSONファイルを検索して自動読み込み、次のインデックスを設定"""
-    
+
         file_cont = self.file_controller
 
         # 現在のjsonファイルのリストを取得
@@ -1654,7 +1735,7 @@ class MainController:
 
         json_list = json_list_dict.get("json_list", [])
         remove_list = json_list_dict.get("remove_list", [])
-        
+
         # json_listとremove_listをマージ
         all_json_files = json_list + remove_list
 
@@ -1676,7 +1757,7 @@ class MainController:
         # 現在の基板番号を設定
         self.board_controller.set_current_board_number(currentIndex)
 
-    def load_start_json(self):  
+    def load_start_json(self):
         """閲覧モード用: ロット番号に基づいて開始JSONファイルを読み込み"""
         import re
 
@@ -1705,7 +1786,7 @@ class MainController:
 
             # ロット番号に基づいて対応するディレクトリを検索
             json_dir = self._find_json_directory_by_lot_number(lot_number)
-            
+
             if not json_dir:
                 self.main_view.show_error(
                     f"ロット番号 '{lot_number}' に対応するディレクトリが見つかりませんでした。"
@@ -1714,7 +1795,7 @@ class MainController:
 
             # 開始JSONファイル（0001.json）のパスを構築
             start_json_file = os.path.join(json_dir, "0001.json")
-            
+
             if not os.path.exists(start_json_file):
                 self.main_view.show_error(
                     f"開始JSONファイルが見つかりませんでした。\nパス: {start_json_file}"
@@ -1724,23 +1805,27 @@ class MainController:
             # JSONファイルを読み込み
             print(f"[load_start_json] 開始JSONファイルを読み込み中: {start_json_file}")
             self.load_json(file_path=start_json_file)
-            
+
             # ロット番号入力フィールドをクリア
             self.main_view.clear_lot_number()
-            
+
             print(f"[load_start_json] 開始JSONファイルの読み込みが完了しました")
             return True
 
         except Exception as e:
             print(f"[load_start_json] 開始JSON読み込みエラー: {e}")
-            self.main_view.show_error(f"開始JSON読み込み中にエラーが発生しました:\n{str(e)}")
+            self.main_view.show_error(
+                f"開始JSON読み込み中にエラーが発生しました:\n{str(e)}"
+            )
             return False
 
     def _find_json_directory_by_lot_number(self, lot_number: str) -> Optional[str]:
         """ロット番号に基づいてJSONディレクトリを検索"""
         try:
             # lot_number_info.jsonを読み込む
-            project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            project_root = os.path.dirname(
+                os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            )
             info_file = os.path.join(project_root, "lot_number_info.json")
             with open(info_file, "r", encoding="utf-8-sig") as f:
                 info_data = json.load(f)
@@ -1760,13 +1845,17 @@ class MainController:
             if not current_path:
                 self.main_view.show_warning("削除対象のファイルが選択されていません")
                 return
-            
+
             # 現在のユーザー情報を取得
-            current_user = self.worker_model._current_worker_no if self.worker_model._current_worker_no else "未設定"
+            current_user = (
+                self.worker_model._current_worker_no
+                if self.worker_model._current_worker_no
+                else "未設定"
+            )
 
             # ファイル名を取得
             filename = os.path.basename(current_path)
-            
+
             # 確認ダイアログを表示
             confirm_message = (
                 f"以下のファイルを削除しますか？\n\n"
@@ -1774,19 +1863,21 @@ class MainController:
                 f"※ファイルは履歴フォルダに移動され、復元可能です\n"
                 f"※この操作には検査担当者権限が必要です"
             )
-            
-            if not self.main_view.show_confirmation_dialog(confirm_message, "ファイル削除確認"):
+
+            if not self.main_view.show_confirmation_dialog(
+                confirm_message, "ファイル削除確認"
+            ):
                 return
-            
+
             # FileControllerを使用してファイルを削除（履歴移動）
             success = self.file_controller.delete_current_file()
-            
+
             if success:
                 # UI状態をリセット
                 # self.coordinate_model.clear_coordinates()
                 self.coordinate_controller.clear_all_coordinates(is_create_json=False)
                 self.image_model.clear_image()
-                
+
                 # ビューを更新
                 # self.canvas_view.clear_image()
                 # self.canvas_view.clear_coordinates()
@@ -1794,12 +1885,14 @@ class MainController:
 
                 # 保存名をクリア
                 self.main_view.set_save_name("")
-                
+
                 print(f"[delete_file] ファイル削除完了: {filename}")
 
             # lotInfo.jsonを再読み込み
             self.file_controller.reload_lot_info()
-                
+
         except Exception as e:
             print(f"[delete_file] ファイル削除処理エラー: {e}")
-            self.main_view.show_error(f"ファイル削除処理中にエラーが発生しました:\n{str(e)}")
+            self.main_view.show_error(
+                f"ファイル削除処理中にエラーが発生しました:\n{str(e)}"
+            )

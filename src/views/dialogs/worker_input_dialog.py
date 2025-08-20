@@ -24,7 +24,7 @@ class WorkerInputDialog:
         """ダイアログを表示"""
         self.dialog = tk.Toplevel(self.parent)
         self.dialog.title("作業者入力")
-        self.dialog.geometry("350x200")
+        self.dialog.geometry("350x260")
         self.dialog.resizable(False, False)
 
         # モーダルダイアログに設定
@@ -35,7 +35,7 @@ class WorkerInputDialog:
         self.dialog.update_idletasks()
         x = (self.dialog.winfo_screenwidth() // 2) - (350 // 2)
         y = (self.dialog.winfo_screenheight() // 2) - (200 // 2)
-        self.dialog.geometry(f"350x200+{x}+{y}")
+        self.dialog.geometry(f"350x260+{x}+{y}")
 
         self._setup_ui()
 

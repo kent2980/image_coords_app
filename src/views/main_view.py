@@ -135,6 +135,12 @@ class MainView:
         """コールバック関数の存在確認"""
         return key in self.callbacks and self.callbacks[key] is not None
 
+    # region UIセッティング
+
+    # **************************************************************
+    # レイアウト設定
+    # **************************************************************
+
     def _setup_layout(self):
         """レイアウトを設定 - 既存UIと同じ構造"""
 
@@ -348,6 +354,131 @@ class MainView:
             print("[DEBUG] コールバックが設定されていないため、テスト関数を設定します")
             self.item_tag_change_button.config(command=test_button_click)
 
+    def setup_menu_buttons(self):
+        """メニューボタンを設定（旧コードと同じ配置）"""
+
+        # 座標フレーム
+        coordinate_frame = tk.Frame(self.menu_frame)
+        coordinate_frame.pack(side=tk.LEFT, padx=5)
+
+        # 座標ラベル
+        coordinate_label = tk.Label(
+            coordinate_frame, text="座標操作:", font=("Arial", 10)
+        )
+        coordinate_label.pack(side=tk.LEFT, padx=5)
+
+        # 座標番号ラベル
+        self.coordinate_number_label = tk.Label(
+            coordinate_frame,
+            text="0 / 0",
+            font=("Arial", 12),
+            width=10,
+        )
+        self.coordinate_number_label.pack(side=tk.LEFT, padx=5)
+
+        # 前へボタン
+        prev_button = tk.Button(
+            coordinate_frame,
+            text="前へ",
+            command=lambda: self.trigger_coordinate_callback_with_update(
+                "prev_coordinate"
+            ),
+            font=("Arial", 10),
+        )
+        prev_button.pack(side=tk.LEFT, padx=2)
+
+        # 次へボタン
+        next_button = tk.Button(
+            coordinate_frame,
+            text="次へ",
+            command=lambda: self.trigger_coordinate_callback_with_update(
+                "next_coordinate"
+            ),
+            font=("Arial", 10),
+        )
+        next_button.pack(side=tk.LEFT, padx=2)
+
+        # 削除ボタン
+        clear_button = tk.Button(
+            coordinate_frame,
+            text="削除",
+            command=lambda: self.trigger_coordinate_callback_with_update(
+                "delete_coordinate"
+            ),
+            font=("Arial", 10),
+        )
+        clear_button.pack(side=tk.LEFT, padx=2)
+
+        # 全削除ボタン
+        all_clear_button = tk.Button(
+            coordinate_frame,
+            text="全削除",
+            command=lambda: self.trigger_coordinate_callback_with_update(
+                "clear_coordinates"
+            ),
+            font=("Arial", 10),
+        )
+        all_clear_button.pack(side=tk.LEFT, padx=2)
+
+        # 基板選択フレーム
+        board_frame = tk.Frame(self.menu_frame)
+        board_frame.pack(side=tk.LEFT, padx=5)
+
+        # 基板選択ラベル
+        self.board_label = tk.Label(
+            board_frame,
+            text="基板選択:",
+            font=("Arial", 12),
+            width=10,
+        )
+        self.board_label.pack(side=tk.LEFT, padx=5)
+
+        # 基板インデックスラベル
+        self.board_index_label = tk.Label(board_frame, text="0 / 0", font=("Arial", 12))
+        self.board_index_label.pack(side=tk.LEFT, padx=5)
+
+        # 基板選択「前へ」ボタン
+        prev_board_button = tk.Button(
+            self.menu_frame,
+            text="前へ",
+            command=lambda: self.trigger_board_callback_with_update("prev_board"),
+            font=("Arial", 10),
+        )
+        prev_board_button.pack(side=tk.LEFT, padx=5)
+
+        # 基板選択「次へ」ボタン
+        next_board_button = tk.Button(
+            self.menu_frame,
+            text="次へ",
+            command=lambda: self.trigger_board_callback_with_update("next_board"),
+            font=("Arial", 10),
+        )
+        next_board_button.pack(side=tk.LEFT, padx=5)
+
+        # ファイル操作フレーム
+        file_frame = tk.Frame(self.menu_frame)
+        file_frame.pack(side=tk.LEFT, padx=15)
+
+        # ファイル削除ボタン
+        delete_file_button = tk.Button(
+            file_frame,
+            text="🗑 ファイル削除",
+            command=self.get_callback("delete_file"),
+            font=("Arial", 10),
+            fg="red",
+            relief="raised",
+            padx=10,
+        )
+        delete_file_button.pack(side=tk.LEFT, padx=2)
+
+    # endregion
+
+    # region ジョブ管理
+
+    # ***************************************************
+    # モデル初期化
+    # ***************************************************
+
     def initialize_models(self):
         """モデル選択肢を初期化（旧コード互換機能）"""
         if self.has_callback("load_models_from_file"):
@@ -503,27 +634,31 @@ class MainView:
         else:
             display_text = "0/0"
         self.set_coordinate_number_text(display_text)
-        
-        # デバッグログ出力
-        print(f"[DEBUG] 座標番号表示更新: {display_text} (index: {current_index}, total: {total_count})")
 
-    def update_coordinate_display_realtime(self, coordinates_data: List[Dict], selected_index: int = -1):
+        # デバッグログ出力
+        print(
+            f"[DEBUG] 座標番号表示更新: {display_text} (index: {current_index}, total: {total_count})"
+        )
+
+    def update_coordinate_display_realtime(
+        self, coordinates_data: List[Dict], selected_index: int = -1
+    ):
         """リアルタイムで座標表示を更新"""
         total_count = len(coordinates_data)
-        
+
         if total_count == 0:
             self.clear_coordinate_number_display()
             return
-            
+
         # 選択されたインデックスがない場合は最後の座標を選択
         if selected_index < 0:
             selected_index = total_count - 1
-            
+
         # インデックスの範囲チェック
         selected_index = max(0, min(selected_index, total_count - 1))
-        
+
         self.update_coordinate_number_display(selected_index, total_count)
-        
+
         # 座標が選択されている場合はハイライト
         if total_count > 0:
             self.highlight_coordinate_number(True)
@@ -540,7 +675,7 @@ class MainView:
             return self.board_index_label.cget("text")
         return ""
 
-    def set_board_index_text(self, current_board_number:int, max_board_number:int):
+    def set_board_index_text(self, current_board_number: int, max_board_number: int):
         """基盤インデックスラベルのテキストを設定"""
 
         # 最大基盤番号が現在の基盤番号より小さい場合は更新
@@ -559,27 +694,31 @@ class MainView:
         else:
             display_text = "0/0"
         self.set_board_index_text(display_text)
-        
-        # デバッグログ出力
-        print(f"[DEBUG] 基盤インデックス表示更新: {display_text} (index: {current_index}, total: {total_count})")
 
-    def update_board_display_realtime(self, boards_data: List[Dict], selected_index: int = -1):
+        # デバッグログ出力
+        print(
+            f"[DEBUG] 基盤インデックス表示更新: {display_text} (index: {current_index}, total: {total_count})"
+        )
+
+    def update_board_display_realtime(
+        self, boards_data: List[Dict], selected_index: int = -1
+    ):
         """リアルタイムで基盤表示を更新"""
         total_count = len(boards_data)
-        
+
         if total_count == 0:
             self.clear_board_index_display()
             return
-            
+
         # 選択されたインデックスがない場合は最初の基盤を選択
         if selected_index < 0:
             selected_index = 0
-            
+
         # インデックスの範囲チェック
         selected_index = max(0, min(selected_index, total_count - 1))
-        
+
         self.update_board_index_display(selected_index, total_count)
-        
+
         # 基盤が選択されている場合はハイライト
         if total_count > 0:
             self.highlight_board_index(True)
@@ -598,9 +737,7 @@ class MainView:
     ):
         """基盤インデックスラベルのスタイルを設定"""
         if hasattr(self, "board_index_label") and self.board_index_label:
-            self.board_index_label.config(
-                bg=bg_color, fg=fg_color, font=font_tuple
-            )
+            self.board_index_label.config(bg=bg_color, fg=fg_color, font=font_tuple)
 
     def highlight_board_index(self, highlight: bool = True):
         """基盤インデックスラベルをハイライト表示"""
@@ -628,7 +765,9 @@ class MainView:
         else:
             self.set_coordinate_number_style(bg_color="white", fg_color="black")
 
-    def trigger_coordinate_callback_with_update(self, callback_key: str, *args, **kwargs):
+    def trigger_coordinate_callback_with_update(
+        self, callback_key: str, *args, **kwargs
+    ):
         """座標操作コールバックを実行し、表示を自動更新"""
         if self.has_callback(callback_key):
             callback = self.get_callback(callback_key)
@@ -649,7 +788,7 @@ class MainView:
                 self._request_board_display_update()
                 return result
         return None
-        
+
     def _request_coordinate_display_update(self):
         """座標表示の更新を要求（コントローラーからの情報取得が必要）"""
         # この部分はコントローラーからの情報が必要なため、
@@ -682,7 +821,7 @@ class MainView:
                 callback = self.get_callback("load_start_json")
                 if callback:
                     callback()
-    
+
     def _on_item_tag_change(self):
         """現品票切り替え処理"""
         print("[DEBUG] 現品票切り替えが要求されました")
@@ -701,7 +840,6 @@ class MainView:
                 callback = self.get_callback("load_start_json")
                 if callback:
                     callback()
-
 
     def show_message(self, message: str, title: str = "情報"):
         """メッセージを表示"""
@@ -784,116 +922,6 @@ class MainView:
                 # 初期フォーカス
                 self.lot_number_entry.focus_set()
 
-
-    def setup_menu_buttons(self):
-        """メニューボタンを設定（旧コードと同じ配置）"""
-
-        # 座標フレーム
-        coordinate_frame = tk.Frame(self.menu_frame)
-        coordinate_frame.pack(side=tk.LEFT, padx=5)
-
-        # 座標ラベル
-        coordinate_label = tk.Label(
-            coordinate_frame, text="座標操作:", font=("Arial", 10)
-        )
-        coordinate_label.pack(side=tk.LEFT, padx=5)
-
-        # 座標番号ラベル
-        self.coordinate_number_label = tk.Label(
-            coordinate_frame,
-            text="0 / 0",
-            font=("Arial", 12),
-            width=10,
-        )
-        self.coordinate_number_label.pack(side=tk.LEFT, padx=5)
-
-        # 前へボタン
-        prev_button = tk.Button(
-            coordinate_frame,
-            text="前へ",
-            command=lambda: self.trigger_coordinate_callback_with_update("prev_coordinate"),
-            font=("Arial", 10),
-        )
-        prev_button.pack(side=tk.LEFT, padx=2)
-
-        # 次へボタン
-        next_button = tk.Button(
-            coordinate_frame,
-            text="次へ",
-            command=lambda: self.trigger_coordinate_callback_with_update("next_coordinate"),
-            font=("Arial", 10),
-        )
-        next_button.pack(side=tk.LEFT, padx=2)
-
-        # 削除ボタン
-        clear_button = tk.Button(
-            coordinate_frame,
-            text="削除",
-            command=lambda: self.trigger_coordinate_callback_with_update("delete_coordinate"),
-            font=("Arial", 10),
-        )
-        clear_button.pack(side=tk.LEFT, padx=2)
-
-        # 全削除ボタン
-        all_clear_button = tk.Button(
-            coordinate_frame,
-            text="全削除",
-            command=lambda: self.trigger_coordinate_callback_with_update("clear_coordinates"),
-            font=("Arial", 10),
-        )
-        all_clear_button.pack(side=tk.LEFT, padx=2)
-
-        # 基板選択フレーム
-        board_frame = tk.Frame(self.menu_frame)
-        board_frame.pack(side=tk.LEFT, padx=5)
-
-        # 基板選択ラベル
-        self.board_label = tk.Label(
-            board_frame,
-            text="基板選択:",
-            font=("Arial", 12),
-            width=10,
-        )
-        self.board_label.pack(side=tk.LEFT, padx=5)
-
-        # 基板インデックスラベル
-        self.board_index_label = tk.Label(board_frame, text="0 / 0", font=("Arial", 12))
-        self.board_index_label.pack(side=tk.LEFT, padx=5)
-
-        # 基板選択「前へ」ボタン
-        prev_board_button = tk.Button(
-            self.menu_frame,
-            text="前へ",
-            command=lambda: self.trigger_board_callback_with_update("prev_board"),
-            font=("Arial", 10),
-        )
-        prev_board_button.pack(side=tk.LEFT, padx=5)
-
-        # 基板選択「次へ」ボタン
-        next_board_button = tk.Button(
-            self.menu_frame,
-            text="次へ",
-            command=lambda: self.trigger_board_callback_with_update("next_board"),
-            font=("Arial", 10),
-        )
-        next_board_button.pack(side=tk.LEFT, padx=5)
-
-        # ファイル操作フレーム
-        file_frame = tk.Frame(self.menu_frame)
-        file_frame.pack(side=tk.LEFT, padx=15)
-
-        # ファイル削除ボタン
-        delete_file_button = tk.Button(
-            file_frame,
-            text="🗑 ファイル削除",
-            command=self.get_callback("delete_file"),
-            font=("Arial", 10),
-            fg="red",
-            relief="raised",
-            padx=10,
-        )
-        delete_file_button.pack(side=tk.LEFT, padx=2)
-
     def get_form_data(self) -> Dict[str, Any]:
         """フォームデータを取得（旧コード互換）"""
         return {
@@ -936,3 +964,5 @@ class MainView:
                 return model_dict[model_name]
 
         return ""
+
+    # endregion jjjj

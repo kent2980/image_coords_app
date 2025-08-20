@@ -19,6 +19,7 @@ class SidebarView:
         self.item_number_var = tk.StringVar()
         self.reference_var = tk.StringVar()
         self.defect_var = tk.StringVar()
+        self.serial_var = tk.StringVar()
 
         # ロット番号（表示用）
         self.current_lot_number = ""
@@ -44,7 +45,7 @@ class SidebarView:
 
         # コールバック関数
         self.callbacks: Dict[str, Callable] = {}
-        
+
         # CoordinateControllerへの参照（自動保存用）
         self.coordinate_controller = None
 
@@ -86,74 +87,52 @@ class SidebarView:
         separator5 = tk.Frame(self.parent_frame, height=1, bg="#cccccc")
         separator5.pack(fill=tk.X, padx=15, pady=(0, 15))
 
-        # 作業者ラベル
-        self.worker_label = tk.Label(
-            self.parent_frame,
-            text="作業者: 未設定",
-            font=("Arial", 10, "bold"),
-            bg="#f5f5f5",
-            fg="#555555",
-            anchor="w",
-        )
-        self.worker_label.pack(fill=tk.X, padx=15, pady=(0, 5))
+        # 作業者フィールドを作成
+        self.worker_label = self._create_info_field("作業者: ", "未設定")
 
         # 区切り線
         separator1 = tk.Frame(self.parent_frame, height=1, bg="#cccccc")
         separator1.pack(fill=tk.X, padx=15, pady=(0, 15))
 
-        # 製番ラベル
-        self.product_label = tk.Label(
-            self.parent_frame,
-            text="製番: 未設定",
-            font=("Arial", 10, "bold"),
-            bg="#f5f5f5",
-            fg="#555555",
-            anchor="w",
-        )
-        self.product_label.pack(fill=tk.X, padx=15, pady=(0, 5))
+        # 製番フィールドを作成
+        self.product_label = self._create_info_field("品目コード: ", "未設定")
 
-        # ロット番号ラベル
-        self.lot_label = tk.Label(
-            self.parent_frame,
-            text="指図番号: 未設定",
-            font=("Arial", 10, "bold"),
-            bg="#f5f5f5",
-            fg="#555555",
-            anchor="w",
-        )
-        self.lot_label.pack(fill=tk.X, padx=15, pady=(0, 5))
+        # ロット番号フィールドを作成
+        self.lot_label = self._create_info_field("指図: ", "未設定")
 
-        # 基盤番号ラベル
-        self.board_label = tk.Label(
-            self.parent_frame,
-            text="基盤: 1",
-            font=("Arial", 10, "bold"),
-            bg="#f5f5f5",
-            fg="#0066cc",
-            anchor="w",
+        # 区切り線
+        separator1 = tk.Frame(self.parent_frame, height=1, bg="#cccccc")
+        separator1.pack(fill=tk.X, padx=15, pady=(0, 15))
+
+        # 基板番号とアイテム番号フィールドを作成（横並び）
+        self.board_label, self.item_entry = self._create_dual_info_field(
+            "基板No: ", "1", "#555555", "座標No: ", "1", "#555555"
         )
-        self.board_label.pack(fill=tk.X, padx=15, pady=(0, 5))
 
         # 区切り線
         separator4 = tk.Frame(self.parent_frame, height=1, bg="#cccccc")
         separator4.pack(fill=tk.X, padx=15, pady=(0, 15))
 
-        # アイテム番号（読み取り専用）
-        self.item_entry = self._create_styled_input_field(
-            "項目番号", self.item_number_var, width=12, readonly=True
-        )
-
         # リファレンス
         self.reference_entry = self._create_styled_input_field(
-            "リファレンス", self.reference_var, width=15
+            "Rf", self.reference_var, width=15
         )
-
-        # 区切り線
-        separator2 = tk.Frame(self.parent_frame, height=1, bg="#cccccc")
-        separator2.pack(fill=tk.X, padx=15, pady=(15, 10))
 
         # 不良名
         self._create_defect_selection()
+
+        # 区切り線
+        separator3 = tk.Frame(self.parent_frame, height=1, bg="#cccccc")
+        separator3.pack(fill=tk.X, padx=15, pady=(15, 10))
+
+        # シリアル番号
+        self.serial_entry = self._create_styled_input_field(
+            "シリアル", self.serial_var, width=15
+        )
+
+        # 区切り線
+        separator3 = tk.Frame(self.parent_frame, height=1, bg="#cccccc")
+        separator3.pack(fill=tk.X, padx=15, pady=(15, 10))
 
         # 修理済み
         self._create_repaired_selection()
@@ -164,6 +143,106 @@ class SidebarView:
 
         # コメント
         self._create_comment_field()
+
+    def _create_info_field(
+        self, title_text: str, value_text: str, fg_color: str = "#555555"
+    ) -> tk.Label:
+        """情報表示フィールドを作成（横並び）"""
+        # フレーム作成
+        info_frame = tk.Frame(self.parent_frame, bg="#f5f5f5")
+        info_frame.pack(fill=tk.X, padx=15, pady=(0, 5))
+
+        # タイトルラベル
+        title_label = tk.Label(
+            info_frame,
+            text=title_text,
+            font=("Arial", 10, "bold"),
+            bg="#f5f5f5",
+            fg="#555555",
+            anchor="w",
+        )
+        title_label.pack(side=tk.LEFT)
+
+        # 値ラベル
+        value_label = tk.Label(
+            info_frame,
+            text=value_text,
+            font=("Arial", 10, "bold"),
+            bg="#f5f5f5",
+            fg=fg_color,
+            anchor="w",
+        )
+        value_label.pack(side=tk.LEFT)
+
+        return value_label
+
+    def _create_dual_info_field(
+        self,
+        title1_text: str,
+        value1_text: str,
+        fg1_color: str,
+        title2_text: str,
+        value2_text: str,
+        fg2_color: str,
+    ) -> tuple[tk.Label, tk.Label]:
+        """2つの情報表示フィールドを横並びで作成"""
+        # フレーム作成
+        info_frame = tk.Frame(self.parent_frame, bg="#f5f5f5")
+        info_frame.pack(fill=tk.X, padx=15, pady=(0, 5))
+
+        # 左側の情報フィールド
+        left_frame = tk.Frame(info_frame, bg="#f5f5f5")
+        left_frame.pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+        # 左側タイトルラベル
+        title1_label = tk.Label(
+            left_frame,
+            text=title1_text,
+            font=("Arial", 10, "bold"),
+            bg="#f5f5f5",
+            fg="#555555",
+            anchor="w",
+        )
+        title1_label.pack(side=tk.LEFT)
+
+        # 左側値ラベル
+        value1_label = tk.Label(
+            left_frame,
+            text=value1_text,
+            font=("Arial", 14, "bold"),
+            bg="#f5f5f5",
+            fg=fg1_color,
+            anchor="w",
+        )
+        value1_label.pack(side=tk.LEFT)
+
+        # 右側の情報フィールド
+        right_frame = tk.Frame(info_frame, bg="#f5f5f5")
+        right_frame.pack(side=tk.RIGHT, fill=tk.X, expand=True)
+
+        # 右側タイトルラベル
+        title2_label = tk.Label(
+            right_frame,
+            text=title2_text,
+            font=("Arial", 10, "bold"),
+            bg="#f5f5f5",
+            fg="#555555",
+            anchor="w",
+        )
+        title2_label.pack(side=tk.LEFT)
+
+        # 右側値ラベル
+        value2_label = tk.Label(
+            right_frame,
+            text=value2_text,
+            font=("Arial", 14, "bold"),
+            bg="#f5f5f5",
+            fg=fg2_color,
+            anchor="w",
+        )
+        value2_label.pack(side=tk.LEFT)
+
+        return value1_label, value2_label
 
     def _create_styled_input_field(
         self, label_text, variable, width=15, readonly=False
@@ -181,8 +260,9 @@ class SidebarView:
             bg="#f5f5f5",
             fg="#555555",
             anchor="w",
+            width=7,  # ラベルの幅を調整
         )
-        label.pack(fill=tk.X, pady=(0, 3))
+        label.pack(side=tk.LEFT, pady=(0, 3))
 
         # 入力フィールド
         entry_state = "readonly" if readonly else "normal"
@@ -192,13 +272,37 @@ class SidebarView:
             main_frame,
             textvariable=variable,
             width=width,
-            font=("Arial", 10),
+            font=("Arial", 14),
             relief="solid",
             bd=1,
             highlightthickness=1,
             state=entry_state,
+            justify="center",
         )
-        entry.pack(fill=tk.X)
+        entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+        # 英数字を大文字に変換するバインド
+        if entry_state == "normal":
+            entry.bind(
+                "<KeyRelease>",
+                lambda event: self._convert_to_uppercase(event, variable),
+            )
+            # 英数入力に固定（IME無効化）
+            entry.bind("<FocusIn>", self._set_alphanumeric_mode)
+            entry.bind("<Button-1>", self._set_alphanumeric_mode)
+
+            # Windows環境での追加設定
+            import platform
+
+            if platform.system() == "Windows":
+                # WindowsでのIME制御を強化
+                entry.configure(
+                    validate="key",
+                    validatecommand=(
+                        self.parent_frame.register(self._validate_alphanumeric),
+                        "%P",
+                    ),
+                )
 
         return entry
 
@@ -216,17 +320,19 @@ class SidebarView:
             bg="#f5f5f5",
             fg="#555555",
             anchor="w",
+            width=7,
         )
-        label.pack(fill=tk.X, pady=(0, 3))
+        label.pack(side=tk.LEFT, pady=(0, 3))
 
         self.defect_combobox = ttk.Combobox(
             defect_frame,
             textvariable=self.defect_var,
             values=self.defect_items,
             state="readonly",
-            font=("Arial", 10),
+            font=("Arial", 14),
+            justify="center",
         )
-        self.defect_combobox.pack(fill=tk.X)
+        self.defect_combobox.pack(side=tk.LEFT, fill=tk.X)
 
         # 初期値は空に設定
         self.defect_var.set("")
@@ -297,7 +403,7 @@ class SidebarView:
         self.comment_text = tk.Text(
             text_frame,
             height=8,
-            font=("Arial", 9),
+            font=("Arial", 14),
             relief="solid",
             bd=1,
             highlightthickness=1,
@@ -305,13 +411,102 @@ class SidebarView:
         )
         self.comment_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
+        # コメントフィールドはかな入力モードに設定
+        self.comment_text.bind("<FocusIn>", self._set_kana_mode)
+        self.comment_text.bind("<Button-1>", self._set_kana_mode)
+
         # スクロールバー
         scrollbar = tk.Scrollbar(text_frame, command=self.comment_text.yview)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.comment_text.config(yscrollcommand=scrollbar.set)
-        
+
         # 変更イベントバインド
         self._bind_change_events()
+
+    def _convert_to_uppercase(self, event, variable):
+        """入力文字を大文字に変換"""
+        current_value = variable.get()
+        upper_value = current_value.upper()
+        if current_value != upper_value:
+            # カーソル位置を保存
+            cursor_pos = event.widget.index(tk.INSERT)
+            # 大文字に変換
+            variable.set(upper_value)
+            # カーソル位置を復元
+            event.widget.icursor(cursor_pos)
+
+    def _validate_alphanumeric(self, value):
+        """英数字のみを許可する検証関数（Windows用）"""
+        import re
+
+        # 英数字、ハイフン、アンダースコアのみを許可
+        return re.match(r"^[A-Za-z0-9\-_]*$", value) is not None
+
+    def _set_alphanumeric_mode(self, event):
+        """入力フィールドを英数入力モードに設定"""
+        try:
+            import platform
+            import subprocess
+
+            system = platform.system()
+            if system == "Darwin":  # macOS
+                subprocess.run(
+                    [
+                        "osascript",
+                        "-e",
+                        'tell application "System Events" to key code 102',
+                    ],
+                    check=False,
+                    capture_output=True,
+                )
+            elif system == "Windows":  # Windows
+                # WindowsでIMEを英数モードに切り替え
+                subprocess.run(
+                    [
+                        "powershell",
+                        "-Command",
+                        "Add-Type -AssemblyName System.Windows.Forms; "
+                        "[System.Windows.Forms.SendKeys]::SendWait('^{F10}')",
+                    ],
+                    check=False,
+                    capture_output=True,
+                )
+        except Exception:
+            # エラーが発生しても無視（IME切り替えは補助的な機能）
+            pass
+
+    def _set_kana_mode(self, event):
+        """入力フィールドをかな入力モードに設定"""
+        try:
+            import platform
+            import subprocess
+
+            system = platform.system()
+            if system == "Darwin":  # macOS
+                subprocess.run(
+                    [
+                        "osascript",
+                        "-e",
+                        'tell application "System Events" to key code 104',
+                    ],
+                    check=False,
+                    capture_output=True,
+                )
+            elif system == "Windows":  # Windows
+                # WindowsでIMEをひらがなモードに切り替え
+                subprocess.run(
+                    [
+                        "powershell",
+                        "-Command",
+                        "Add-Type -AssemblyName System.Windows.Forms; "
+                        "[System.Windows.Forms.SendKeys]::SendWait('^{F7}')",
+                    ],
+                    check=False,
+                    capture_output=True,
+                )
+        except Exception:
+            # エラーが発生しても無視（IME切り替えは補助的な機能）
+            pass
 
     def _bind_change_events(self):
         """変更イベントをバインド"""
@@ -320,47 +515,48 @@ class SidebarView:
         self.defect_var.trace_add("write", self._on_data_changed)
         if hasattr(self, "repaired_var"):
             self.repaired_var.trace_add("write", self._on_data_changed)
-        
+
         # コメントフィールドの変更を監視
         if hasattr(self, "comment_text") and self.comment_text:
-            self.comment_text.bind('<KeyRelease>', self._on_comment_changed)
-            self.comment_text.bind('<FocusOut>', self._on_comment_changed)
+            self.comment_text.bind("<KeyRelease>", self._on_comment_changed)
+            self.comment_text.bind("<FocusOut>", self._on_comment_changed)
 
     def _on_data_changed(self, *args):
         """データ変更時のコールバック"""
         if "on_form_data_changed" in self.callbacks:
             self.callbacks["on_form_data_changed"]()
-        
+
         # 座標詳細情報の自動保存
         self._auto_save_coordinate_detail()
-    
+
     def _on_comment_changed(self, event=None):
         """コメントフィールド変更時のコールバック"""
         # 座標詳細情報の自動保存
         self._auto_save_coordinate_detail()
-    
+
     def _auto_save_coordinate_detail(self):
         """座標詳細情報を自動保存"""
         try:
             # CoordinateControllerが設定されていない場合は何もしない
             if not self.coordinate_controller:
                 return
-            
+
             # 現在のフォームデータを取得
             detail = self.get_coordinate_detail()
-            
+
             # CoordinateControllerを通じて詳細情報を更新（自動保存も実行される）
             self.coordinate_controller.update_current_coordinate_detail(detail)
-            
+
         except Exception as e:
             print(f"[ERROR] 座標詳細自動保存エラー: {e}")
             import traceback
+
             traceback.print_exc()
 
     def set_callbacks(self, callbacks: Dict[str, Callable]):
         """コールバック関数を設定"""
         self.callbacks.update(callbacks)
-    
+
     def set_coordinate_controller(self, coordinate_controller) -> None:
         """CoordinateControllerを設定"""
         self.coordinate_controller = coordinate_controller
@@ -500,13 +696,13 @@ class SidebarView:
         """ロット番号を設定"""
         self.current_lot_number = lot_number
         if hasattr(self, "lot_label") and self.lot_label:
-            self.lot_label.config(text=f"指図番号: {lot_number}")
+            self.lot_label.config(text=lot_number)
 
     def set_product_number(self, product_number: str):
         """製番を設定"""
         self.current_product_number = product_number
         if hasattr(self, "product_label") and self.product_label:
-            self.product_label.config(text=f"製番: {product_number}")
+            self.product_label.config(text=product_number)
 
     def get_product_number(self) -> str:
         """製番を取得"""
@@ -520,7 +716,7 @@ class SidebarView:
         """ロット番号をクリア（モデル変更時用）"""
         self.current_lot_number = ""
         if hasattr(self, "lot_label") and self.lot_label:
-            self.lot_label.config(text="指図番号: 未設定")
+            self.lot_label.config(text="未設定")
 
     def get_worker_no(self) -> str:
         """作業者番号を取得"""
@@ -530,11 +726,17 @@ class SidebarView:
         """作業者番号を設定"""
         self.current_worker_no = worker_no
 
-    def update_board_display(self, board_number: int):
+    def set_board_label(self, board_number: int):
         """基盤番号表示を更新"""
         self.current_board_number = board_number
         if hasattr(self, "board_label") and self.board_label:
-            self.board_label.config(text=f"基盤: {board_number}")
+            self.board_label.config(text=board_number)
+
+    def set_item_entry(self, item_entry: int):
+        """アイテム番号を設定"""
+        self.current_item_entry = item_entry
+        if hasattr(self, "item_entry") and self.item_entry:
+            self.item_entry.config(text=item_entry)
 
     def get_current_board_number(self) -> int:
         """現在の基盤番号を取得"""

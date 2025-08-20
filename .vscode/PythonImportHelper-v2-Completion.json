@@ -220,54 +220,6 @@
         "documentation": {}
     },
     {
-        "label": "Dict",
-        "importPath": "typing",
-        "description": "typing",
-        "isExtraImport": true,
-        "detail": "typing",
-        "documentation": {}
-    },
-    {
-        "label": "Any",
-        "importPath": "typing",
-        "description": "typing",
-        "isExtraImport": true,
-        "detail": "typing",
-        "documentation": {}
-    },
-    {
-        "label": "List",
-        "importPath": "typing",
-        "description": "typing",
-        "isExtraImport": true,
-        "detail": "typing",
-        "documentation": {}
-    },
-    {
-        "label": "Tuple",
-        "importPath": "typing",
-        "description": "typing",
-        "isExtraImport": true,
-        "detail": "typing",
-        "documentation": {}
-    },
-    {
-        "label": "Optional",
-        "importPath": "typing",
-        "description": "typing",
-        "isExtraImport": true,
-        "detail": "typing",
-        "documentation": {}
-    },
-    {
-        "label": "TYPE_CHECKING",
-        "importPath": "typing",
-        "description": "typing",
-        "isExtraImport": true,
-        "detail": "typing",
-        "documentation": {}
-    },
-    {
         "label": "TYPE_CHECKING",
         "importPath": "typing",
         "description": "typing",
@@ -316,7 +268,15 @@
         "documentation": {}
     },
     {
-        "label": "Optional",
+        "label": "TYPE_CHECKING",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Any",
         "importPath": "typing",
         "description": "typing",
         "isExtraImport": true,
@@ -332,7 +292,47 @@
         "documentation": {}
     },
     {
+        "label": "List",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Optional",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Tuple",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Optional",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
         "label": "Any",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Dict",
         "importPath": "typing",
         "description": "typing",
         "isExtraImport": true,
@@ -572,31 +572,15 @@
         "documentation": {}
     },
     {
+        "label": "Any",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
         "label": "Callable",
-        "importPath": "typing",
-        "description": "typing",
-        "isExtraImport": true,
-        "detail": "typing",
-        "documentation": {}
-    },
-    {
-        "label": "Optional",
-        "importPath": "typing",
-        "description": "typing",
-        "isExtraImport": true,
-        "detail": "typing",
-        "documentation": {}
-    },
-    {
-        "label": "List",
-        "importPath": "typing",
-        "description": "typing",
-        "isExtraImport": true,
-        "detail": "typing",
-        "documentation": {}
-    },
-    {
-        "label": "Tuple",
         "importPath": "typing",
         "description": "typing",
         "isExtraImport": true,
@@ -612,7 +596,23 @@
         "documentation": {}
     },
     {
-        "label": "Any",
+        "label": "List",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Optional",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Tuple",
         "importPath": "typing",
         "description": "typing",
         "isExtraImport": true,
@@ -878,6 +878,15 @@
         "documentation": {}
     },
     {
+        "label": "re",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "re",
+        "description": "re",
+        "detail": "re",
+        "documentation": {}
+    },
+    {
         "label": "SQLModel",
         "importPath": "sqlmodel",
         "description": "sqlmodel",
@@ -1050,7 +1059,7 @@
         "documentation": {}
     },
     {
-        "label": "WorkerModel",
+        "label": "LotModel",
         "importPath": "src.models",
         "description": "src.models",
         "isExtraImport": true,
@@ -1058,7 +1067,7 @@
         "documentation": {}
     },
     {
-        "label": "LotModel",
+        "label": "WorkerModel",
         "importPath": "src.models",
         "description": "src.models",
         "isExtraImport": true,
@@ -1217,7 +1226,7 @@
         "kind": 6,
         "importPath": "src.controllers.file_controller",
         "description": "src.controllers.file_controller",
-        "peekOfCode": "class FileController:\n    \"\"\"ファイル操作を管理するコントローラー（FileManager統合版）\"\"\"\n    def __init__(self, coordinate_model: \"CoordinateModel\", settings_model: \"AppSettingsModel\", worker_model: \"WorkerModel\", board_model: \"BoardModel\", lot_model: \"LotModel\"):\n        self.coordinate_model = coordinate_model\n        self.settings_model = settings_model\n        self.worker_model = worker_model\n        self.board_model = board_model\n        self.lot_model = lot_model\n        # 現在の保存ディレクトリ\n        self.save_dir = None",
+        "peekOfCode": "class FileController:\n    \"\"\"ファイル操作を管理するコントローラー（FileManager統合版）\"\"\"\n    def __init__(\n        self,\n        coordinate_model: \"CoordinateModel\",\n        settings_model: \"AppSettingsModel\",\n        worker_model: \"WorkerModel\",\n        board_model: \"BoardModel\",\n        lot_model: \"LotModel\",\n    ):",
         "detail": "src.controllers.file_controller",
         "documentation": {}
     },
@@ -1289,7 +1298,7 @@
         "kind": 6,
         "importPath": "src.models.app_settings_model",
         "description": "src.models.app_settings_model",
-        "peekOfCode": "class AppSettingsModel:\n    \"\"\"アプリケーション設定を管理するモデル\"\"\"\n    def __init__(self):\n        self._config = configparser.ConfigParser()\n        self._settings_file = os.path.join(os.path.expanduser('~'), 'image_coords_settings.ini')\n        self._default_settings = {\n            'image_directory': '未選択',\n            'data_directory': '未選択',\n            'default_mode': '編集'\n        }",
+        "peekOfCode": "class AppSettingsModel:\n    \"\"\"アプリケーション設定を管理するモデル\"\"\"\n    def __init__(self):\n        self._config = configparser.ConfigParser()\n        # プロジェクトルートディレクトリを取得\n        current_dir = os.path.dirname(os.path.abspath(__file__))\n        project_root = os.path.dirname(os.path.dirname(current_dir))\n        self._settings_file = os.path.join(\n            project_root, \"settings/image_coords_settings.ini\"\n        )",
         "detail": "src.models.app_settings_model",
         "documentation": {}
     },
@@ -1334,7 +1343,7 @@
         "kind": 6,
         "importPath": "src.models.worker_model",
         "description": "src.models.worker_model",
-        "peekOfCode": "class WorkerModel:\n    \"\"\"作業者データを管理するモデル\"\"\"\n    def __init__(self):\n        self._worker_file = \"worker.csv\"\n        self._current_worker_no: str = \"\"\n        self._workers: Dict[str, str] = {}  # worker_no: worker_name\n        self._load_workers()\n    def _load_workers(self):\n        \"\"\"作業者データを読み込み\"\"\"\n        try:",
+        "peekOfCode": "class WorkerModel:\n    \"\"\"作業者データを管理するモデル\"\"\"\n    def __init__(self):\n        current_dir = os.path.dirname(os.path.abspath(__file__))\n        project_root = os.path.dirname(os.path.dirname(current_dir))\n        self._worker_file = os.path.join(project_root, \"settings/worker.txt\")\n        self._current_worker_no: str = \"\"\n        self._workers: Dict[str, str] = {}  # worker_no: worker_name\n        self._load_workers()\n    def _load_workers(self):",
         "detail": "src.models.worker_model",
         "documentation": {}
     },
@@ -1424,7 +1433,7 @@
         "kind": 6,
         "importPath": "src.views.coordinate_canvas_view",
         "description": "src.views.coordinate_canvas_view",
-        "peekOfCode": "class CoordinateCanvasView:\n    \"\"\"座標キャンバスを管理するビュー\"\"\"\n    def __init__(self, parent_frame: tk.Frame):\n        self.parent_frame = parent_frame\n        self.canvas_width = 800\n        self.canvas_height = 600\n        # キャンバス\n        self.canvas = tk.Canvas(\n            parent_frame,\n            width=self.canvas_width,",
+        "peekOfCode": "class CoordinateCanvasView:\n    \"\"\"座標キャンバスを管理するビュー\"\"\"\n    def __init__(self, parent_frame: tk.Frame):\n        self.parent_frame = parent_frame\n        self.canvas_width = 800\n        self.canvas_height = 600\n        # キャンバス\n        self.canvas = tk.Canvas(\n            parent_frame, width=self.canvas_width, height=self.canvas_height, bg=\"white\"\n        )",
         "detail": "src.views.coordinate_canvas_view",
         "documentation": {}
     },
@@ -1469,7 +1478,7 @@
         "kind": 6,
         "importPath": "src.views.sidebar_view",
         "description": "src.views.sidebar_view",
-        "peekOfCode": "class SidebarView:\n    \"\"\"サイドバーを管理するビュー\"\"\"\n    def __init__(self, parent_frame: tk.Frame):\n        self.parent_frame = parent_frame\n        # 変数\n        self.item_number_var = tk.StringVar()\n        self.reference_var = tk.StringVar()\n        self.defect_var = tk.StringVar()\n        # ロット番号（表示用）\n        self.current_lot_number = \"\"",
+        "peekOfCode": "class SidebarView:\n    \"\"\"サイドバーを管理するビュー\"\"\"\n    def __init__(self, parent_frame: tk.Frame):\n        self.parent_frame = parent_frame\n        # 変数\n        self.item_number_var = tk.StringVar()\n        self.reference_var = tk.StringVar()\n        self.defect_var = tk.StringVar()\n        self.serial_var = tk.StringVar()\n        # ロット番号（表示用）",
         "detail": "src.views.sidebar_view",
         "documentation": {}
     },
@@ -1487,7 +1496,7 @@
         "kind": 6,
         "importPath": "main",
         "description": "main",
-        "peekOfCode": "class ImageCoordsApp:\n    \"\"\"MVCアーキテクチャによる画像座標アプリケーション\"\"\"\n    def __init__(self):\n        self.root = tk.Tk()\n        self.root.title(\"画像座標アプリケーション (MVC)\")\n        self.root.geometry(\"1400x900\")\n        # アプリケーションのセットアップ\n        self._setup_application()\n    def _setup_application(self):\n        \"\"\"アプリケーションのセットアップ\"\"\"",
+        "peekOfCode": "class ImageCoordsApp:\n    \"\"\"MVCアーキテクチャによる画像座標アプリケーション\"\"\"\n    def __init__(self):\n        self.root = tk.Tk()\n        self.root.title(\"画像座標アプリケーション (MVC)\")\n        # サブディスプレイにフルスクリーンで表示設定\n        self._setup_display()\n        # アプリケーションのセットアップ\n        self._setup_application()\n    def _setup_display(self):",
         "detail": "main",
         "documentation": {}
     },

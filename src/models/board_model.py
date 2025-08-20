@@ -149,7 +149,9 @@ class BoardModel:
     ) -> bool:
         """基盤情報をJSONファイルに保存"""
         try:
-            board_info_file = os.path.join(self._project_root, "board_info.json")
+            board_info_file = os.path.join(
+                self._project_root, "settings/board_info.json"
+            )
 
             # 既存の基盤情報を読み込み
             board_info = {}
@@ -190,7 +192,9 @@ class BoardModel:
     ) -> bool:
         """基盤情報をJSONファイルから読み込み"""
         try:
-            board_info_file = os.path.join(self._project_root, "board_info.json")
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            project_root = os.path.dirname(os.path.dirname(current_dir))
+            board_info_file = os.path.join(project_root, "settings/board_info.json")
 
             if not os.path.exists(board_info_file):
                 return False
