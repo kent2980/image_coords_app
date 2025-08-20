@@ -1235,7 +1235,7 @@
         "kind": 6,
         "importPath": "src.controllers.main_controller",
         "description": "src.controllers.main_controller",
-        "peekOfCode": "class MainController:\n    \"\"\"メインアプリケーションコントローラー\"\"\"\n    def __init__(\n        self,\n        coordinate_model: \"CoordinateModel\",\n        settings_model: \"AppSettingsModel\",\n        worker_model: \"WorkerModel\",\n        image_model: \"ImageModel\",\n        board_model: \"BoardModel\",\n        lot_model: \"LotModel\",",
+        "peekOfCode": "class MainController:\n    \"\"\"メインアプリケーションコントローラー\"\"\"\n    # region コンストラクタ\n    def __init__(\n        self,\n        coordinate_model: \"CoordinateModel\",\n        settings_model: \"AppSettingsModel\",\n        worker_model: \"WorkerModel\",\n        image_model: \"ImageModel\",\n        board_model: \"BoardModel\",",
         "detail": "src.controllers.main_controller",
         "documentation": {}
     },

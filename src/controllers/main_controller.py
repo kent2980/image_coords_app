@@ -29,6 +29,7 @@ if TYPE_CHECKING:
 class MainController:
     """メインアプリケーションコントローラー"""
 
+    # region コンストラクタ
     def __init__(
         self,
         coordinate_model: "CoordinateModel",
@@ -94,7 +95,9 @@ class MainController:
         # 環境変数 DEBUG=1 でデバッグモードを有効化
         self.debug_mode: bool = os.getenv("DEBUG", "0") == "1"
 
-    # セッター関数
+    # endregion
+
+    # region プロパティ
     @property
     def current_lot_number(self):
         return getattr(self, "_current_lot_number", None)
@@ -131,6 +134,9 @@ class MainController:
         self.sidebar_view.set_product_number(value)
         self._current_model = value
 
+    # endregion
+
+    # region アプリケーションの初期化
     # アプリケーションの初期化
     def initialize_application(self):
         """アプリケーションを初期化"""
@@ -220,18 +226,14 @@ class MainController:
             "select_image": self.select_image,
             "load_json": self.load_json,
             "save_coordinates": self.save_coordinates,
-            "save_data": self.save_coordinates,  # 旧コード互換
             "on_save_button_click": self.on_save_button_click,  # 保存ボタン処理
             "clear_coordinates": self.clear_coordinates,
             "delete_coordinate": self.delete_coordinate,
             "prev_coordinate": self.prev_coordinate,
             "next_coordinate": self.next_coordinate,
             "on_model_selected": self.on_model_selected,
-            "load_models_from_file": self.load_models_from_file,  # 旧コード互換コールバック
             "on_lot_number_save": self.on_lot_number_save,  # ロット番号保存
-            "setup_save_name_entry": self.setup_save_name_entry,  # 保存名自動設定
             "on_item_tag_change": self.on_item_tag_change,  # 現品票切り替え
-            "load_start_json": self.load_start_json,  # 閲覧モード用開始JSON読み込み
             # メニューコールバック
             "new_project": self.new_project,
             "new_file": self.new_file,
@@ -345,36 +347,6 @@ class MainController:
         self.main_view.update_undo_redo_state(can_undo, can_redo)
 
     # イベントハンドラー
-    def on_mode_change(self):
-        """モード変更時の処理"""
-        current_mode = self.main_view.get_current_mode()
-
-        if current_mode == "編集":
-            # 編集モード
-            self.canvas_view.bind_events("edit")
-            self.sidebar_view.set_readonly_mode(False)
-            print("[モード変更] 編集モードに切り替えました")
-        else:
-            # 閲覧モード
-            self.canvas_view.bind_events("view")
-            self.sidebar_view.set_readonly_mode(True)
-            print("[モード変更] 閲覧モードに切り替えました")
-
-            # 座標がある場合は概要情報を表示
-            if self.coordinate_model.coordinates:
-                summary = self.coordinate_controller.get_coordinate_summary()
-                self.sidebar_view.display_coordinate_summary(summary)
-
-                # 最初の座標を自動選択
-                self.coordinate_controller.set_current_coordinate(0)
-                detail = self.coordinate_controller.get_current_coordinate_detail()
-                if detail:
-                    self.sidebar_view.display_coordinate_info(detail, 0)
-
-        # ハイライトをクリア（モード変更時は一旦リセット）
-        if current_mode == "編集":
-            self.canvas_view.clear_highlight()
-
     def on_delete_key(self, event):
         """Deleteキーまたはbackspaceキーが押された時の処理"""
         # 編集モードでない場合は何もしない
@@ -613,7 +585,11 @@ class MainController:
             except Exception as e:
                 print(f"自動更新エラー: {e}")
 
-    # アクション
+    # endregion
+
+    # region コールバック関数
+
+    # アクション（コールバック順）
     def select_date(self):
         """日付選択ダイアログを表示"""
         dialog = self.dialogs["DateSelectDialog"](
@@ -625,6 +601,36 @@ class MainController:
             self.current_date = result["date"]
             self.main_view.update_date_label(result["date"].strftime("%Y-%m-%d"))
 
+    def on_mode_change(self):
+        """モード変更時の処理"""
+        current_mode = self.main_view.get_current_mode()
+
+        if current_mode == "編集":
+            # 編集モード
+            self.canvas_view.bind_events("edit")
+            self.sidebar_view.set_readonly_mode(False)
+            print("[モード変更] 編集モードに切り替えました")
+        else:
+            # 閲覧モード
+            self.canvas_view.bind_events("view")
+            self.sidebar_view.set_readonly_mode(True)
+            print("[モード変更] 閲覧モードに切り替えました")
+
+            # 座標がある場合は概要情報を表示
+            if self.coordinate_model.coordinates:
+                summary = self.coordinate_controller.get_coordinate_summary()
+                self.sidebar_view.display_coordinate_summary(summary)
+
+                # 最初の座標を自動選択
+                self.coordinate_controller.set_current_coordinate(0)
+                detail = self.coordinate_controller.get_current_coordinate_detail()
+                if detail:
+                    self.sidebar_view.display_coordinate_info(detail, 0)
+
+        # ハイライトをクリア（モード変更時は一旦リセット）
+        if current_mode == "編集":
+            self.canvas_view.clear_highlight()
+
     def open_settings(self):
         """設定ダイアログを開く"""
         dialog = self.dialogs["SettingsDialog"](
@@ -632,78 +638,15 @@ class MainController:
         )
         dialog.show()
 
-    def on_settings_changed(self):
-        """設定変更時のコールバック"""
-        # モデル選択リストを更新
-        self._update_model_options()
+    def undo_action(self):
+        """元に戻す操作"""
+        if self.coordinate_controller.undo():
+            self._update_undo_redo_state()
 
-    def load_models_from_file(self):
-        """モデルデータをファイルから読み込む"""
-        self.model_list = self.coordinate_controller.load_models_from_file(
-            self.settings_model
-        )
-        return self.model_list
-
-    def on_lot_number_save(self):
-        """ロット番号保存処理"""
-        import re
-
-        # 作業者が設定されているかチェック
-        if not self.current_worker_no:
-            self.main_view.show_error("作業者が設定されていません。")
-            return
-
-        # ロット番号を取得
-        lot_number = self.main_view.get_lot_number().strip()
-        if not lot_number:
-            self.main_view.show_error("ロット番号を入力してください。")
-            return
-
-        # ロット番号の形式をチェック (7桁-2桁の形式)
-        lot_pattern = r"^\d{7}-10$|^\d{7}-20$"
-        if not re.match(lot_pattern, lot_number):
-            self.main_view.show_error(
-                "ロット番号の形式が正しくありません。\n形式: 1234567-10 または 1234567-20 (7桁-10または7桁-20)"
-            )
-            return
-
-        # ロット番号を保存
-        self.current_lot_number = lot_number  # MainControllerのロット番号も更新
-        self.current_model = self.main_view.get_selected_model()
-
-        print(f"ロット番号を保存しました: {lot_number}")
-
-    def setup_save_name_entry(self):
-        """保存名を自動設定"""
-        selected_model = self.main_view.get_selected_model()
-        current_lot_number = (
-            self.current_lot_number or self.sidebar_view.get_lot_number()
-        )
-
-        if (
-            selected_model
-            and not selected_model.startswith("画像")
-            and current_lot_number
-        ):
-            auto_save_name = self.file_controller.setup_save_name_entry(
-                selected_model,
-                current_lot_number,
-                "",  # 現在の保存名を空にして自動生成
-            )
-            if auto_save_name:
-                self.main_view.set_save_name(auto_save_name)
-                print(f"保存名を自動更新しました: {auto_save_name}")
-
-    def on_save_button_click(self):
-        """保存ボタンクリック時の処理（ロット番号処理＋座標保存）"""
-        # 最初にロット番号が入力されているかチェック
-        lot_number = self.main_view.get_lot_number().strip()
-        if lot_number:
-            # ロット番号が入力されている場合はロット番号保存処理を実行
-            self.on_lot_number_save()
-        else:
-            # ロット番号が入力されていない場合は座標保存処理を実行
-            self.save_coordinates()
+    def redo_action(self):
+        """やり直し操作"""
+        if self.coordinate_controller.redo():
+            self._update_undo_redo_state()
 
     def select_image(self):
         """画像を選択"""
@@ -937,6 +880,62 @@ class MainController:
         except Exception as e:
             self.file_controller.show_error_message(f"保存エラー: {e}")
 
+    def on_save_button_click(self):
+        """保存ボタンクリック時の処理（ロット番号処理＋座標保存）"""
+        # 最初にロット番号が入力されているかチェック
+        lot_number = self.main_view.get_lot_number().strip()
+        if lot_number:
+            # ロット番号が入力されている場合はロット番号保存処理を実行
+            self.on_lot_number_save()
+        else:
+            # ロット番号が入力されていない場合は座標保存処理を実行
+            self.save_coordinates()
+
+    def on_settings_changed(self):
+        """設定変更時のコールバック"""
+        # モデル選択リストを更新
+        self._update_model_options()
+
+    def on_lot_number_save(self):
+        """ロット番号保存処理"""
+        import re
+
+        # 作業者が設定されているかチェック
+        if not self.current_worker_no:
+            self.main_view.show_error("作業者が設定されていません。")
+            return
+
+        # ロット番号を取得
+        lot_number = self.main_view.get_lot_number().strip()
+        if not lot_number:
+            self.main_view.show_error("ロット番号を入力してください。")
+            return
+
+        # ロット番号の形式をチェック (7桁-2桁の形式)
+        lot_pattern = r"^\d{7}-10$|^\d{7}-20$"
+        if not re.match(lot_pattern, lot_number):
+            self.main_view.show_error(
+                "ロット番号の形式が正しくありません。\n形式: 1234567-10 または 1234567-20 (7桁-10または7桁-20)"
+            )
+            return
+
+        # ロット番号を保存
+        self.current_lot_number = lot_number  # MainControllerのロット番号も更新
+        self.current_model = self.main_view.get_selected_model()
+
+        print(f"ロット番号を保存しました: {lot_number}")
+
+    def on_save_button_click(self):
+        """保存ボタンクリック時の処理（ロット番号処理＋座標保存）"""
+        # 最初にロット番号が入力されているかチェック
+        lot_number = self.main_view.get_lot_number().strip()
+        if lot_number:
+            # ロット番号が入力されている場合はロット番号保存処理を実行
+            self.on_lot_number_save()
+        else:
+            # ロット番号が入力されていない場合は座標保存処理を実行
+            self.save_coordinates()
+
     def clear_coordinates(self):
         """座標をクリア"""
         print("[DEBUG] 座標をクリアします")
@@ -980,16 +979,6 @@ class MainController:
             print(
                 "[DEBUG] CoordinateController.select_next_coordinate method not found"
             )
-
-    def undo_action(self):
-        """元に戻す操作"""
-        if self.coordinate_controller.undo():
-            self._update_undo_redo_state()
-
-    def redo_action(self):
-        """やり直し操作"""
-        if self.coordinate_controller.redo():
-            self._update_undo_redo_state()
 
     def search_coordinates(self):
         """座標検索機能（閲覧モード用）"""
@@ -1549,6 +1538,10 @@ class MainController:
                 "エラー", f"基盤セッション読み込み中にエラーが発生しました:\n{str(e)}"
             )
 
+    # endregion
+
+    # region 内部関数
+
     def _switch_to_next_board_with_validation(
         self,
         selected_model: str = None,
@@ -1757,68 +1750,6 @@ class MainController:
         # 現在の基板番号を設定
         self.board_controller.set_current_board_number(currentIndex)
 
-    def load_start_json(self):
-        """閲覧モード用: ロット番号に基づいて開始JSONファイルを読み込み"""
-        import re
-
-        try:
-            # 現在のモードを確認
-            current_mode = self.main_view.get_current_mode()
-            if current_mode != "閲覧":
-                print("[load_start_json] 閲覧モード以外では実行できません")
-                return False
-
-            # ロット番号を取得
-            lot_number = self.main_view.get_lot_number().strip()
-            if not lot_number:
-                self.main_view.show_error("ロット番号を入力してください。")
-                return False
-
-            # ロット番号の形式をチェック (7桁-10/20の形式)
-            lot_pattern = r"^\d{7}-(10|20)$"
-            if not re.match(lot_pattern, lot_number):
-                self.main_view.show_error(
-                    "ロット番号の形式が正しくありません。\n形式: 1234567-10 または 1234567-20"
-                )
-                return False
-
-            print(f"[load_start_json] ロット番号による開始JSON読み込み: {lot_number}")
-
-            # ロット番号に基づいて対応するディレクトリを検索
-            json_dir = self._find_json_directory_by_lot_number(lot_number)
-
-            if not json_dir:
-                self.main_view.show_error(
-                    f"ロット番号 '{lot_number}' に対応するディレクトリが見つかりませんでした。"
-                )
-                return False
-
-            # 開始JSONファイル（0001.json）のパスを構築
-            start_json_file = os.path.join(json_dir, "0001.json")
-
-            if not os.path.exists(start_json_file):
-                self.main_view.show_error(
-                    f"開始JSONファイルが見つかりませんでした。\nパス: {start_json_file}"
-                )
-                return False
-
-            # JSONファイルを読み込み
-            print(f"[load_start_json] 開始JSONファイルを読み込み中: {start_json_file}")
-            self.load_json(file_path=start_json_file)
-
-            # ロット番号入力フィールドをクリア
-            self.main_view.clear_lot_number()
-
-            print(f"[load_start_json] 開始JSONファイルの読み込みが完了しました")
-            return True
-
-        except Exception as e:
-            print(f"[load_start_json] 開始JSON読み込みエラー: {e}")
-            self.main_view.show_error(
-                f"開始JSON読み込み中にエラーが発生しました:\n{str(e)}"
-            )
-            return False
-
     def _find_json_directory_by_lot_number(self, lot_number: str) -> Optional[str]:
         """ロット番号に基づいてJSONディレクトリを検索"""
         try:
@@ -1896,3 +1827,5 @@ class MainController:
             self.main_view.show_error(
                 f"ファイル削除処理中にエラーが発生しました:\n{str(e)}"
             )
+
+    # endregion

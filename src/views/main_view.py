@@ -428,7 +428,7 @@ class MainView:
         self.board_label = tk.Label(
             board_frame,
             text="基板選択:",
-            font=("Arial", 12),
+            font=("Arial", 10),
             width=10,
         )
         self.board_label.pack(side=tk.LEFT, padx=5)
