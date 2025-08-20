@@ -1413,6 +1413,15 @@ class MainController:
 
     def _change_lot_number(self):
         """ロット番号を変更する処理"""
+
+        # ロックファイルが存在するかチェック
+        if self.file_controller.is_lock_file_exists():
+            # ロックファイルが存在する場合はエラーメッセージを表示
+            self.main_view.show_error(
+                "ロット番号の変更中にエラーが発生しました。\n別のプロセスでロット番号が使用中です。"
+            )
+            return
+
         # ディレクトリ作成
         self.file_controller.init_lot_number_directory(self.current_lot_number)
         # ロックファイル作成
@@ -1423,5 +1432,7 @@ class MainController:
         max_index = self.file_controller.get_max_json_index(json_files)
         # インデックス用のJSONファイルを作成
         self.file_controller.create_index_json_file(max_index)
+        # main_viewの基盤選択ラベルを更新
+        self.main_view.set_board_index_text(max_index + 1, max_index + 1)
 
     # endregion

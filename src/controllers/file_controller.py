@@ -81,6 +81,13 @@ class FileController:
             return lock_file_path
         return None
 
+    def is_lock_file_exists(self) -> bool:
+        """ロット番号ディレクトリにロックファイルが存在するかチェック"""
+        if self.lot_directory:
+            lock_file_path = self.lot_directory / "lock"
+            return lock_file_path.exists()
+        return False
+
     def create_index_json_file(self, index: int):
         """インデックス用のJSONファイルを作成"""
         next_index = index + 1

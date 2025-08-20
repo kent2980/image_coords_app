@@ -684,7 +684,7 @@ class MainView:
 
         # ラベルのテキストを設定
         if hasattr(self, "board_index_label") and self.board_index_label:
-            label_text = f"{current_board_number}/{max_board_number}"
+            label_text = f"{current_board_number} / {max_board_number}"
             self.board_index_label.config(text=label_text)
 
     def update_board_index_display(self, current_index: int, total_count: int):
