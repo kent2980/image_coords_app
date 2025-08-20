@@ -656,6 +656,43 @@ class MainController:
 
         print(f"ロット番号を保存しました: {lot_number}")
 
+    def on_item_tag_change(self):
+        """現品票で切り替えボタンが押された時の処理"""
+        print("[DEBUG] 現品票切り替えボタンがクリックされました")
+        try:
+            # 現在のモードを取得
+            mode = self.main_view.get_current_mode()
+
+            # 現品票切り替えダイアログを表示
+            print("[DEBUG] ダイアログを表示しようとしています...")
+            result = None
+
+            if mode == "編集":
+                # 編集モード：製番と指図を入力するダイアログ
+                result = self.main_view.show_item_tag_switch_dialog()
+                model_number = result[0]
+                # 製番からモデル名を検索
+                self.current_model = self._find_model_by_product_number(
+                    model_number
+                ).split("_")[0]
+                self.current_lot_number = result[1]
+            elif mode == "閲覧":
+                # 閲覧モード：指図入力のみのダイアログを表示
+                result = self._show_lot_number_input_dialog()
+            else:
+                result = None
+
+            print(f"[DEBUG] ダイアログの結果: {result[0]}")
+
+        except Exception as e:
+            print(f"現品票切り替えエラー: {e}")
+            import traceback
+
+            traceback.print_exc()
+            self.main_view.show_error(
+                f"現品票切り替え中にエラーが発生しました:\n{str(e)}"
+            )
+
     def on_save_button_click(self):
         """保存ボタンクリック時の処理（ロット番号処理＋座標保存）"""
         # 最初にロット番号が入力されているかチェック
@@ -784,43 +821,6 @@ class MainController:
             import traceback
 
             traceback.print_exc()
-
-    def on_item_tag_change(self):
-        """現品票で切り替えボタンが押された時の処理"""
-        print("[DEBUG] 現品票切り替えボタンがクリックされました")
-        try:
-            # 現在のモードを取得
-            mode = self.main_view.get_current_mode()
-
-            # 現品票切り替えダイアログを表示
-            print("[DEBUG] ダイアログを表示しようとしています...")
-            result = None
-
-            if mode == "編集":
-                # 編集モード：製番と指図を入力するダイアログ
-                result = self.main_view.show_item_tag_switch_dialog()
-                model_number = result[0]
-                # 製番からモデル名を検索
-                self.current_model = self._find_model_by_product_number(
-                    model_number
-                ).split("_")[0]
-                self.current_lot_number = result[1]
-            elif mode == "閲覧":
-                # 閲覧モード：指図入力のみのダイアログを表示
-                result = self._show_lot_number_input_dialog()
-            else:
-                result = None
-
-            print(f"[DEBUG] ダイアログの結果: {result[0]}")
-
-        except Exception as e:
-            print(f"現品票切り替えエラー: {e}")
-            import traceback
-
-            traceback.print_exc()
-            self.main_view.show_error(
-                f"現品票切り替え中にエラーが発生しました:\n{str(e)}"
-            )
 
     def _show_lot_number_input_dialog(self):
         """閲覧モード用の指図入力ダイアログを表示"""
