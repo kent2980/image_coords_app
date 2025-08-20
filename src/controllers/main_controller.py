@@ -631,30 +631,39 @@ class MainController:
         """ロット番号保存処理"""
         import re
 
-        # 作業者が設定されているかチェック
-        if not self.current_worker_no:
-            self.main_view.show_error("作業者が設定されていません。")
-            return
+        # 現在のモードを取得
+        mode = self.main_view.get_current_mode()
 
-        # ロット番号を取得
-        lot_number = self.main_view.get_lot_number().strip()
-        if not lot_number:
-            self.main_view.show_error("ロット番号を入力してください。")
-            return
+        if mode == "編集":
+            # 作業者が設定されているかチェック
+            if not self.current_worker_no:
+                self.main_view.show_error("作業者が設定されていません。")
+                return
 
-        # ロット番号の形式をチェック (7桁-2桁の形式)
-        lot_pattern = r"^\d{7}-10$|^\d{7}-20$"
-        if not re.match(lot_pattern, lot_number):
-            self.main_view.show_error(
-                "ロット番号の形式が正しくありません。\n形式: 1234567-10 または 1234567-20 (7桁-10または7桁-20)"
-            )
-            return
+            # ロット番号を取得
+            lot_number = self.main_view.get_lot_number().strip()
+            # ロット番号入力エリアを初期化
+            self.main_view.clear_lot_number()
+            if not lot_number:
+                self.main_view.show_error("ロット番号を入力してください。")
+                return
 
-        # ロット番号を保存
-        self.current_lot_number = lot_number
-        self.current_model = self.main_view.get_selected_model().split("_")[0]
+            # ロット番号の形式をチェック (7桁-2桁の形式)
+            lot_pattern = r"^\d{7}-10$|^\d{7}-20$"
+            if not re.match(lot_pattern, lot_number):
+                self.main_view.show_error(
+                    "ロット番号の形式が正しくありません。\n形式: 1234567-10 または 1234567-20 (7桁-10または7桁-20)"
+                )
+                return
 
-        print(f"ロット番号を保存しました: {lot_number}")
+            # ロット番号を保存
+            self.current_lot_number = lot_number
+            self.current_model = self.main_view.get_selected_model().split("_")[0]
+
+            print(f"ロット番号を保存しました: {lot_number}")
+
+            # ロット切り替え処理
+            self._change_lot_number()
 
     def on_item_tag_change(self):
         """現品票で切り替えボタンが押された時の処理"""
@@ -676,6 +685,8 @@ class MainController:
                     model_number
                 ).split("_")[0]
                 self.current_lot_number = result[1]
+                # ロット切り替え処理
+                self._change_lot_number()
             elif mode == "閲覧":
                 # 閲覧モード：指図入力のみのダイアログを表示
                 result = self._show_lot_number_input_dialog()
@@ -1399,5 +1410,18 @@ class MainController:
         確認ダイアログ付き、検査担当者権限が必要
         """
         pass
+
+    def _change_lot_number(self):
+        """ロット番号を変更する処理"""
+        # ディレクトリ作成
+        self.file_controller.init_lot_number_directory(self.current_lot_number)
+        # ロックファイル作成
+        self.file_controller.create_lot_number_dir_lock_file()
+        # ディレクトリ内のJSONファイル名を取得
+        json_files = self.file_controller.get_lot_dir_json_list()
+        # 最大インデックスを取得
+        max_index = self.file_controller.get_max_json_index(json_files)
+        # インデックス用のJSONファイルを作成
+        self.file_controller.create_index_json_file(max_index)
 
     # endregion

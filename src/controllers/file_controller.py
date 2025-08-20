@@ -45,6 +45,9 @@ class FileController:
         # デフォルトの不良項目
         self.default_defects = None
 
+        # ロットディレクトリ
+        self.lot_directory = None
+
     def load_defects_from_file(self) -> List[str]:
         """defects.txtから不良項目を読み込み"""
         try:
@@ -57,3 +60,60 @@ class FileController:
         except Exception as e:
             print(f"不良項目読み込みエラー: {e}")
             return self.default_defects
+
+    def init_lot_number_directory(self, lot_number: str):
+        """ロット番号用のディレクトリを初期化"""
+        data_root_path = self.settings_model.data_directory
+        lot_directory = Path(data_root_path) / lot_number
+
+        if not lot_directory.exists():
+            lot_directory.mkdir(parents=True, exist_ok=True)
+
+        self.lot_directory = lot_directory
+
+        return self.lot_directory
+
+    def create_lot_number_dir_lock_file(self):
+        """ロット番号ディレクトリのロックファイルを作成"""
+        if self.lot_directory:
+            lock_file_path = self.lot_directory / "lock"
+            lock_file_path.touch(exist_ok=True)
+            return lock_file_path
+        return None
+
+    def create_index_json_file(self, index: int):
+        """インデックス用のJSONファイルを作成"""
+        next_index = index + 1
+        # 0埋め4桁のインデックスを作成
+        index_str = f"{next_index:04d}"
+        json_data = {"index": index_str}
+
+        json_path = self.lot_directory / f"{index_str}.json"
+        with open(json_path, "w", encoding="utf-8") as f:
+            json.dump(json_data, f, ensure_ascii=False, indent=4)
+
+        self.current_json_path = json_path
+
+        return json_path
+
+    def get_lot_dir_json_list(self) -> List[Path]:
+        """ロットディレクトリ内のJSONファイル一覧を取得"""
+        if not self.lot_directory:
+            return []
+
+        json_files = list(self.lot_directory.glob("*.json"))
+        return [file for file in json_files if file.is_file()]
+
+    def get_max_json_index(self, json_list: List[Path]) -> int:
+        """JSONファイルの最大インデックスを取得"""
+        max_index = 0
+        for json_file in json_list:
+            try:
+                index = int(
+                    json_file.stem.split("_")[0]
+                )  # ファイル名からインデックスを取得
+                if index > max_index:
+                    max_index = index
+            except ValueError:
+                continue
+        return max_index

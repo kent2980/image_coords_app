@@ -965,4 +965,7 @@ class MainView:
 
         return ""
 
+    def clear_lot_number_entry(self):
+        self.lot_number_entry.delete(0, tk.END)
+
     # endregion jjjj
