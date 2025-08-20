@@ -153,9 +153,6 @@ class MainController:
 
             print("[DEBUG] デバッグモード: 作業者入力をスキップしました")
 
-        # FileManagerを初期化（作業者情報取得後）
-        self.file_controller.initialize_file_manager(self.current_worker_no or "作業者")
-
         # コントローラー間の連携を設定
         self.coordinate_controller.set_canvas_view(self.canvas_view)
         self.coordinate_controller.set_sidebar_view(self.sidebar_view)
@@ -400,15 +397,6 @@ class MainController:
 
             # 保存名を自動設定
             current_lot = self.current_lot_number or self.sidebar_view.get_lot_number()
-            auto_save_name = self.file_controller.setup_save_name_entry(
-                selected_model,
-                current_lot or "",
-                (
-                    "" if model_changed else self.main_view.get_save_name()
-                ),  # モデル変更時は保存名もリセット
-            )
-            if auto_save_name:
-                self.main_view.set_save_name(auto_save_name)
 
             if not model_changed:
                 print(f"モデルを選択しました: {selected_model}")
@@ -548,43 +536,6 @@ class MainController:
             detail = self.sidebar_view.get_coordinate_detail()
             self.coordinate_controller.update_current_coordinate_detail(detail)
 
-        # 座標が存在し、現在のJSONファイルがある場合のみ自動更新
-        coordinates = self.coordinate_controller.get_all_coordinates()
-
-        if coordinates and self.file_controller.current_json_path:
-            try:
-                # 座標詳細情報を取得
-                coordinate_details = (
-                    self.coordinate_controller.get_all_coordinate_details()
-                )
-
-                # 現在のロット番号と作業者Noを取得
-                form_data = self.sidebar_view.get_form_data()
-                lot_number = (
-                    form_data.get("lot_number")
-                    or self.current_lot_number
-                    or self.sidebar_view.get_lot_number()
-                )
-                worker_no = form_data.get("worker_no") or self.current_worker_no
-
-                # 現在のモデル名を取得
-                current_model = self.main_view.get_selected_model() or ""
-
-                # 自動更新保存
-                if self.file_controller.save_coordinates_with_auto_update(
-                    coordinates,
-                    coordinate_details,
-                    lot_number,
-                    worker_no,
-                    current_model,
-                ):
-                    print(
-                        f"JSONファイルを自動更新しました: {self.file_controller.current_json_path}"
-                    )
-
-            except Exception as e:
-                print(f"自動更新エラー: {e}")
-
     # endregion
 
     # region コールバック関数
@@ -650,235 +601,15 @@ class MainController:
 
     def select_image(self):
         """画像を選択"""
-        file_path = self.file_controller.select_image_file()
-
-        if not file_path:
-            return
-
-        try:
-            # 画像を読み込み
-            tk_image = self.image_model.load_image(
-                file_path, self.canvas_view.canvas_width, self.canvas_view.canvas_height
-            )
-
-            if tk_image:
-                # キャンバスに画像を表示
-                self.canvas_view.display_image(
-                    tk_image,
-                    self.image_model.display_size[0],
-                    self.image_model.display_size[1],
-                )
-
-                # 座標をクリア
-                self.coordinate_controller.clear_coordinates()
-
-                # JSONパスをリセット
-                self.file_controller.current_json_path = None
-
-                print(f"画像を読み込みました: {file_path}")
-            else:
-                self.file_controller.show_error_message(
-                    "画像の読み込みに失敗しました。"
-                )
-
-        except Exception as e:
-            self.file_controller.show_error_message(f"画像読み込みエラー: {e}")
+        pass
 
     def load_json(self, file_path=None):
         """JSONファイルを読み込み"""
-
-        if file_path is None:
-            file_path = self.file_controller.select_json_file()
-
-        if not file_path:
-            return
-
-        try:
-            # JSONデータを読み込み
-            data = self.file_controller.load_json_data(file_path)
-            parsed_data = self.file_controller.parse_loaded_data(data)
-
-            # 画像パスをチェック
-            image_path = parsed_data["image_path"]
-            if not self.file_controller.validate_image_path(image_path):
-                self.file_controller.show_error_message(
-                    "画像ファイルが見つかりません。"
-                )
-                return
-
-            # 画像を読み込み
-            tk_image = self.image_model.load_image(
-                image_path,
-                self.canvas_view.canvas_width,
-                self.canvas_view.canvas_height,
-            )
-
-            if tk_image:
-                # キャンバスに画像を表示
-                self.canvas_view.display_image(
-                    tk_image,
-                    self.image_model.display_size[0],
-                    self.image_model.display_size[1],
-                )
-
-                # 座標と詳細情報を設定
-                self.coordinate_controller.load_coordinates_from_data(
-                    parsed_data["coordinates"], parsed_data["coordinate_details"]
-                )
-
-                # サイドバーに基本情報を設定
-                lot_number = parsed_data.get("lot_number", "")
-                worker_no = parsed_data.get("worker_no", "")
-                product_number = parsed_data.get("model", "").split("_")[0]
-                self.sidebar_view.set_lot_number(lot_number)
-                self.sidebar_view.set_worker_no(worker_no)
-                self.sidebar_view.set_product_number(product_number)
-
-                # モデルコンボボックスの情報をログ出力（デバッグ用）
-                model_values = self.main_view.get_model_values()
-                model_count = self.main_view.get_model_count()
-                current_model = self.main_view.get_selected_model()
-                print(f"[デバッグ] モデル選択肢: {model_values}")
-                print(f"[デバッグ] モデル数: {model_count}")
-                print(f"[デバッグ] 現在のモデル: {current_model}")
-
-                # ファイルパスを記録
-                self.file_controller.current_json_path = file_path
-
-                # 読み込み完了メッセージ
-                coord_count = len(parsed_data["coordinates"])
-                current_mode = self.main_view.get_current_mode()
-
-                if current_mode == "閲覧":
-                    self.file_controller.show_info_message(
-                        f"JSONファイルを閲覧モードで読み込みました。\n"
-                        f"座標数: {coord_count}個\n"
-                        f"座標をクリックして詳細情報を確認できます。"
-                    )
-                else:
-                    self.file_controller.show_info_message(
-                        f"JSONファイルを読み込みました。\n座標数: {coord_count}個"
-                    )
-
-                print(f"JSONファイルを読み込みました: {file_path}")
-            else:
-                self.file_controller.show_error_message(
-                    "画像の読み込みに失敗しました。"
-                )
-
-        except Exception as e:
-            self.file_controller.show_error_message(f"JSON読み込みエラー: {e}")
+        pass
 
     def save_coordinates(self):
         """座標を保存（旧コード互換の自動保存機能付き）"""
-        coordinates = self.coordinate_controller.get_all_coordinates()
-
-        if not coordinates:
-            self.file_controller.show_info_message("座標がありません。")
-            return
-
-        try:
-            # MainViewとSidebarViewからフォームデータを取得
-            main_form_data = self.main_view.get_form_data()
-
-            # ロット番号をチェック（MainControllerとSidebarViewの両方から確認）
-            lot_number = self.current_lot_number or self.sidebar_view.get_lot_number()
-            if not lot_number or not lot_number.strip():
-                self.file_controller.show_error_message(
-                    "ロット番号が入力されていません。\nロット番号を入力してから保存してください。"
-                )
-                return
-
-            # 現在のモデル名を取得
-            current_model = self.sidebar_view.get_selected_model()
-
-            # 保存ディレクトリを作成
-            save_dir = self.file_controller.setup_json_save_dir(
-                self.current_date, current_model, lot_number
-            )
-
-            file_path = None
-
-            if save_dir:
-                # 自動的にファイルパスを生成
-                save_name = main_form_data.get("save_name", "").strip()
-
-                if save_name:
-                    # 保存名が設定されている場合
-                    filename = f"{save_name}.json"
-                    file_path = os.path.join(save_dir, filename)
-
-                    # 同名ファイルが存在する場合は連番を付ける
-                    counter = 1
-                    while os.path.exists(file_path):
-                        name_part = os.path.splitext(filename)[0]
-                        file_path = os.path.join(
-                            save_dir, f"{name_part}_{counter:04d}.json"
-                        )
-                        counter += 1
-                else:
-                    # 保存名が設定されていない場合は連番ファイル名を生成
-                    next_number = self.file_controller.get_next_sequential_number(
-                        save_dir
-                    )
-                    filename = f"{next_number:04d}.json"
-                    file_path = os.path.join(save_dir, filename)
-
-                    # 保存名フィールドに生成されたファイル名（拡張子なし）を設定
-                    self.sidebar_view.set_save_name(f"{next_number:04d}")
-            else:
-                # ディレクトリ作成に失敗した場合は従来の方法でファイル選択
-                save_name = main_form_data.get("save_name", "")
-                default_filename = (
-                    f"{save_name}.json" if save_name else "coordinates.json"
-                )
-                file_path = self.file_controller.save_json_file(default_filename)
-
-            if not file_path:
-                return
-
-            # 座標詳細情報を取得
-            coordinate_details = self.coordinate_controller.get_all_coordinate_details()
-
-            # 保存データを作成
-            save_data = self.file_controller.create_save_data(
-                current_model,
-                coordinates,
-                self.image_model.current_image_path,
-                coordinate_details,
-                lot_number,
-                self.current_worker_no,
-            )
-
-            # データを保存
-            if self.file_controller.save_json_data(file_path, save_data):
-                # 現在の基盤データもセッションとJSONファイルに保存
-                self._save_current_board_to_session_and_json(
-                    coordinates, coordinate_details, lot_number
-                )
-
-                self.file_controller.show_success_message(
-                    f"座標をJSON形式で保存しました。\n保存先: {file_path}"
-                )
-
-                # 保存後に座標をリセット
-                self.coordinate_controller.clear_coordinates()
-                self.sidebar_view.clear_form()
-                self._update_undo_redo_state()
-                print("[JSON保存] 座標をリセットしました")
-
-                # 保存名エントリを次の連番に更新
-                if save_dir:
-                    auto_save_name = self.file_controller.setup_save_name_entry(
-                        current_model, lot_number, ""
-                    )
-                    if auto_save_name:
-                        self.sidebar_view.set_save_name(auto_save_name)
-            else:
-                self.file_controller.show_error_message("保存に失敗しました。")
-
-        except Exception as e:
-            self.file_controller.show_error_message(f"保存エラー: {e}")
+        pass
 
     def on_save_button_click(self):
         """保存ボタンクリック時の処理（ロット番号処理＋座標保存）"""
@@ -920,8 +651,8 @@ class MainController:
             return
 
         # ロット番号を保存
-        self.current_lot_number = lot_number  # MainControllerのロット番号も更新
-        self.current_model = self.main_view.get_selected_model()
+        self.current_lot_number = lot_number
+        self.current_model = self.main_view.get_selected_model().split("_")[0]
 
         print(f"ロット番号を保存しました: {lot_number}")
 
@@ -1070,7 +801,9 @@ class MainController:
                 result = self.main_view.show_item_tag_switch_dialog()
                 model_number = result[0]
                 # 製番からモデル名を検索
-                self.current_model = self._find_model_by_product_number(model_number)
+                self.current_model = self._find_model_by_product_number(
+                    model_number
+                ).split("_")[0]
                 self.current_lot_number = result[1]
             elif mode == "閲覧":
                 # 閲覧モード：指図入力のみのダイアログを表示
@@ -1361,37 +1094,7 @@ class MainController:
 
     def next_board(self):
         """次の基板を選択"""
-        print("[ボタン] 次の基板が選択されました")
-
-        coordinate_count = len(self.coordinate_controller.get_all_coordinates())
-
-        if coordinate_count == 0:
-            messagebox.showwarning(
-                "基盤切り替えエラー",
-                "現在の基盤には座標データがありません。\n基盤を切り替えるには座標データが必要です。",
-            )
-            return
-
-        try:
-            # 次の基板への切り替えを実行
-            selected_model = self.main_view.get_selected_model()
-            lot_number = self.current_lot_number or self.sidebar_view.get_lot_number()
-
-            self._switch_to_next_board_with_validation(
-                selected_model=selected_model,
-                lot_number=lot_number,
-                worker_no=self.current_worker_no,
-                current_date=self.current_date,
-            )
-
-            # lotInfo.jsonを再読み込み
-            self.file_controller.reload_lot_info()
-
-        except Exception as e:
-            print(f"次の基盤切り替えエラー: {e}")
-            messagebox.showerror(
-                "エラー", f"次の基盤への切り替え中にエラーが発生しました:\n{str(e)}"
-            )
+        pass
 
     def delete_board(self):
         """現在の基板を削除"""
@@ -1668,87 +1371,12 @@ class MainController:
         self, model_name: str, lot_number: str, board_number: int
     ):
         """指定された基盤のJSONファイルが存在する場合に読み込み"""
-        try:
-            # JSONファイルのパスを構築
-            json_dir = self.file_controller.setup_json_save_dir(model_name, lot_number)
-
-            if not json_dir:
-                print(
-                    f"[JSONロード] 基盤 {board_number} のディレクトリが見つかりません"
-                )
-                return False
-
-            json_filename = f"{board_number:04d}.json"
-            json_filepath = os.path.join(json_dir, json_filename)
-
-            # JSONファイルが存在するかチェック
-            if not self.file_controller.is_defective_info_file(board_number):
-                print(
-                    f"[JSONロード] 基盤 {board_number} のJSONファイルが見つかりません: {json_filepath}"
-                )
-                return False
-
-            # JSONファイルからデータを読み込み
-            data = self.file_controller.load_json_data(json_filepath)
-            parsed_data = self.file_controller.parse_loaded_data(data)
-
-            # 座標と詳細情報を復元
-            if parsed_data["coordinates"]:
-                self.coordinate_controller.load_coordinates_from_data(
-                    parsed_data["coordinates"], parsed_data["coordinate_details"]
-                )
-
-                # 座標マーカーを再描画
-                self._redraw_coordinates_for_new_scale()
-
-                coord_count = len(parsed_data["coordinates"])
-                print(
-                    f"[JSONロード] 基盤 {board_number} に {coord_count}個の座標を復元しました"
-                )
-
-                return True
-            else:
-                print(
-                    f"[JSONロード] 基盤 {board_number} のJSONファイルに座標データがありません"
-                )
-                return False
-
-        except Exception as e:
-            print(f"[JSONロード] 基盤 {board_number} のJSONファイル読み込みエラー: {e}")
-            # エラーが発生しても処理を継続（セッションデータがあれば使用される）
-            return False
+        pass
 
     def _check_and_load_latest_json(self, model_name: str, lot_number: str):
         """対象ディレクトリの最新のJSONファイルを検索して自動読み込み、次のインデックスを設定"""
 
-        file_cont = self.file_controller
-
-        # 現在のjsonファイルのリストを取得
-        json_list_dict = self.file_controller.load_json_info()
-
-        json_list = json_list_dict.get("json_list", [])
-        remove_list = json_list_dict.get("remove_list", [])
-
-        # json_listとremove_listをマージ
-        all_json_files = json_list + remove_list
-
-        # maxIndexを取得
-        currentIndex = 0
-        for json_file in all_json_files:
-            try:
-                json_file_index = int(json_file[0:4])
-                currentIndex = max(currentIndex, json_file_index)
-            except ValueError:
-                continue
-        currentIndex = currentIndex + 1
-
-        file_cont.create_defective_info_file(currentIndex)
-
-        # lotInfo.jsonを更新
-        self.file_controller.reload_lot_info()
-
-        # 現在の基板番号を設定
-        self.board_controller.set_current_board_number(currentIndex)
+        pass
 
     def _find_json_directory_by_lot_number(self, lot_number: str) -> Optional[str]:
         """ロット番号に基づいてJSONディレクトリを検索"""
@@ -1770,62 +1398,6 @@ class MainController:
         現在のファイルを削除（履歴フォルダに移動）
         確認ダイアログ付き、検査担当者権限が必要
         """
-        try:
-            # 現在のファイルパスを確認
-            current_path = self.file_controller.get_current_json_path()
-            if not current_path:
-                self.main_view.show_warning("削除対象のファイルが選択されていません")
-                return
-
-            # 現在のユーザー情報を取得
-            current_user = (
-                self.worker_model._current_worker_no
-                if self.worker_model._current_worker_no
-                else "未設定"
-            )
-
-            # ファイル名を取得
-            filename = os.path.basename(current_path)
-
-            # 確認ダイアログを表示
-            confirm_message = (
-                f"以下のファイルを削除しますか？\n\n"
-                f"ファイル: {filename}\n"
-                f"※ファイルは履歴フォルダに移動され、復元可能です\n"
-                f"※この操作には検査担当者権限が必要です"
-            )
-
-            if not self.main_view.show_confirmation_dialog(
-                confirm_message, "ファイル削除確認"
-            ):
-                return
-
-            # FileControllerを使用してファイルを削除（履歴移動）
-            success = self.file_controller.delete_current_file()
-
-            if success:
-                # UI状態をリセット
-                # self.coordinate_model.clear_coordinates()
-                self.coordinate_controller.clear_all_coordinates(is_create_json=False)
-                self.image_model.clear_image()
-
-                # ビューを更新
-                # self.canvas_view.clear_image()
-                # self.canvas_view.clear_coordinates()
-                # self._update_coordinate_display()
-
-                # 保存名をクリア
-                self.main_view.set_save_name("")
-
-                print(f"[delete_file] ファイル削除完了: {filename}")
-
-            # lotInfo.jsonを再読み込み
-            self.file_controller.reload_lot_info()
-
-        except Exception as e:
-            print(f"[delete_file] ファイル削除処理エラー: {e}")
-            self.main_view.show_error(
-                f"ファイル削除処理中にエラーが発生しました:\n{str(e)}"
-            )
+        pass
 
     # endregion
