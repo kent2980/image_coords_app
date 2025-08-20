@@ -114,7 +114,6 @@ class MainController:
         self.coordinate_controller.set_canvas_view(self.canvas_view)
         self.coordinate_controller.set_sidebar_view(self.sidebar_view)
         self.coordinate_controller.set_main_view(self.main_view)
-        self.coordinate_controller.set_file_controller(self.file_controller)
         self.board_controller.set_sidebar_view(self.sidebar_view)
         self.board_controller.set_main_view(self.main_view)
 
@@ -256,7 +255,7 @@ class MainController:
         self.main_view.setup_top_controls()
 
         # メニューを設定
-        self.main_view.setup_menu_buttons()
+        # self.main_view.setup_menu_buttons()
 
         # 日付表示を更新
         self.main_view.update_date_label(self.current_date.strftime("%Y-%m-%d"))
