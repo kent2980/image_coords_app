@@ -1020,6 +1020,15 @@
         "documentation": {}
     },
     {
+        "label": "signal",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "signal",
+        "description": "signal",
+        "detail": "signal",
+        "documentation": {}
+    },
+    {
         "label": "BoardController",
         "importPath": "src.controllers",
         "description": "src.controllers",
@@ -1530,7 +1539,7 @@
         "kind": 2,
         "importPath": "main",
         "description": "main",
-        "peekOfCode": "def main():\n    \"\"\"メイン関数\"\"\"\n    try:\n        app = ImageCoordsApp()\n        app.run()\n    except KeyboardInterrupt:\n        print(\"アプリケーションが中断されました。\")\n    except Exception as e:\n        print(f\"予期しないエラーが発生しました: {e}\")\n        messagebox.showerror(\"エラー\", f\"予期しないエラーが発生しました: {e}\")",
+        "peekOfCode": "def main():\n    \"\"\"メイン関数\"\"\"\n    app = None\n    try:\n        app = ImageCoordsApp()\n        app.run()\n    except KeyboardInterrupt:\n        print(\"アプリケーションが中断されました。\")\n    except Exception as e:\n        print(f\"予期しないエラーが発生しました: {e}\")",
         "detail": "main",
         "documentation": {}
     },

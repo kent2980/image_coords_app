@@ -96,6 +96,9 @@ class MainController:
         # 初期化フラグ
         self.is_initialized: bool = False
 
+        # ロックファイルのパス
+        self.lock_file_path: Optional[Path] = None
+
         # デバッグフラグ（デバッグ時は作業者入力をスキップ）
         # 環境変数 DEBUG=1 でデバッグモードを有効化
         self.debug_mode: bool = os.getenv("DEBUG", "0") == "1"
@@ -109,6 +112,7 @@ class MainController:
 
     @current_lot_number.setter
     def current_lot_number(self, value: str):
+        self.file_controller.delete_lot_number_dir_lock_file()
         self.sidebar_view.set_lot_number(value)
         self._current_lot_number = value
 
@@ -1382,7 +1386,7 @@ class MainController:
         # ディレクトリ作成
         self.file_controller.init_lot_number_directory(self.current_lot_number)
         # ロックファイル作成
-        self.file_controller.create_lot_number_dir_lock_file()
+        self.lock_file_path = self.file_controller.create_lot_number_dir_lock_file()
         # ディレクトリ内のdataファイル名を取得
         data_files = self.file_controller.get_lot_dir_data_list()
         # 最大インデックスを取得

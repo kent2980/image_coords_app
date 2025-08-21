@@ -4,6 +4,7 @@ MVCアーキテクチャ版のメインエントリーポイント
 """
 
 import os
+import signal
 import sys
 import tkinter as tk
 from tkinter import messagebox
@@ -167,6 +168,57 @@ class ImageCoordsApp:
             self.main_controller.set_debug_mode(True)
             print("[DEBUG] デバッグモードが有効になりました")
 
+        # アプリケーション終了時の処理を設定
+        self.root.protocol("WM_DELETE_WINDOW", self._on_closing)
+
+        # シグナルハンドラーを設定
+        self._setup_signal_handlers()
+
+    def _setup_signal_handlers(self):
+        """システム終了シグナルのハンドラーを設定"""
+
+        def signal_handler(signum, frame):
+            print(f"[シグナル受信] シグナル {signum} を受信しました")
+            self._cleanup_and_exit()
+
+        # SIGTERM（正常終了シグナル）とSIGINT（Ctrl+C）をキャッチ
+        signal.signal(signal.SIGTERM, signal_handler)
+        signal.signal(signal.SIGINT, signal_handler)
+
+    def _cleanup_and_exit(self):
+        """クリーンアップしてアプリケーションを終了"""
+        try:
+            print("[クリーンアップ] アプリケーションを終了します...")
+
+            # ロックファイルを削除
+            if hasattr(self, "file_controller"):
+                self.file_controller.remove_lot_number_dir_lock_file()
+                print("[クリーンアップ] ロックファイルを削除しました")
+
+        except Exception as e:
+            print(f"[クリーンアップ] クリーンアップ中にエラーが発生しました: {e}")
+        finally:
+            # 強制終了
+            os._exit(0)
+
+    def _on_closing(self):
+        """アプリケーション終了時の処理（ウィンドウの×ボタン）"""
+        try:
+            print("[終了処理] ウィンドウ終了が要求されました")
+
+            # ロックファイルを削除
+            if hasattr(self, "file_controller"):
+                self.file_controller.remove_lot_number_dir_lock_file()
+                print("[終了処理] ロックファイルを削除しました")
+
+            # アプリケーションを終了
+            self.root.destroy()
+
+        except Exception as e:
+            print(f"[終了処理] 終了処理中にエラーが発生しました: {e}")
+            # エラーが発生してもアプリケーションは終了する
+            self.root.destroy()
+
     def run(self):
         """アプリケーションを実行"""
         self.root.mainloop()
@@ -174,6 +226,7 @@ class ImageCoordsApp:
 
 def main():
     """メイン関数"""
+    app = None
     try:
         app = ImageCoordsApp()
         app.run()
@@ -182,6 +235,17 @@ def main():
     except Exception as e:
         print(f"予期しないエラーが発生しました: {e}")
         messagebox.showerror("エラー", f"予期しないエラーが発生しました: {e}")
+    finally:
+        # 確実にクリーンアップを実行
+        if app and hasattr(app, "file_controller"):
+            try:
+                app.file_controller.remove_lot_number_dir_lock_file()
+                print("[クリーンアップ] ロックファイルのクリーンアップを実行しました")
+            except Exception as cleanup_error:
+                print(
+                    f"[クリーンアップ] クリーンアップ中にエラーが発生しました: {cleanup_error}"
+                )
+        print("[終了] アプリケーションを終了しました。")
 
 
 if __name__ == "__main__":

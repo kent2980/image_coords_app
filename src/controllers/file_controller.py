@@ -75,13 +75,20 @@ class FileController:
 
         return self.lot_directory
 
-    def create_lot_number_dir_lock_file(self):
+    def create_lot_number_dir_lock_file(self) -> Path | None:
         """ロット番号ディレクトリのロックファイルを作成"""
         if self.lot_directory:
             lock_file_path = self.lot_directory / "lock"
             lock_file_path.touch(exist_ok=True)
             return lock_file_path
         return None
+
+    def delete_lot_number_dir_lock_file(self) -> None:
+        """ロット番号ディレクトリのロックファイルを削除"""
+        if self.lot_directory:
+            lock_file_path = self.lot_directory / "lock"
+            if lock_file_path.exists():
+                lock_file_path.unlink()
 
     def is_lock_file_exists(self) -> bool:
         """ロット番号ディレクトリにロックファイルが存在するかチェック"""
