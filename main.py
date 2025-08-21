@@ -208,7 +208,7 @@ class ImageCoordsApp:
 
             # ロックファイルを削除
             if hasattr(self, "file_controller"):
-                self.file_controller.remove_lot_number_dir_lock_file()
+                self.file_controller.delete_lot_number_dir_lock_file()
                 print("[終了処理] ロックファイルを削除しました")
 
             # アプリケーションを終了
@@ -239,7 +239,7 @@ def main():
         # 確実にクリーンアップを実行
         if app and hasattr(app, "file_controller"):
             try:
-                app.file_controller.remove_lot_number_dir_lock_file()
+                app.file_controller.delete_lot_number_dir_lock_file()
                 print("[クリーンアップ] ロックファイルのクリーンアップを実行しました")
             except Exception as cleanup_error:
                 print(
