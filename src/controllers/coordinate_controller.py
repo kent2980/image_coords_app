@@ -6,6 +6,8 @@
 import os
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
+from src.db.schema import Coordinate
+
 if TYPE_CHECKING:
     from ..models.coordinate_model import CoordinateModel
     from ..models.image_model import ImageModel
@@ -62,9 +64,6 @@ class CoordinateController:
         # メインビューの座標表示を更新
         self._update_coordinate_display()
 
-        # 自動保存処理
-        self._auto_save_coordinates()
-
         return index
 
     def remove_coordinate(self, index: int) -> bool:
@@ -75,9 +74,6 @@ class CoordinateController:
 
             # メインビューの座標表示を更新
             self._update_coordinate_display()
-
-            # 自動保存処理
-            self._auto_save_coordinates()
 
             return True
         return False
@@ -92,10 +88,6 @@ class CoordinateController:
         # メインビューの座標表示を更新（クリア）
         self._update_coordinate_display()
 
-        # 自動保存処理
-        if is_create_json:
-            self._auto_save_coordinates()
-
     def update_coordinate(self, index: int, display_x: int, display_y: int) -> bool:
         """座標を更新"""
         # 表示座標を元画像座標に変換
@@ -109,9 +101,6 @@ class CoordinateController:
 
             # メインビューの座標表示を更新
             self._update_coordinate_display()
-
-            # 自動保存処理
-            self._auto_save_coordinates()
 
             return True
         return False
@@ -175,9 +164,6 @@ class CoordinateController:
         current_index = self.coordinate_model.current_index
         if current_index >= 0:
             result = self.coordinate_model.set_coordinate_detail(current_index, detail)
-            if result:
-                # 自動保存処理
-                self._auto_save_coordinates()
             return result
         return False
 
@@ -276,6 +262,7 @@ class CoordinateController:
     def get_all_coordinate_details(self) -> List[Dict[str, Any]]:
         """全座標詳細を取得"""
         return self.coordinate_model.coordinate_details
+
 
     def load_models_from_file(self, settings_model: Any) -> List[Dict[str, str]]:
         """設定で指定された画像ディレクトリから画像ファイル名を読み込み
@@ -488,33 +475,3 @@ class CoordinateController:
             import traceback
 
             traceback.print_exc()
-
-    def _auto_save_coordinates(self) -> None:
-        """座標データを自動保存"""
-        try:
-
-            # 座標データと詳細情報を取得
-            coordinates = self.coordinate_model.coordinates
-            coordinate_details = self.coordinate_model.coordinate_details
-
-            # 座標がない場合もファイルを更新（空の状態で保存）
-            print(
-                f"[DEBUG] 自動保存実行: {len(coordinates)}個の座標, 基盤番号: {self.current_board_number}"
-            )
-
-            # FileControllerを使用してJSONファイルを更新
-            file_path = self.reload_json_file()
-
-            if file_path:
-                print(f"[DEBUG] 自動保存成功: {file_path}")
-            else:
-                print("[WARNING] 自動保存に失敗しました")
-
-        except Exception as e:
-            print(f"[ERROR] 自動保存エラー: {e}")
-            import traceback
-
-            traceback.print_exc()
-
-    def reload_json_file(self):
-        pass

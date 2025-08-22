@@ -9,7 +9,7 @@ from datetime import datetime
 from tkinter import filedialog, messagebox
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
-from src.db.models import Lot
+from src.db.schema import Lot
 
 if TYPE_CHECKING:
     from ..models.coordinate_model import CoordinateModel

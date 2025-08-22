@@ -3,6 +3,7 @@
 座標詳細情報の表示と編集を管理
 """
 
+from pathlib import Path
 import tkinter as tk
 from datetime import datetime
 from tkinter import ttk
@@ -68,6 +69,66 @@ class SidebarView:
 
         self._setup_sidebar()
 
+    def set_item_number(self, value: str):
+        """item_number_varの値を設定"""
+        self.item_number_var.set(value)
+
+    def set_reference(self, value: str):
+        """reference_varの値を設定"""
+        self.reference_var.set(value)
+
+    def set_defect(self, value: str):
+        """defect_varの値を設定"""
+        self.defect_var.set(value)
+
+    def set_serial(self, value: str):
+        """serial_varの値を設定"""
+        self.serial_var.set(value)
+
+    def set_comment(self, value: str):
+        """コメントテキストフィールドの値を設定"""
+        if hasattr(self, "comment_text") and self.comment_text:
+            self.comment_text.delete("1.0", tk.END)
+            self.comment_text.insert("1.0", value)
+
+    def clear_comment(self):
+        """コメントテキストフィールドを初期化"""
+        if hasattr(self, "comment_text") and self.comment_text:
+            self.comment_text.delete("1.0", tk.END)
+
+    def get_comment(self) -> str:
+        """コメントテキストフィールドの値を取得"""
+        if hasattr(self, "comment_text") and self.comment_text:
+            return self.comment_text.get("1.0", tk.END).strip()
+        return ""
+
+    def set_repaired(self, value: str):
+        """repaired_varの値を設定"""
+        if hasattr(self, "repaired_var"):
+            self.repaired_var.set(value)
+
+    def get_repaired(self) -> str:
+        """repaired_varの値を取得"""
+        if hasattr(self, "repaired_var"):
+            return self.repaired_var.get()
+        return "いいえ"
+
+    def get_item_number(self) -> str:
+        """item_number_varの値を取得"""
+        return self.item_number_var.get()
+
+    def get_reference(self) -> str:
+        """reference_varの値を取得"""
+        return self.reference_var.get()
+
+    def get_defect(self) -> str:
+        """defect_varの値を取得"""
+        return self.defect_var.get()
+
+    def get_serial(self) -> str:
+        """serial_varの値を取得"""
+        return self.serial_var.get()
+
     def _setup_sidebar(self):
         """サイドバーUIを設定"""
         # サイドバーのスタイル設定（旧コードと一致）
@@ -118,8 +179,14 @@ class SidebarView:
             "Rf", self.reference_var, width=15
         )
 
+        # リファレンス入力フィールドにEnterキーのバインド
+        self.reference_entry.bind("<Return>", self._on_entry_return)
+
         # 不良名
-        self._create_defect_selection()
+        self.defect_combobox = self._create_defect_selection()
+
+        # 不良名入力フィールドの値が変更されたら
+        self.defect_combobox.bind("<<ComboboxSelected>>", self._on_defect_selected)
 
         # 区切り線
         separator3 = tk.Frame(self.parent_frame, height=1, bg="#cccccc")
@@ -129,6 +196,9 @@ class SidebarView:
         self.serial_entry = self._create_styled_input_field(
             "シリアル", self.serial_var, width=15
         )
+
+        # シリアル番号入力フィールドにEnterキーのバインド
+        self.serial_entry.bind("<Return>", self._on_entry_return)
 
         # 区切り線
         separator3 = tk.Frame(self.parent_frame, height=1, bg="#cccccc")
@@ -143,6 +213,21 @@ class SidebarView:
 
         # コメント
         self._create_comment_field()
+
+        # コメント入力フィールドにEnterキーのバインド
+        self.comment_text.bind("<Return>", self._on_entry_return)
+
+    def _on_entry_return(self, event: tk.Event):
+        """エンターキーが押されたときの処理"""
+        # コントローラーのコールバックを呼び出し
+        if "on_entry_return" in self.callbacks:
+            self.callbacks["on_entry_return"](event)
+
+    def _on_defect_selected(self, event: tk.Event):
+        """不良名が選択されたときの処理"""
+        # コントローラーのコールバックを呼び出し
+        if "on_defect_selected" in self.callbacks:
+            self.callbacks["on_defect_selected"](event)
 
     def _create_info_field(
         self, title_text: str, value_text: str, fg_color: str = "#555555"
@@ -306,7 +391,7 @@ class SidebarView:
 
         return entry
 
-    def _create_defect_selection(self):
+    def _create_defect_selection(self) -> ttk.Combobox:
         """不良名選択フィールドを作成"""
         # メインフレーム
         defect_frame = tk.Frame(self.parent_frame, bg="#f5f5f5")
@@ -324,7 +409,7 @@ class SidebarView:
         )
         label.pack(side=tk.LEFT, pady=(0, 3))
 
-        self.defect_combobox = ttk.Combobox(
+        defect_combobox = ttk.Combobox(
             defect_frame,
             textvariable=self.defect_var,
             values=self.defect_items,
@@ -332,10 +417,12 @@ class SidebarView:
             font=("Arial", 14),
             justify="center",
         )
-        self.defect_combobox.pack(side=tk.LEFT, fill=tk.X)
+        defect_combobox.pack(side=tk.LEFT, fill=tk.X)
 
-        # 初期値は空に設定
+        # 初期値は空に設定 
         self.defect_var.set("")
+
+        return defect_combobox
 
     def _create_repaired_selection(self):
         """修理済み選択フィールドを作成"""
@@ -760,3 +847,18 @@ class SidebarView:
 
         # 概要情報があれば表示（現在は特別な処理なし）
         # 必要に応じて将来的に概要情報の表示機能を追加
+
+    def setup_change_lot_number(self, data_file_path: Path):
+        """ロットナンバー変更処理"""
+        # data_file_pathからファイル名を取得
+        file_name = data_file_path.name.split(".")[0]
+        # ファイル名からインデックス番号を取得
+        data_index = int(file_name)
+        # サイドバーの基板番号を変更
+        self.set_board_label(data_index)
+        # その他項目を初期化
+        self.set_defect("")
+        self.set_reference("")
+        self.set_serial("")
+        self.clear_comment()
+        self.set_repaired("いいえ")

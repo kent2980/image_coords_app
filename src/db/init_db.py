@@ -1,5 +1,5 @@
 from sqlmodel import SQLModel, create_engine
-from .models import Lot, Worker, Coordinate
+from .schema import Lot, Worker, Coordinate
 
 DB_URL = "sqlite:///app_data.db"
 engine = create_engine(DB_URL, echo=True)

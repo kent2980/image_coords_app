@@ -13,6 +13,8 @@ from pathlib import Path
 from tkinter import messagebox
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
+from src.db.schema import Coordinate, CoordinateList
+
 if TYPE_CHECKING:
     from ..controllers.board_controller import BoardController
     from ..controllers.coordinate_controller import CoordinateController
@@ -99,6 +101,9 @@ class MainController:
         # ロックファイルのパス
         self.lock_file_path: Optional[Path] = None
 
+        # 座標リスト
+        self.coordinate_list: Optional[CoordinateList] = CoordinateList()
+
         # デバッグフラグ（デバッグ時は作業者入力をスキップ）
         # 環境変数 DEBUG=1 でデバッグモードを有効化
         self.debug_mode: bool = os.getenv("DEBUG", "0") == "1"
@@ -183,6 +188,9 @@ class MainController:
 
         # UI要素を初期化
         self._initialize_ui_elements()
+
+        # 座標リストを初期化
+        self._initialize_coordinate_list()
 
         # 設定を読み込んで適用
         self._apply_settings()
@@ -276,6 +284,8 @@ class MainController:
         sidebar_callbacks = {
             "on_form_data_changed": self.on_form_data_changed,
             "search_coordinates": self.search_coordinates,
+            "on_entry_return": self.on_entry_return,
+            "on_defect_selected": self.on_defect_selected,
         }
         self.sidebar_view.set_callbacks(sidebar_callbacks)
 
@@ -444,9 +454,9 @@ class MainController:
         x, y = int(event.x), int(event.y)
 
         # 整番
-        product_number = self.sidebar_view.get_product_number()
+        product_number = self._current_model
         # ロットナンバー
-        lot_number = self.sidebar_view.get_lot_number()
+        lot_number = self.current_lot_number
         # 整番・ロット取得フラグ
         is_product_lot_set = bool(product_number and lot_number)
 
@@ -1402,5 +1412,48 @@ class MainController:
             self.current_lot_number,
             self._current_worker_no,
         )
+        # サイドバー更新
+        self.sidebar_view.setup_change_lot_number(self.current_data_file)
+
+    # region SidebarView Callbacks
+    
+    def on_entry_return(self, event):
+        """サイドバーのエントリーでEnterキーが押された時の処理"""
+        print("[DEBUG] Sidebar on_entry_return")
+        data = self.get_Coordinate_data()
+        print(self.coordinate_controller.get_coordinate_summary())
+
+    def on_defect_selected(self, event):
+        """サイドバーの不良項目が選択された時の処理"""
+        print("[DEBUG] Sidebar on_defect_selected")
+        data = self.get_Coordinate_data()
+        print(data)
+
+    # endregion SidebarView Callbacks
 
     # endregion
+
+    def get_Coordinate_data(self) -> Coordinate:
+        """サイドバーから座標データを取得"""
+        coordinate = Coordinate(
+            id=self.coordinate_model.current_index,
+            coordinate_detail=self.coordinate_model.get_current_coordinate(),
+            reference=self.sidebar_view.get_reference(),
+            defect_name=self.sidebar_view.get_defect(),
+            serial=self.sidebar_view.get_serial(),
+            comment=self.sidebar_view.get_comment(),
+        )
+        return coordinate
+
+    def save_current_coordinate_to_list(self):
+        """現在の座標データを座標リストに保存"""
+        try:
+            coordinate_data = self.get_Coordinate_data()
+            self._add_coordinate_to_list(coordinate_data)
+            print("[DEBUG] 現在の座標データを座標リストに保存しました")
+        except Exception as e:
+            print(f"[ERROR] 座標データ保存エラー: {e}")
+
+    def get_all_coordinates_from_list(self) -> List[Coordinate]:
+        """座標リストから全ての座標データを取得"""
+        return self._get_coordinate_list_data()
