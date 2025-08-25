@@ -5,18 +5,12 @@
 
 import json
 import os
-from datetime import datetime
-from tkinter import filedialog, messagebox
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, List, Optional
 
 from src.db.schema import Detail, DetailList, Lot, Worker
 
 if TYPE_CHECKING:
-    from ..models.coordinate_model import CoordinateModel
     from ..models.app_settings_model import AppSettingsModel
-    from ..models.worker_model import WorkerModel
-    from ..models.board_model import BoardModel
-    from ..models.lot_model import LotModel
 
 from pathlib import Path
 
@@ -26,29 +20,10 @@ class FileController:
 
     def __init__(
         self,
-        coordinate_model: "CoordinateModel",
         settings_model: "AppSettingsModel",
-        worker_model: "WorkerModel",
-        board_model: "BoardModel",
-        lot_model: "LotModel",
     ):
-        self.coordinate_model = coordinate_model
         self.settings_model = settings_model
-        self.worker_model = worker_model
-        self.board_model = board_model
-        self.lot_model = lot_model
 
-        # 現在の保存ディレクトリ
-        self.save_dir = None
-
-        # 現在のJSONファイルパス
-        self.current_json_path = None
-
-        # デフォルトの不良項目
-        self.default_defects = None
-
-        # ロットディレクトリ
-        self.lot_directory = None
 
     def load_defects_from_file(self) -> List[str]:
         """defects.txtから不良項目を読み込み"""
@@ -56,14 +31,14 @@ class FileController:
             if os.path.exists("defects.txt"):
                 with open("defects.txt", "r", encoding="utf-8") as f:
                     defects = [line.strip() for line in f if line.strip()]
-                return defects if defects else self.default_defects
+                return defects 
             else:
-                return self.default_defects
+                raise ValueError("不良項目が見つかりませんでした。")
         except Exception as e:
             print(f"不良項目読み込みエラー: {e}")
-            return self.default_defects
+            raise Exception("不良項目の読み込みに失敗しました。")
 
-    def init_lot_number_directory(self, lot_number: str):
+    def __create_lot_number_directory(self, lot_number: str) -> Path:
         """ロット番号用のディレクトリを初期化"""
         data_root_path = self.settings_model.data_directory
         lot_directory = Path(data_root_path) / lot_number
@@ -71,86 +46,50 @@ class FileController:
         if not lot_directory.exists():
             lot_directory.mkdir(parents=True, exist_ok=True)
 
-        self.lot_directory = lot_directory
+        return lot_directory
 
-        return self.lot_directory
-
-    def create_lot_number_dir_lock_file(self) -> Path | None:
+    def create_lot_number_dir_lock_file(self, lot_number: str) -> Path | None:
         """ロット番号ディレクトリのロックファイルを作成"""
-        if self.lot_directory:
-            lock_file_path = self.lot_directory / "lock"
+        lot_directory = self.__create_lot_number_directory(lot_number)
+        if lot_directory:
+            lock_file_path = lot_directory / "lock"
             lock_file_path.touch(exist_ok=True)
             return lock_file_path
         return None
 
-    def delete_lot_number_dir_lock_file(self) -> None:
+    def delete_lot_number_dir_lock_file(self, lot_number: str) -> None:
         """ロット番号ディレクトリのロックファイルを削除"""
-        if self.lot_directory:
-            lock_file_path = self.lot_directory / "lock"
+        lot_directory = self.__create_lot_number_directory(lot_number)
+        if lot_directory:
+            lock_file_path = lot_directory / "lock"
             if lock_file_path.exists():
                 lock_file_path.unlink()
 
-    def is_lock_file_exists(self) -> bool:
+    def is_lock_file_exists(self, lot_number: str) -> bool:
         """ロット番号ディレクトリにロックファイルが存在するかチェック"""
-        if self.lot_directory:
-            lock_file_path = self.lot_directory / "lock"
+        lot_directory = self.__create_lot_number_directory(lot_number)
+        if lot_directory:
+            lock_file_path = lot_directory / "lock"
             return lock_file_path.exists()
         return False
 
-    def get_lot_dir_data_list(self) -> List[Path]:
+    def get_lot_dir_data_list(self, lot_number: str) -> List[Path]:
         """ロットディレクトリ内のdataファイル一覧を取得"""
-        if not self.lot_directory:
+        lot_directory = self.__create_lot_number_directory(lot_number)
+        if not lot_directory:
             return []
 
-        data_files = list(self.lot_directory.glob("*.data"))
+        data_files = list(lot_directory.glob("*.data"))
         return [file for file in data_files if file.is_file()]
 
-    def get_max_data_index(self, data_list: List[Path]) -> int:
-        """dataファイルの最大インデックスを取得"""
-        max_index = 0
-        for data_file in data_list:
-            try:
-                index = int(
-                    data_file.stem.split("_")[0]
-                )  # ファイル名からインデックスを取得
-                if index > max_index:
-                    max_index = index
-            except ValueError:
-                continue
-        return max_index
 
-    def save_data_file(self, data_path: Path, data: Dict[str, Any]) -> bool:
-        """dataデータをファイルに保存"""
-        try:
-            with open(data_path, "w", encoding="utf-8") as f:
-                json.dump(data, f, ensure_ascii=False, indent=4)
-            return True
-        except Exception as e:
-            print(f"data保存エラー: {e}")
-            return False
-
-    def create_lot_text(
-        self, lot:Lot
-    ) -> Optional[Path]:
-        """ロットデータを作成"""
-        if not self.lot_directory:
-            raise ValueError("ロットディレクトリが設定されていません。")
-
-        json_path = self.lot_directory / "lotInfo.json"
-        try:
-            with open(json_path, "w", encoding="utf-8") as f:
-                json.dump(lot.model_dump(), f, ensure_ascii=False, indent=4)
-            return json_path
-        except Exception as e:
-            print(f"ロットデータ保存エラー: {e}")
-            return None
-    
-    def create_worker_text(self, worker: Worker) -> Path:
+    def create_worker_text(self, lot_number: str, worker: Worker) -> Path:
         """作業者情報を作成"""
-        if not self.lot_directory:
+        lot_directory = self.__create_lot_number_directory(lot_number)
+        if not lot_directory:
             raise ValueError("ロットディレクトリが設定されていません。")
 
-        json_path = self.lot_directory / "workerInfo.json"
+        json_path = lot_directory / "workerInfo.json"
         try:
             with open(json_path, "w", encoding="utf-8") as f:
                 json.dump(worker.model_dump(), f, ensure_ascii=False, indent=4)
@@ -159,10 +98,10 @@ class FileController:
             print(f"作業者情報保存エラー: {e}")
             return None
 
-    def create_detail_text(self, detail: Detail) -> Optional[Path]:
+    def create_detail_text(self, lot_number: str, detail: Detail) -> Optional[Path]:
         """インデックス用のdataファイルを作成"""
-        
-        if not self.lot_directory:
+        lot_directory = self.__create_lot_number_directory(lot_number)
+        if not lot_directory:
             raise ValueError("ロットディレクトリが設定されていません。")
 
         # ファイル名の生成
@@ -183,12 +122,13 @@ class FileController:
         
         return json_path
 
-    def read_index_data_file(self,index: int) -> DetailList:
+    def read_index_data_file(self, lot_number: str, index: int) -> DetailList:
         """インデックス用のdataファイルを読み込む"""
-        if not self.lot_directory:
+        lot_directory = self.__create_lot_number_directory(lot_number)
+        if not lot_directory:
             raise ValueError("ロットディレクトリが設定されていません。")
 
-        json_path = self.lot_directory / f"{index:04d}.data"
+        json_path = lot_directory / f"{index:04d}.data"
         if not json_path.exists():
             raise FileNotFoundError(f"{json_path} が見つかりません。")
 
@@ -196,12 +136,13 @@ class FileController:
             data = json.load(f)
             return DetailList(**data)
     
-    def read_lot_text(self, lot: str) -> Optional[Lot]:
+    def read_lot_text(self, lot_number: str) -> Optional[Lot]:
         """ロットデータを読み込む"""
-        if not self.lot_directory:
+        lot_directory = self.__create_lot_number_directory(lot_number)
+        if not lot_directory:
             raise ValueError("ロットディレクトリが設定されていません。")
 
-        json_path = self.lot_directory / "lotInfo.json"
+        json_path = lot_directory / "lotInfo.json"
         if not json_path.exists():
             raise FileNotFoundError(f"{json_path} が見つかりません。")
 
