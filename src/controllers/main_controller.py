@@ -13,7 +13,7 @@ from pathlib import Path
 from tkinter import messagebox
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
-from src.db.schema import Coordinate, CoordinateList
+from src.db.schema import Coordinate, CoordinateList, Detail, Lot, Worker
 
 if TYPE_CHECKING:
     from ..controllers.board_controller import BoardController
@@ -92,14 +92,8 @@ class MainController:
         # モデルデータ
         self.model_data: List[Any] = []
 
-        # 現在作業中のjsonファイル
-        self.current_json_file: Path = None
-
         # 初期化フラグ
         self.is_initialized: bool = False
-
-        # ロックファイルのパス
-        self.lock_file_path: Optional[Path] = None
 
         # 座標リスト
         self.coordinate_list: Optional[CoordinateList] = CoordinateList()
@@ -117,7 +111,7 @@ class MainController:
 
     @current_lot_number.setter
     def current_lot_number(self, value: str):
-        self.file_controller.delete_lot_number_dir_lock_file()
+        self.file_controller.delete_lot_number_dir_lock_file(self.current_lot_number)
         self.sidebar_view.set_lot_number(value)
         self._current_lot_number = value
 
@@ -1382,36 +1376,41 @@ class MainController:
         """
         pass
 
+    def get_lot_item(self) -> Lot:
+        """ロット情報を取得"""
+        pass
+
+    def get_detail_item(self) -> Detail:
+        """詳細情報を取得"""
+        pass
+
+    def get_worker_item(self) -> Worker:
+        """作業者情報を取得"""
+        pass
+
     def _change_lot_number(self):
         """ロット番号を変更する処理"""
 
         # ロックファイルが存在するかチェック
-        if self.file_controller.is_lock_file_exists():
+        if self.file_controller.is_lock_file_exists(self.current_lot_number):
             # ロックファイルが存在する場合はエラーメッセージを表示
             self.main_view.show_error(
                 "ロット番号の変更中にエラーが発生しました。\n別のプロセスでロット番号が使用中です。"
             )
             return
 
-        # ディレクトリ作成
-        self.file_controller.init_lot_number_directory(self.current_lot_number)
         # ロックファイル作成
-        self.lock_file_path = self.file_controller.create_lot_number_dir_lock_file()
+        self.file_controller.create_lot_number_dir_lock_file(self.current_lot_number)
         # ディレクトリ内のdataファイル名を取得
-        data_files = self.file_controller.get_lot_dir_data_list()
-        # 最大インデックスを取得
-        max_index = self.file_controller.get_max_data_index(data_files)
+        data_files = self.file_controller.get_lot_dir_data_list(self.current_lot_number)
+        # 作成するdataファイルのインデックスを決定
+        index = self.file_controller.next_data_index(data_files)
         # インデックス用のdataファイルを作成
-        self.current_data_file = self.file_controller.create_index_data_file(max_index)
+        self.current_data_file = self.file_controller.create_detail_text(self.current_lot_number, index)
         # main_viewの基盤選択ラベルを更新
-        self.main_view.set_board_index_text(max_index + 1, max_index + 1)
+        self.main_view.set_board_index_text(index,index)
         # lotInfo.jsonを生成
-        self.file_controller.create_lot_info(
-            self.current_model,
-            self.image_model.current_image_path,
-            self.current_lot_number,
-            self._current_worker_no,
-        )
+        self.file_controller.create_lot_text()
         # サイドバー更新
         self.sidebar_view.setup_change_lot_number(self.current_data_file)
 

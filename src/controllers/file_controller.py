@@ -81,14 +81,33 @@ class FileController:
 
         data_files = list(lot_directory.glob("*.data"))
         return [file for file in data_files if file.is_file()]
+    
+    def next_data_index(self, data_files: List[Path]) -> int:
+        """次のデータインデックスを取得"""
+        if not data_files:
+            return 1
 
+        # 既存のファイル名からインデックスを取得
+        indices = [
+            int(file.stem) for file in data_files if file.stem.isdigit()
+        ]
+        return max(indices) + 1 if indices else 1
 
-    def create_worker_text(self, lot_number: str, worker: Worker) -> Path:
+    def create_lot_text(self, lot: Lot) -> Optional[Path]:
+        """ロット情報を作成"""
+        lot_directory = self.__create_lot_number_directory(lot.lot_number)
+        json_path = lot_directory / "lotInfo.json"
+        try:
+            with open(json_path, "w", encoding="utf-8") as f:
+                json.dump(lot.model_dump(), f, ensure_ascii=False, indent=4)
+        except Exception as e:
+            print(f"ロット情報保存エラー: {e}")
+            return None
+        return json_path
+
+    def create_worker_text(self, lot_number: str, worker: Worker) -> Optional[Path]:
         """作業者情報を作成"""
         lot_directory = self.__create_lot_number_directory(lot_number)
-        if not lot_directory:
-            raise ValueError("ロットディレクトリが設定されていません。")
-
         json_path = lot_directory / "workerInfo.json"
         try:
             with open(json_path, "w", encoding="utf-8") as f:
@@ -98,16 +117,14 @@ class FileController:
             print(f"作業者情報保存エラー: {e}")
             return None
 
-    def create_detail_text(self, lot_number: str, detail: Detail) -> Optional[Path]:
+    def create_detail_text(self, lot_number: str,index:int, detail: Detail) -> Optional[Path]:
         """インデックス用のdataファイルを作成"""
         lot_directory = self.__create_lot_number_directory(lot_number)
         if not lot_directory:
             raise ValueError("ロットディレクトリが設定されていません。")
 
         # ファイル名の生成
-        index = detail.count_number
-        next_index = index + 1
-        index_str = f"{next_index:04d}"
+        index_str = f"{index:04d}"
         json_path = self.lot_directory / f"{index_str}.data"
 
         if not self.lot_directory:
