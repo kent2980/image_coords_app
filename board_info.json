@@ -1,0 +1,503 @@
+{
+  "2025-08-11_TEST_MODEL_1234567-10": {
+    "date": "2025-08-11",
+    "model_name": "TEST_MODEL",
+    "lot_number": "1234567-10",
+    "current_board": 2,
+    "boards_data": {
+      "1": {
+        "board_number": 1,
+        "coordinates": [
+          [
+            100,
+            150
+          ]
+        ],
+        "coordinate_details": [
+          {
+            "reference": "A1",
+            "defect": "ズレ"
+          }
+        ],
+        "lot_number": "1234567-10",
+        "worker_no": "001",
+        "image_path": "",
+        "model_name": "TEST_MODEL",
+        "created_at": "2025-08-11T12:04:27.944919",
+        "updated_at": "2025-08-11T12:04:27.944924",
+        "total_coordinates": 1
+      }
+    },
+    "board_history": [
+      1
+    ],
+    "updated_at": "2025-08-11T12:04:27.947215"
+  },
+  "2025-08-11_Y8470608_SHINANOSEIKEN_1234567-10": {
+    "date": "2025-08-11",
+    "model_name": "Y8470608_SHINANOSEIKEN",
+    "lot_number": "1234567-10",
+    "current_board": 5,
+    "boards_data": {
+      "4": {
+        "board_number": 4,
+        "coordinates": [
+          [
+            201,
+            73
+          ],
+          [
+            240,
+            112
+          ],
+          [
+            280,
+            179
+          ]
+        ],
+        "coordinate_details": [
+          {
+            "item_number": "1",
+            "reference": "",
+            "defect": "",
+            "repaired": "いいえ",
+            "comment": ""
+          },
+          {
+            "item_number": "2",
+            "reference": "",
+            "defect": "",
+            "repaired": "いいえ",
+            "comment": ""
+          },
+          {
+            "item_number": "3",
+            "reference": "",
+            "defect": "",
+            "repaired": "いいえ",
+            "comment": ""
+          }
+        ],
+        "lot_number": "1234567-10",
+        "worker_no": "DEBUG",
+        "image_path": "/Users/user/Pictures/image_coords_app/Y8470608_SHINANOSEIKEN.png",
+        "model_name": "Y8470608_SHINANOSEIKEN",
+        "created_at": "2025-08-11T12:12:56.258731",
+        "updated_at": "2025-08-11T12:12:56.258756",
+        "total_coordinates": 3
+      }
+    },
+    "board_history": [
+      1,
+      4,
+      5
+    ],
+    "updated_at": "2025-08-11T12:12:56.262095"
+  },
+  "2024-01-15_CUSTOM_MODEL_9999999-10": {
+    "date": "2024-01-15",
+    "model_name": "CUSTOM_MODEL",
+    "lot_number": "9999999-10",
+    "current_board": 3,
+    "boards_data": {
+      "1": {
+        "board_number": 1,
+        "coordinates": [
+          [
+            100,
+            150
+          ]
+        ],
+        "coordinate_details": [
+          {
+            "reference": "A1",
+            "defect": "ズレ"
+          }
+        ],
+        "lot_number": "1234567-10",
+        "worker_no": "001",
+        "image_path": "",
+        "model_name": "TEST_MODEL",
+        "created_at": "2025-08-11T12:02:51.967178",
+        "updated_at": "2025-08-11T12:02:51.967183",
+        "total_coordinates": 1
+      },
+      "2": {
+        "board_number": 2,
+        "coordinates": [
+          [
+            300,
+            350
+          ]
+        ],
+        "coordinate_details": [
+          {
+            "reference": "C3",
+            "defect": "汚れ",
+            "comment": "基盤2の座標"
+          }
+        ],
+        "lot_number": "9999999-10",
+        "worker_no": "999",
+        "image_path": "",
+        "model_name": "CUSTOM_MODEL",
+        "created_at": "2025-08-11T12:02:51.970385",
+        "updated_at": "2025-08-11T12:02:51.970389",
+        "total_coordinates": 1
+      }
+    },
+    "board_history": [
+      1,
+      2
+    ],
+    "updated_at": "2025-08-11T12:02:51.971068"
+  },
+  "2025-08-11_TEST_MODEL_5555555-20": {
+    "date": "2025-08-11",
+    "model_name": "TEST_MODEL",
+    "lot_number": "5555555-20",
+    "current_board": 4,
+    "boards_data": {
+      "1": {
+        "board_number": 1,
+        "coordinates": [
+          [
+            100,
+            150
+          ]
+        ],
+        "coordinate_details": [
+          {
+            "reference": "A1",
+            "defect": "ズレ"
+          }
+        ],
+        "lot_number": "1234567-10",
+        "worker_no": "001",
+        "image_path": "",
+        "model_name": "TEST_MODEL",
+        "created_at": "2025-08-11T12:02:51.967178",
+        "updated_at": "2025-08-11T12:02:51.967183",
+        "total_coordinates": 1
+      },
+      "2": {
+        "board_number": 2,
+        "coordinates": [
+          [
+            300,
+            350
+          ]
+        ],
+        "coordinate_details": [
+          {
+            "reference": "C3",
+            "defect": "汚れ",
+            "comment": "基盤2の座標"
+          }
+        ],
+        "lot_number": "9999999-10",
+        "worker_no": "999",
+        "image_path": "",
+        "model_name": "CUSTOM_MODEL",
+        "created_at": "2025-08-11T12:02:51.970385",
+        "updated_at": "2025-08-11T12:02:51.970389",
+        "total_coordinates": 1
+      }
+    },
+    "board_history": [
+      1,
+      2,
+      3
+    ],
+    "updated_at": "2025-08-11T12:02:51.972860"
+  },
+  "2025-08-12_Y8470680R_AAE004547-CAA_MAIN_A面_1234567-10": {
+    "date": "2025-08-12",
+    "model_name": "Y8470680R_AAE004547-CAA_MAIN_A面",
+    "lot_number": "1234567-10",
+    "current_board": 2,
+    "boards_data": {
+      "1": {
+        "board_number": 1,
+        "coordinates": [
+          [
+            1338,
+            514
+          ],
+          [
+            1399,
+            774
+          ]
+        ],
+        "coordinate_details": [
+          {
+            "item_number": "1",
+            "reference": "",
+            "defect": "",
+            "repaired": "いいえ",
+            "comment": ""
+          },
+          {
+            "item_number": "2",
+            "reference": "",
+            "defect": "",
+            "repaired": "いいえ",
+            "comment": ""
+          }
+        ],
+        "lot_number": "1234567-10",
+        "worker_no": "DEBUG",
+        "image_path": "C:/Users/kentaroyoshida/Pictures/image_coords_app\\Y8470680R_AAE004547-CAA_MAIN_A面.jpg",
+        "model_name": "Y8470680R_AAE004547-CAA_MAIN_A面",
+        "created_at": "2025-08-12T17:20:54.136159",
+        "updated_at": "2025-08-12T17:20:54.136159",
+        "total_coordinates": 2
+      }
+    },
+    "board_history": [
+      1,
+      2,
+      3
+    ],
+    "updated_at": "2025-08-12T17:20:54.154149"
+  },
+  "2025-08-13_Y8470680R_AAE004547-CAA_MAIN_A面_1234567-10": {
+    "date": "2025-08-13",
+    "model_name": "Y8470680R_AAE004547-CAA_MAIN_A面",
+    "lot_number": "1234567-10",
+    "current_board": 3,
+    "boards_data": {
+      "1": {
+        "board_number": 1,
+        "coordinates": [
+          [
+            1151,
+            396
+          ],
+          [
+            1495,
+            814
+          ]
+        ],
+        "coordinate_details": [
+          {
+            "item_number": "1",
+            "reference": "",
+            "defect": "",
+            "repaired": "いいえ",
+            "comment": ""
+          },
+          {
+            "item_number": "2",
+            "reference": "",
+            "defect": "",
+            "repaired": "いいえ",
+            "comment": ""
+          }
+        ],
+        "lot_number": "1234567-10",
+        "worker_no": "DEBUG",
+        "image_path": "C:/Users/kentaroyoshida/Pictures/image_coords_app\\Y8470680R_AAE004547-CAA_MAIN_A面.jpg",
+        "model_name": "Y8470680R_AAE004547-CAA_MAIN_A面",
+        "created_at": "2025-08-13T16:54:57.963658",
+        "updated_at": "2025-08-13T16:54:57.963658",
+        "total_coordinates": 2
+      },
+      "2": {
+        "board_number": 2,
+        "coordinates": [
+          [
+            1133,
+            622
+          ],
+          [
+            1566,
+            905
+          ]
+        ],
+        "coordinate_details": [
+          {
+            "item_number": "1",
+            "reference": "",
+            "defect": "",
+            "repaired": "いいえ",
+            "comment": ""
+          },
+          {
+            "item_number": "2",
+            "reference": "",
+            "defect": "",
+            "repaired": "いいえ",
+            "comment": ""
+          }
+        ],
+        "lot_number": "1234567-10",
+        "worker_no": "DEBUG",
+        "image_path": "C:/Users/kentaroyoshida/Pictures/image_coords_app\\Y8470680R_AAE004547-CAA_MAIN_A面.jpg",
+        "model_name": "Y8470680R_AAE004547-CAA_MAIN_A面",
+        "created_at": "2025-08-13T16:54:59.572953",
+        "updated_at": "2025-08-13T16:54:59.572953",
+        "total_coordinates": 2
+      }
+    },
+    "board_history": [
+      1,
+      2
+    ],
+    "updated_at": "2025-08-13T16:54:59.580691"
+  },
+  "2025-08-18_Y8470680R_AAE004547-CAA_MAIN_A面_1234567-10": {
+    "date": "2025-08-18",
+    "model_name": "Y8470680R_AAE004547-CAA_MAIN_A面",
+    "lot_number": "1234567-10",
+    "current_board": 2,
+    "boards_data": {
+      "1": {
+        "board_number": 1,
+        "coordinates": [
+          [
+            939,
+            410
+          ],
+          [
+            1291,
+            681
+          ],
+          [
+            1106,
+            349
+          ]
+        ],
+        "coordinate_details": [
+          {
+            "item_number": "1",
+            "reference": "",
+            "defect": "",
+            "repaired": "いいえ",
+            "comment": ""
+          },
+          {
+            "item_number": "2",
+            "reference": "",
+            "defect": "",
+            "repaired": "いいえ",
+            "comment": ""
+          },
+          {
+            "item_number": "3",
+            "reference": "r744",
+            "defect": "",
+            "repaired": "いいえ",
+            "comment": ""
+          }
+        ],
+        "lot_number": "1234567-10",
+        "worker_no": "12260",
+        "image_path": "C:/Users/kentaroyoshida/Pictures/image_coords_app\\Y8470680R_AAE004547-CAA_MAIN_A面.jpg",
+        "model_name": "Y8470680R_AAE004547-CAA_MAIN_A面",
+        "created_at": "2025-08-18T17:27:06.675885",
+        "updated_at": "2025-08-18T17:27:06.675885",
+        "total_coordinates": 3
+      }
+    },
+    "board_history": [
+      1
+    ],
+    "updated_at": "2025-08-18T17:27:06.689975"
+  },
+  "2025-08-19_Y8470680R_AAE004547-CAA_MAIN_A面_1234567-10": {
+    "date": "2025-08-19",
+    "model_name": "Y8470680R_AAE004547-CAA_MAIN_A面",
+    "lot_number": "1234567-10",
+    "current_board": 11,
+    "boards_data": {
+      "2": {
+        "board_number": 2,
+        "coordinates": [
+          [
+            1170,
+            538
+          ]
+        ],
+        "coordinate_details": [
+          {
+            "item_number": "1",
+            "reference": "s44",
+            "defect": "寸法不良",
+            "repaired": "いいえ",
+            "comment": ""
+          }
+        ],
+        "lot_number": "1234567-10",
+        "worker_no": "12260",
+        "image_path": "C:/Users/kentaroyoshida/Pictures/image_coords_app\\Y8470680R_AAE004547-CAA_MAIN_A面.jpg",
+        "model_name": "Y8470680R_AAE004547-CAA_MAIN_A面",
+        "created_at": "2025-08-19T16:41:31.921370",
+        "updated_at": "2025-08-19T16:41:31.921370",
+        "total_coordinates": 1
+      },
+      "1": {
+        "board_number": 1,
+        "coordinates": [
+          [
+            1884,
+            1473
+          ]
+        ],
+        "coordinate_details": [
+          {
+            "item_number": "1",
+            "reference": "",
+            "defect": "",
+            "repaired": "いいえ",
+            "comment": ""
+          }
+        ],
+        "lot_number": "1234567-10",
+        "worker_no": "12260",
+        "image_path": "C:/Users/kentaroyoshida/Pictures/image_coords_app\\Y8470680R_AAE004547-CAA_MAIN_A面.jpg",
+        "model_name": "Y8470680R_AAE004547-CAA_MAIN_A面",
+        "created_at": "2025-08-19T16:40:44.133843",
+        "updated_at": "2025-08-19T16:40:44.133843",
+        "total_coordinates": 1
+      },
+      "12": {
+        "board_number": 12,
+        "coordinates": [
+          [
+            1229,
+            907
+          ]
+        ],
+        "coordinate_details": [
+          {
+            "item_number": "1",
+            "reference": "",
+            "defect": "",
+            "repaired": "いいえ",
+            "comment": ""
+          }
+        ],
+        "lot_number": "1234567-10",
+        "worker_no": "12260",
+        "image_path": "C:/Users/kentaroyoshida/Pictures/image_coords_app\\Y8470680R_AAE004547-CAA_MAIN_A面.jpg",
+        "model_name": "Y8470680R_AAE004547-CAA_MAIN_A面",
+        "created_at": "2025-08-19T16:49:49.588971",
+        "updated_at": "2025-08-19T16:49:49.588971",
+        "total_coordinates": 1
+      }
+    },
+    "board_history": [
+      1,
+      9,
+      8,
+      7,
+      5,
+      2,
+      10,
+      11,
+      12
+    ],
+    "updated_at": "2025-08-19T16:49:49.593540"
+  }
+}
