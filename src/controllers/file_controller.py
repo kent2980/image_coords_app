@@ -9,7 +9,7 @@ from datetime import datetime
 from tkinter import filedialog, messagebox
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
-from src.db.schema import Lot
+from src.db.schema import Detail, DetailList, Lot, Worker
 
 if TYPE_CHECKING:
     from ..models.coordinate_model import CoordinateModel
@@ -97,24 +97,6 @@ class FileController:
             return lock_file_path.exists()
         return False
 
-    def create_index_data_file(self, index: int) -> Path:
-        """インデックス用のdataファイルを作成"""
-        next_index = index + 1
-        # 0埋め4桁のインデックスを作成
-        index_str = f"{next_index:04d}"
-        json_data = {"index": index_str}
-
-        if not self.lot_directory:
-            raise ValueError("ロットディレクトリが設定されていません。")
-
-        json_path = self.lot_directory / f"{index_str}.data"
-        with open(json_path, "w", encoding="utf-8") as f:
-            json.dump(json_data, f, ensure_ascii=False, indent=4)
-
-        self.current_json_path = json_path
-
-        return json_path
-
     def get_lot_dir_data_list(self) -> List[Path]:
         """ロットディレクトリ内のdataファイル一覧を取得"""
         if not self.lot_directory:
@@ -147,20 +129,82 @@ class FileController:
             print(f"data保存エラー: {e}")
             return False
 
-    def create_lot_info(
-        self, model: str, image_path: str, lot_no: str, worker_no: str
-    ) -> bool:
-        """ロットデータを保存"""
+    def create_lot_text(
+        self, lot:Lot
+    ) -> Optional[Path]:
+        """ロットデータを作成"""
+        if not self.lot_directory:
+            raise ValueError("ロットディレクトリが設定されていません。")
+
+        json_path = self.lot_directory / "lotInfo.json"
         try:
-            lot_data: Lot = Lot(
-                model=model,
-                image_path=image_path,
-                lot_no=lot_no,
-                worker_no=worker_no,
-            )
-            with open(self.lot_directory / "lotInfo.json", "w", encoding="utf-8") as f:
-                json.dump(lot_data.model_dump(), f, ensure_ascii=False, indent=4)
-            return True
+            with open(json_path, "w", encoding="utf-8") as f:
+                json.dump(lot.model_dump(), f, ensure_ascii=False, indent=4)
+            return json_path
         except Exception as e:
             print(f"ロットデータ保存エラー: {e}")
-            return False
+            return None
+    
+    def create_worker_text(self, worker: Worker) -> Path:
+        """作業者情報を作成"""
+        if not self.lot_directory:
+            raise ValueError("ロットディレクトリが設定されていません。")
+
+        json_path = self.lot_directory / "workerInfo.json"
+        try:
+            with open(json_path, "w", encoding="utf-8") as f:
+                json.dump(worker.model_dump(), f, ensure_ascii=False, indent=4)
+            return json_path
+        except Exception as e:
+            print(f"作業者情報保存エラー: {e}")
+            return None
+
+    def create_detail_text(self, detail: Detail) -> Optional[Path]:
+        """インデックス用のdataファイルを作成"""
+        
+        if not self.lot_directory:
+            raise ValueError("ロットディレクトリが設定されていません。")
+
+        # ファイル名の生成
+        index = detail.count_number
+        next_index = index + 1
+        index_str = f"{next_index:04d}"
+        json_path = self.lot_directory / f"{index_str}.data"
+
+        if not self.lot_directory:
+            raise ValueError("ロットディレクトリが設定されていません。")
+
+        try:
+            with open(json_path, "w", encoding="utf-8") as f:
+                json.dump(detail.model_dump(), f, ensure_ascii=False, indent=4)
+        except Exception as e:
+            print(f"インデックスデータファイル作成エラー: {e}")
+            return None
+        
+        return json_path
+
+    def read_index_data_file(self,index: int) -> DetailList:
+        """インデックス用のdataファイルを読み込む"""
+        if not self.lot_directory:
+            raise ValueError("ロットディレクトリが設定されていません。")
+
+        json_path = self.lot_directory / f"{index:04d}.data"
+        if not json_path.exists():
+            raise FileNotFoundError(f"{json_path} が見つかりません。")
+
+        with open(json_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            return DetailList(**data)
+    
+    def read_lot_text(self, lot: str) -> Optional[Lot]:
+        """ロットデータを読み込む"""
+        if not self.lot_directory:
+            raise ValueError("ロットディレクトリが設定されていません。")
+
+        json_path = self.lot_directory / "lotInfo.json"
+        if not json_path.exists():
+            raise FileNotFoundError(f"{json_path} が見つかりません。")
+
+        with open(json_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            return Lot(**data)
