@@ -6,7 +6,6 @@
 import os
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
-from src.db.schema import Coordinate
 
 if TYPE_CHECKING:
     from ..models.coordinate_model import CoordinateModel

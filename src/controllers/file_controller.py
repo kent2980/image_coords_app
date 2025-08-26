@@ -7,7 +7,7 @@ import json
 import os
 from typing import TYPE_CHECKING, List, Optional
 
-from src.db.schema import Detail, DetailList, Lot, Worker
+from src.db.schema import Detail, Lot, Worker
 
 if TYPE_CHECKING:
     from ..models.app_settings_model import AppSettingsModel
@@ -57,13 +57,15 @@ class FileController:
             return lock_file_path
         return None
 
-    def delete_lot_number_dir_lock_file(self, lot_number: str) -> None:
+    def delete_lot_number_dir_lock_file(self, lot_number: Optional[str] = None):
         """ロット番号ディレクトリのロックファイルを削除"""
+        if not lot_number:
+            # lot_numberがNoneや空文字なら何もしない
+            return
         lot_directory = self.__create_lot_number_directory(lot_number)
-        if lot_directory:
-            lock_file_path = lot_directory / "lock"
-            if lock_file_path.exists():
-                lock_file_path.unlink()
+        lock_file = lot_directory / "lock"
+        if lock_file.exists():
+            lock_file.unlink()
 
     def is_lock_file_exists(self, lot_number: str) -> bool:
         """ロット番号ディレクトリにロックファイルが存在するかチェック"""
@@ -138,20 +140,6 @@ class FileController:
             return None
         
         return json_path
-
-    def read_index_data_file(self, lot_number: str, index: int) -> DetailList:
-        """インデックス用のdataファイルを読み込む"""
-        lot_directory = self.__create_lot_number_directory(lot_number)
-        if not lot_directory:
-            raise ValueError("ロットディレクトリが設定されていません。")
-
-        json_path = lot_directory / f"{index:04d}.data"
-        if not json_path.exists():
-            raise FileNotFoundError(f"{json_path} が見つかりません。")
-
-        with open(json_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            return DetailList(**data)
     
     def read_lot_text(self, lot_number: str) -> Optional[Lot]:
         """ロットデータを読み込む"""

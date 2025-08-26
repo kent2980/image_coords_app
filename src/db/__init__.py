@@ -1,8 +1,7 @@
-from .schema import Coordinate, Lot, Worker, CoordinateList
+from .schema import Lot, Worker, Detail
 
 __all__ = (
     "Lot",
     "Worker",
-    "Coordinate",
-    "CoordinateList",
+    "Detail",
 )

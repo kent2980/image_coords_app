@@ -13,7 +13,7 @@ from pathlib import Path
 from tkinter import messagebox
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
-from src.db.schema import Coordinate, CoordinateList, Detail, Lot, Worker
+from src.db.schema import Detail, Lot, Worker
 
 if TYPE_CHECKING:
     from ..controllers.board_controller import BoardController
@@ -111,7 +111,8 @@ class MainController:
 
     @current_lot_number.setter
     def current_lot_number(self, value: str):
-        self.file_controller.delete_lot_number_dir_lock_file(self.current_lot_number)
+        if not self.current_lot_number:
+            self.file_controller.delete_lot_number_dir_lock_file(self.current_lot_number)
         self.sidebar_view.set_lot_number(value)
         self._current_lot_number = value
 
@@ -1376,17 +1377,52 @@ class MainController:
         """
         pass
 
+    def get_detail_count(self) -> int:
+        """現在の座標数を取得"""
+        all_coord = self.coordinate_controller.get_all_coordinates()
+        return len(all_coord)
+
     def get_lot_item(self) -> Lot:
         """ロット情報を取得"""
-        pass
+
+        # ロット情報を取得
+        model = self.current_model
+        image_path = self.image_model.current_image_path
+        lot_number = self.current_lot_number
+        parent_lot_number = lot_number.split("-")[-1]
+        worker_number = self.current_worker_no
+        detail_count = self.get_detail_count()
+
+        # Lotオブジェクトを作成
+        lot = Lot(
+            model=model,
+            image_path=image_path,
+            lot_number=lot_number,
+            parent_lot_number=parent_lot_number,
+            worker_number=worker_number,
+            detail_count=detail_count
+        )
+
+        return lot
 
     def get_detail_item(self) -> Detail:
         """詳細情報を取得"""
-        pass
+        data = self.coordinate_controller.get_current_coordinate_detail()
+        print(f"[DEBUG] get_detail_item data: {data}")
 
     def get_worker_item(self) -> Worker:
         """作業者情報を取得"""
-        pass
+
+        # 作業者情報を取得
+        number = self._current_worker_no()
+        name = self.current_worker_name()
+
+        # Workerオブジェクトを作成
+        worker = Worker(
+            name=name,
+            number=number
+        )
+        return worker
 
     def _change_lot_number(self):
         """ロット番号を変更する処理"""
@@ -1413,6 +1449,7 @@ class MainController:
         self.file_controller.create_lot_text()
         # サイドバー更新
         self.sidebar_view.setup_change_lot_number(self.current_data_file)
+        self.get_detail_item()
 
     # region SidebarView Callbacks
     
@@ -1432,18 +1469,6 @@ class MainController:
 
     # endregion
 
-    def get_Coordinate_data(self) -> Coordinate:
-        """サイドバーから座標データを取得"""
-        coordinate = Coordinate(
-            id=self.coordinate_model.current_index,
-            coordinate_detail=self.coordinate_model.get_current_coordinate(),
-            reference=self.sidebar_view.get_reference(),
-            defect_name=self.sidebar_view.get_defect(),
-            serial=self.sidebar_view.get_serial(),
-            comment=self.sidebar_view.get_comment(),
-        )
-        return coordinate
-
     def save_current_coordinate_to_list(self):
         """現在の座標データを座標リストに保存"""
         try:
@@ -1452,7 +1477,3 @@ class MainController:
             print("[DEBUG] 現在の座標データを座標リストに保存しました")
         except Exception as e:
             print(f"[ERROR] 座標データ保存エラー: {e}")
-
-    def get_all_coordinates_from_list(self) -> List[Coordinate]:
-        """座標リストから全ての座標データを取得"""
-        return self._get_coordinate_list_data()

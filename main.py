@@ -127,11 +127,7 @@ class ImageCoordsApp:
         """コントローラーの初期化"""
         # ファイルコントローラー
         self.file_controller = FileController(
-            self.coordinate_model,
             self.settings_model,
-            self.worker_model,
-            self.board_model,
-            self.lot_model,
         )
 
         # 座標コントローラー

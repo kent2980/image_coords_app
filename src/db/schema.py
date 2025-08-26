@@ -19,7 +19,7 @@ class Lot(BaseModel):
     image_path: Optional[str] = Field(description="画像パス")
     parent_lot_number: Optional[str] = Field(description="親ロット番号")
     lot_number: Optional[str] = Field(description="ロット番号")
-    worker_no: Optional[str] = Field(description="作業者番号")
+    worker_number: Optional[str] = Field(description="作業者番号")
     detail_count: Optional[int] = Field(description="座標詳細数")
 
 
@@ -27,7 +27,7 @@ class Worker(BaseModel):
     """作業者データモデル"""
 
     name: Optional[str] = Field(description="作業者名")
-    worker_no: Optional[str] = Field(description="作業者番号")
+    number: Optional[str] = Field(description="作業者番号")
 
 
 class Detail(BaseModel):
