@@ -5,26 +5,61 @@
 from typing import List, Dict, Any, Optional, Tuple
 
 
+class CoordinateItem:
+    """座標アイテム（座標と詳細情報を統合）"""
+    
+    def __init__(self, x: int, y: int, detail: Optional[Dict[str, Any]] = None):
+        self.x = x
+        self.y = y
+        self.detail = detail or {}
+    
+    @property
+    def coordinate(self) -> Tuple[int, int]:
+        """座標タプルを取得"""
+        return (self.x, self.y)
+    
+    def update_coordinate(self, x: int, y: int):
+        """座標を更新"""
+        self.x = x
+        self.y = y
+    
+    def update_detail(self, detail: Dict[str, Any]):
+        """詳細情報を更新"""
+        self.detail = detail.copy()
+    
+    def get_detail(self) -> Dict[str, Any]:
+        """詳細情報を取得"""
+        return self.detail.copy()
+    
+    def copy(self) -> 'CoordinateItem':
+        """コピーを作成"""
+        return CoordinateItem(self.x, self.y, self.detail.copy())
+
+
 class CoordinateModel:
     """座標データを管理するモデル"""
     
     def __init__(self):
-        self._coordinates: List[Tuple[int, int]] = []
-        self._coordinate_details: List[Dict[str, Any]] = []
+        self._coordinate_items: List[CoordinateItem] = []
         self._current_index: int = -1
         self._image_path: str = ""
-        self._undo_stack: List[List[Tuple[int, int]]] = []
-        self._redo_stack: List[List[Tuple[int, int]]] = []
+        self._undo_stack: List[List[CoordinateItem]] = []
+        self._redo_stack: List[List[CoordinateItem]] = []
         
     @property
     def coordinates(self) -> List[Tuple[int, int]]:
-        """座標リストを取得"""
-        return self._coordinates.copy()
+        """座標リストを取得（互換性のため）"""
+        return [item.coordinate for item in self._coordinate_items]
     
     @property
     def coordinate_details(self) -> List[Dict[str, Any]]:
-        """座標詳細リストを取得"""
-        return self._coordinate_details.copy()
+        """座標詳細リストを取得（互換性のため）"""
+        return [item.get_detail() for item in self._coordinate_items]
+    
+    @property
+    def coordinate_items(self) -> List[CoordinateItem]:
+        """座標アイテムリストを取得"""
+        return [item.copy() for item in self._coordinate_items]
     
     @property
     def current_index(self) -> int:
@@ -36,25 +71,24 @@ class CoordinateModel:
         """画像パス"""
         return self._image_path
         
-    def add_coordinate(self, x: int, y: int) -> int:
+    def add_coordinate(self, x: int, y: int, detail: Optional[Dict[str, Any]] = None) -> int:
         """座標を追加"""
         # アンドゥスタックに現在の状態を保存
         self._save_state_to_undo()
         
-        self._coordinates.append((x, y))
-        # 詳細情報も空の辞書で初期化
-        self._coordinate_details.append({})
+        # 新しい座標アイテムを作成して追加
+        coordinate_item = CoordinateItem(x, y, detail)
+        self._coordinate_items.append(coordinate_item)
         
         # 新しい座標のインデックスを返す
-        return len(self._coordinates) - 1
+        return len(self._coordinate_items) - 1
     
     def remove_coordinate(self, index: int) -> bool:
         """座標を削除"""
-        if 0 <= index < len(self._coordinates):
+        if 0 <= index < len(self._coordinate_items):
             self._save_state_to_undo()
             
-            self._coordinates.pop(index)
-            self._coordinate_details.pop(index)
+            self._coordinate_items.pop(index)
             
             # 現在のインデックスを調整
             if self._current_index >= index:
@@ -65,60 +99,59 @@ class CoordinateModel:
     
     def update_coordinate(self, index: int, x: int, y: int) -> bool:
         """座標を更新"""
-        if 0 <= index < len(self._coordinates):
+        if 0 <= index < len(self._coordinate_items):
             self._save_state_to_undo()
-            self._coordinates[index] = (x, y)
+            self._coordinate_items[index].update_coordinate(x, y)
             return True
         return False
     
     def set_coordinate_detail(self, index: int, detail: Dict[str, Any]) -> bool:
         """座標の詳細情報を設定"""
-        if 0 <= index < len(self._coordinate_details):
-            self._coordinate_details[index] = detail.copy()
+        if 0 <= index < len(self._coordinate_items):
+            self._coordinate_items[index].update_detail(detail)
             return True
         return False
     
     def get_coordinate_detail(self, index: int) -> Optional[Dict[str, Any]]:
         """座標の詳細情報を取得"""
-        if 0 <= index < len(self._coordinate_details):
-            return self._coordinate_details[index].copy()
+        if 0 <= index < len(self._coordinate_items):
+            return self._coordinate_items[index].get_detail()
         return None
     
     def set_current_coordinate(self, index: int) -> bool:
         """現在の座標を設定"""
-        if -1 <= index < len(self._coordinates):
+        if -1 <= index < len(self._coordinate_items):
             self._current_index = index
             return True
         return False
     
     def get_current_coordinate(self) -> Optional[Tuple[int, int]]:
         """現在選択中の座標を取得"""
-        if 0 <= self._current_index < len(self._coordinates):
-            return self._coordinates[self._current_index]
+        if 0 <= self._current_index < len(self._coordinate_items):
+            return self._coordinate_items[self._current_index].coordinate
         return None
     
     def get_current_coordinate_detail(self) -> Optional[Dict[str, Any]]:
         """現在選択中の座標の詳細情報を取得"""
-        if 0 <= self._current_index < len(self._coordinate_details):
-            return self._coordinate_details[self._current_index].copy()
+        if 0 <= self._current_index < len(self._coordinate_items):
+            return self._coordinate_items[self._current_index].get_detail()
         return None
     
     def clear_coordinates(self):
         """全座標をクリア"""
         self._save_state_to_undo()
-        self._coordinates.clear()
-        self._coordinate_details.clear()
+        self._coordinate_items.clear()
         self._current_index = -1
     
     def set_coordinates_with_details(self, coordinates: List[Tuple[int, int]], details: List[Dict[str, Any]]):
         """座標と詳細情報を一括設定"""
         self._save_state_to_undo()
-        self._coordinates = coordinates.copy()
-        self._coordinate_details = details.copy()
+        self._coordinate_items.clear()
         
-        # 詳細情報の数を座標数に合わせる
-        while len(self._coordinate_details) < len(self._coordinates):
-            self._coordinate_details.append({})
+        # 座標と詳細情報を統合してCoordinateItemを作成
+        for i, (x, y) in enumerate(coordinates):
+            detail = details[i] if i < len(details) else {}
+            self._coordinate_items.append(CoordinateItem(x, y, detail))
     
     def set_image_path(self, path: str):
         """画像パスを設定"""
@@ -126,7 +159,8 @@ class CoordinateModel:
     
     def _save_state_to_undo(self):
         """現在の状態をアンドゥスタックに保存"""
-        self._undo_stack.append(self._coordinates.copy())
+        current_state = [item.copy() for item in self._coordinate_items]
+        self._undo_stack.append(current_state)
         # リドゥスタックをクリア
         self._redo_stack.clear()
         
@@ -138,19 +172,15 @@ class CoordinateModel:
         """元に戻す"""
         if self._undo_stack:
             # 現在の状態をリドゥスタックに保存
-            self._redo_stack.append(self._coordinates.copy())
+            current_state = [item.copy() for item in self._coordinate_items]
+            self._redo_stack.append(current_state)
             
             # 前の状態を復元
-            self._coordinates = self._undo_stack.pop()
-            
-            # 詳細情報のサイズを調整
-            while len(self._coordinate_details) > len(self._coordinates):
-                self._coordinate_details.pop()
-            while len(self._coordinate_details) < len(self._coordinates):
-                self._coordinate_details.append({})
+            previous_state = self._undo_stack.pop()
+            self._coordinate_items = [item.copy() for item in previous_state]
             
             # 現在のインデックスを調整
-            if self._current_index >= len(self._coordinates):
+            if self._current_index >= len(self._coordinate_items):
                 self._current_index = -1
             
             return True
@@ -160,19 +190,15 @@ class CoordinateModel:
         """やり直し"""
         if self._redo_stack:
             # 現在の状態をアンドゥスタックに保存
-            self._undo_stack.append(self._coordinates.copy())
+            current_state = [item.copy() for item in self._coordinate_items]
+            self._undo_stack.append(current_state)
             
             # リドゥスタックから状態を復元
-            self._coordinates = self._redo_stack.pop()
-            
-            # 詳細情報のサイズを調整
-            while len(self._coordinate_details) > len(self._coordinates):
-                self._coordinate_details.pop()
-            while len(self._coordinate_details) < len(self._coordinates):
-                self._coordinate_details.append({})
+            next_state = self._redo_stack.pop()
+            self._coordinate_items = [item.copy() for item in next_state]
             
             # 現在のインデックスを調整
-            if self._current_index >= len(self._coordinates):
+            if self._current_index >= len(self._coordinate_items):
                 self._current_index = -1
             
             return True
@@ -189,9 +215,9 @@ class CoordinateModel:
     def get_coordinate_summary(self) -> Dict[str, Any]:
         """座標の概要情報を取得"""
         return {
-            'total_count': len(self._coordinates),
-            'coordinates': self._coordinates.copy(),
-            'details': self._coordinate_details.copy(),
+            'total_count': len(self._coordinate_items),
+            'coordinates': [item.coordinate for item in self._coordinate_items],
+            'details': [item.get_detail() for item in self._coordinate_items],
             'current_index': self._current_index,
             'image_path': self._image_path
         }

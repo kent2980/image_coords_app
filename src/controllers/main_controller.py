@@ -1066,7 +1066,9 @@ class MainController:
 
     def next_board(self):
         """次の基板を選択"""
-        pass
+        coord = self.coordinate_controller.get_all_coordinate_items()
+        for c in coord:
+            print(f"[DEBUG] 座標: {c.coordinate}, 詳細: {c.detail}")
 
     def delete_board(self):
         """現在の基板を削除"""

@@ -6,6 +6,8 @@
 import os
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
+from src.models.coordinate_model import CoordinateItem
+
 
 if TYPE_CHECKING:
     from ..models.coordinate_model import CoordinateModel
@@ -261,6 +263,9 @@ class CoordinateController:
     def get_all_coordinate_details(self) -> List[Dict[str, Any]]:
         """全座標詳細を取得"""
         return self.coordinate_model.coordinate_details
+    
+    def get_all_coordinate_items(self) -> List[CoordinateItem]:
+        return self.coordinate_model.coordinate_items
 
 
     def load_models_from_file(self, settings_model: Any) -> List[Dict[str, str]]:
