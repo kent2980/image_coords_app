@@ -455,6 +455,11 @@ class CoordinateController:
             coordinates = self.coordinate_model.coordinates
             current_index = self.coordinate_model.current_index
 
+            if current_index < 0:
+                return
+
+            print(f"[DEBUG] 座標データ取得: {len(coordinates)}個の座標, 選択インデックス: {current_index}")
+
             # 座標データを辞書形式に変換（update_coordinate_display_realtimeが期待する形式）
             coordinates_data = []
             for i, (x, y) in enumerate(coordinates):

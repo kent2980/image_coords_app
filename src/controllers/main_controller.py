@@ -12,6 +12,7 @@ from datetime import date, datetime
 from pathlib import Path
 from tkinter import messagebox
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+import atexit
 
 from src.db.schema import Detail, Lot, Worker
 
@@ -94,9 +95,6 @@ class MainController:
 
         # 初期化フラグ
         self.is_initialized: bool = False
-
-        # 座標リスト
-        self.coordinate_list: Optional[CoordinateList] = CoordinateList()
 
         # デバッグフラグ（デバッグ時は作業者入力をスキップ）
         # 環境変数 DEBUG=1 でデバッグモードを有効化
@@ -183,9 +181,6 @@ class MainController:
 
         # UI要素を初期化
         self._initialize_ui_elements()
-
-        # 座標リストを初期化
-        self._initialize_coordinate_list()
 
         # 設定を読み込んで適用
         self._apply_settings()
@@ -1377,11 +1372,6 @@ class MainController:
         """
         pass
 
-    def get_detail_count(self) -> int:
-        """現在の座標数を取得"""
-        all_coord = self.coordinate_controller.get_all_coordinates()
-        return len(all_coord)
-
     def get_lot_item(self) -> Lot:
         """ロット情報を取得"""
 
@@ -1389,9 +1379,9 @@ class MainController:
         model = self.current_model
         image_path = self.image_model.current_image_path
         lot_number = self.current_lot_number
-        parent_lot_number = lot_number.split("-")[-1]
+        parent_lot_number = lot_number.split("-")[0] if lot_number else None
         worker_number = self.current_worker_no
-        detail_count = self.get_detail_count()
+        detail_count = self.file_controller.get_detail_text_count(lot_number)
 
         # Lotオブジェクトを作成
         lot = Lot(
@@ -1402,6 +1392,8 @@ class MainController:
             worker_number=worker_number,
             detail_count=detail_count
         )
+
+        print("[DEBUG] get_lot_item:", lot)
 
         return lot
 
@@ -1445,25 +1437,22 @@ class MainController:
         self.current_data_file = self.file_controller.create_detail_text(self.current_lot_number, index)
         # main_viewの基盤選択ラベルを更新
         self.main_view.set_board_index_text(index,index)
+        # lot_item取得
+        lot_item = self.get_lot_item()
         # lotInfo.jsonを生成
-        self.file_controller.create_lot_text()
+        self.file_controller.create_lot_text(lot_item)
         # サイドバー更新
         self.sidebar_view.setup_change_lot_number(self.current_data_file)
-        self.get_detail_item()
 
     # region SidebarView Callbacks
     
     def on_entry_return(self, event):
         """サイドバーのエントリーでEnterキーが押された時の処理"""
         print("[DEBUG] Sidebar on_entry_return")
-        data = self.get_Coordinate_data()
-        print(self.coordinate_controller.get_coordinate_summary())
 
     def on_defect_selected(self, event):
         """サイドバーの不良項目が選択された時の処理"""
         print("[DEBUG] Sidebar on_defect_selected")
-        data = self.get_Coordinate_data()
-        print(data)
 
     # endregion SidebarView Callbacks
 

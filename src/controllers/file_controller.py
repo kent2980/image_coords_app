@@ -98,7 +98,7 @@ class FileController:
     def create_lot_text(self, lot: Lot) -> Optional[Path]:
         """ロット情報を作成"""
         lot_directory = self.__create_lot_number_directory(lot.lot_number)
-        json_path = lot_directory / "lotInfo.json"
+        json_path = lot_directory / "lotInfo.txt"
         try:
             with open(json_path, "w", encoding="utf-8") as f:
                 json.dump(lot.model_dump(), f, ensure_ascii=False, indent=4)
@@ -110,7 +110,7 @@ class FileController:
     def create_worker_text(self, lot_number: str, worker: Worker) -> Optional[Path]:
         """作業者情報を作成"""
         lot_directory = self.__create_lot_number_directory(lot_number)
-        json_path = lot_directory / "workerInfo.json"
+        json_path = lot_directory / "workerInfo.txt"
         try:
             with open(json_path, "w", encoding="utf-8") as f:
                 json.dump(worker.model_dump(), f, ensure_ascii=False, indent=4)
@@ -119,7 +119,7 @@ class FileController:
             print(f"作業者情報保存エラー: {e}")
             return None
 
-    def create_detail_text(self, lot_number: str,index:int, detail: Detail) -> Optional[Path]:
+    def create_detail_text(self, lot_number: str,index:int, detail: Detail = None)-> Optional[Path]:
         """インデックス用のdataファイルを作成"""
         lot_directory = self.__create_lot_number_directory(lot_number)
         if not lot_directory:
@@ -127,27 +127,33 @@ class FileController:
 
         # ファイル名の生成
         index_str = f"{index:04d}"
-        json_path = self.lot_directory / f"{index_str}.data"
+        json_path = lot_directory / f"{index_str}.data"
 
-        if not self.lot_directory:
+        if not lot_directory:
             raise ValueError("ロットディレクトリが設定されていません。")
 
         try:
             with open(json_path, "w", encoding="utf-8") as f:
-                json.dump(detail.model_dump(), f, ensure_ascii=False, indent=4)
+                if detail:
+                    json.dump(detail.model_dump(), f, ensure_ascii=False, indent=4)
         except Exception as e:
             print(f"インデックスデータファイル作成エラー: {e}")
             return None
         
         return json_path
-    
+
+    def get_detail_text_count(self, lot_number: str) -> int:
+        """ロット内のデータファイル数を取得"""
+        data_files = self.get_lot_dir_data_list(lot_number)
+        return len(data_files)
+
     def read_lot_text(self, lot_number: str) -> Optional[Lot]:
         """ロットデータを読み込む"""
         lot_directory = self.__create_lot_number_directory(lot_number)
         if not lot_directory:
             raise ValueError("ロットディレクトリが設定されていません。")
 
-        json_path = lot_directory / "lotInfo.json"
+        json_path = lot_directory / "lotInfo.txt"
         if not json_path.exists():
             raise FileNotFoundError(f"{json_path} が見つかりません。")
 

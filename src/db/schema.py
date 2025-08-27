@@ -9,8 +9,8 @@ from datetime import datetime
 class BaseModel(SQLModel):
     """ベースデータモデル"""
 
-    insert_timestamp: Optional[datetime] = Field(default_factory=datetime.now, description="挿入日時")
-    update_timestamp: Optional[datetime] = Field(default_factory=datetime.now, description="更新日時")
+    insert_timestamp: Optional[str] = Field(default_factory=lambda: str(datetime.now()), description="挿入日時")
+    update_timestamp: Optional[str] = Field(default_factory=lambda: str(datetime.now()), description="更新日時")
 
 class Lot(BaseModel):
     """ロットデータモデル"""
