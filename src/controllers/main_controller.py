@@ -13,8 +13,41 @@ from pathlib import Path
 from tkinter import messagebox
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 import atexit
+import time
+import functools
 
 from src.db.schema import Detail, Lot, Worker
+
+
+def timing_decorator(func):
+    """関数の実行時間を計測するデコレーター"""
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+        result = func(*args, **kwargs)
+        end_time = time.time()
+        elapsed = end_time - start_time
+        print(f"[TIMING] {func.__name__}: {elapsed:.4f}秒")
+        return result
+    return wrapper
+
+
+def step_timer(step_name: str):
+    """ステップごとの実行時間を計測するコンテキストマネージャー"""
+    class StepTimer:
+        def __init__(self, name: str):
+            self.name = name
+            self.start = None
+            
+        def __enter__(self):
+            self.start = time.time()
+            return self
+            
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            elapsed = time.time() - self.start
+            print(f"[STEP] {self.name}: {elapsed:.4f}秒")
+    
+    return StepTimer(step_name)
 
 if TYPE_CHECKING:
     from ..controllers.board_controller import BoardController
@@ -453,38 +486,49 @@ class MainController:
 
     def on_canvas_left_click(self, event):
         """キャンバス左クリック（編集モード）"""
-        x, y = int(event.x), int(event.y)
+        
+        with step_timer("全体処理"):
+            # 座標取得
+            with step_timer("座標取得"):
+                x, y = int(event.x), int(event.y)
 
-        # 整番
-        product_number = self._current_model
-        # ロットナンバー
-        lot_number = self.current_lot_number
-        # 整番・ロット取得フラグ
-        is_product_lot_set = bool(product_number and lot_number)
+            # 整番・ロット番号取得
+            with step_timer("整番・ロット番号取得"):
+                product_number = self._current_model
+                lot_number = self.current_lot_number
+                is_product_lot_set = bool(product_number and lot_number)
 
-        # 整番・ロットが設定されている場合
-        if is_product_lot_set:
-            # 座標を追加
-            index = self.coordinate_controller.add_coordinate(x, y)
+            # 整番・ロットが設定されている場合
+            if is_product_lot_set:
+                # 座標追加
+                with step_timer("座標追加（coordinate_controller.add_coordinate）"):
+                    index = self.coordinate_controller.add_coordinate(x, y)
 
-            # 新しい座標を選択状態にする
-            self.coordinate_controller.set_current_coordinate(index)
+                # 座標選択状態設定
+                with step_timer("座標選択状態設定"):
+                    self.coordinate_controller.set_current_coordinate(index)
 
-            # フォームをクリアして項目番号を設定
-            self.sidebar_view.clear_form()
-            # 項目番号を座標詳細として設定
-            detail = {"item_number": str(index + 1)}
-            self.sidebar_view.set_coordinate_detail(detail)
+                # フォームクリア
+                with step_timer("フォームクリア"):
+                    self.sidebar_view.clear_form()
+                
+                # 詳細情報設定
+                with step_timer("詳細情報設定"):
+                    detail = {"item_number": str(index + 1)}
+                    self.sidebar_view.set_coordinate_detail(detail)
 
-            # リファレンス入力フィールドにフォーカス
-            self.sidebar_view.focus_reference_entry()
+                # フォーカス設定
+                with step_timer("フォーカス設定"):
+                    self.sidebar_view.focus_reference_entry()
 
-            # Undo/Redoボタンの状態を更新
-            self._update_undo_redo_state()
+                # Undo/Redo状態更新
+                with step_timer("Undo/Redo状態更新"):
+                    self._update_undo_redo_state()
 
-        else:
-            # 整番・ロットが設定されていない場合はエラーメッセージを表示
-            self.main_view.show_error("整番(モデル)と指図を設定してください。")
+            else:
+                # 整番・ロットが設定されていない場合はエラーメッセージを表示
+                with step_timer("エラーメッセージ表示"):
+                    self.main_view.show_error("整番(モデル)と指図を設定してください。")
 
     def on_canvas_right_click(self, event):
         """キャンバス右クリック（編集モード）- 既存座標の選択"""

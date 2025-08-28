@@ -4,9 +4,24 @@
 """
 
 import os
+import time
+import functools
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from src.db.schema import Detail
+
+
+def timing_decorator(func):
+    """関数の実行時間を計測するデコレーター"""
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+        result = func(*args, **kwargs)
+        end_time = time.time()
+        elapsed = (end_time - start_time) * 1000
+        print(f"[TIMING] {func.__name__}: {elapsed:.2f}ms")
+        return result
+    return wrapper
 
 
 if TYPE_CHECKING:
@@ -48,22 +63,37 @@ class CoordinateController:
         """現在の基盤番号を設定"""
         self.current_board_number = board_number
 
+    @timing_decorator
     def add_coordinate(self, display_x: int, display_y: int) -> int:
         """座標を追加（表示座標から元座標に変換して保存）"""
+        start_time = time.time()
+        
         # 表示座標を元画像座標に変換
+        step1_start = time.time()
         orig_x, orig_y = self.image_model.convert_display_to_original_coords(
             display_x, display_y
         )
+        step1_time = (time.time() - step1_start) * 1000
+        print(f"    [SUB] 座標変換: {step1_time:.2f}ms")
 
         # モデルに座標を追加
+        step2_start = time.time()
         index = self.coordinate_model.add_coordinate(orig_x, orig_y)
+        step2_time = (time.time() - step2_start) * 1000
+        print(f"    [SUB] モデル座標追加: {step2_time:.2f}ms")
 
         # ビューにマーカーを追加
+        step3_start = time.time()
         if self.canvas_view:
             self.canvas_view.add_coordinate_marker(display_x, display_y, index + 1)
+        step3_time = (time.time() - step3_start) * 1000
+        print(f"    [SUB] マーカー追加: {step3_time:.2f}ms")
 
         # メインビューの座標表示を更新
+        step4_start = time.time()
         self._update_coordinate_display()
+        step4_time = (time.time() - step4_start) * 1000
+        print(f"    [SUB] 座標表示更新: {step4_time:.2f}ms")
 
         return index
 
@@ -455,6 +485,7 @@ class CoordinateController:
 
         return result
 
+    @timing_decorator
     def _update_coordinate_display(self) -> None:
         """メインビューの座標表示を更新"""
         if not self.main_view:
@@ -462,8 +493,11 @@ class CoordinateController:
 
         try:
             # 座標データを取得
+            step1_start = time.time()
             coordinates = self.coordinate_model.coordinates
             current_index = self.coordinate_model.current_index
+            step1_time = (time.time() - step1_start) * 1000
+            print(f"      [DETAIL] 座標データ取得: {step1_time:.2f}ms")
 
             if current_index < 0:
                 return
