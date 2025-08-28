@@ -84,6 +84,9 @@ class MainController:
         # 現在のモデル名
         self.current_model: Optional[str] = None
 
+        # 現在の基板番号
+        self.current_index: Optional[int] = None
+
         # 画像フォルダ内のモデルリスト
         self.model_list: List[Dict[str, str]] = None
 
@@ -140,6 +143,15 @@ class MainController:
     def current_model(self, value: str):
         self.sidebar_view.set_product_number(value)
         self._current_model = value
+
+    @property
+    def current_index(self):
+        return getattr(self, "_current_index", None)
+
+    @current_index.setter
+    def current_index(self, value: int):
+        self.sidebar_view.set_board_label(value)
+        self._current_index = value
 
     # endregion
 
@@ -542,7 +554,7 @@ class MainController:
         # 現在選択中の座標があれば詳細情報を更新
         current_index = self.coordinate_model.current_index
         if current_index >= 0:
-            detail = self.sidebar_view.get_coordinate_detail()
+            detail = self.sidebar_view.get_coordinate_detail(self.current_lot_number, self.current_index)
             self.coordinate_controller.update_current_coordinate_detail(detail)
 
     # endregion
@@ -730,6 +742,7 @@ class MainController:
         self.coordinate_controller.clear_coordinates()
         self.sidebar_view.clear_form()
         self._update_undo_redo_state()
+        self.main_view.update_coordinate_number_display()
 
     def delete_coordinate(self):
         """現在選択中の座標を削除する"""
@@ -1066,10 +1079,19 @@ class MainController:
 
     def next_board(self):
         """次の基板を選択"""
-        coord = self.coordinate_controller.get_all_coordinate_items()
-        for c in coord:
-            print(f"[DEBUG] 座標: {c.coordinate}, 詳細: {c.detail}")
 
+        # dataファイルを更新
+        coord = self.coordinate_controller.get_all_coordinate_items()
+        lot_number = self.current_lot_number
+        index = self.current_index
+        self.file_controller.create_detail_text(lot_number, index, coord)
+
+        # 新しいdataファイルを作成
+        self.create_new_index_item()
+    
+        # 座標をクリア
+        self.clear_coordinates()
+        
     def delete_board(self):
         """現在の基板を削除"""
         print("[DEBUG] delete_board() called")
@@ -1431,22 +1453,31 @@ class MainController:
 
         # ロックファイル作成
         self.file_controller.create_lot_number_dir_lock_file(self.current_lot_number)
-        # ディレクトリ内のdataファイル名を取得
-        data_files = self.file_controller.get_lot_dir_data_list(self.current_lot_number)
-        # 作成するdataファイルのインデックスを決定
-        index = self.file_controller.next_data_index(data_files)
-        # インデックス用のdataファイルを作成
-        self.current_data_file = self.file_controller.create_detail_text(self.current_lot_number, index)
-        # main_viewの基盤選択ラベルを更新
-        self.main_view.set_board_index_text(index,index)
         # lot_item取得
         lot_item = self.get_lot_item()
         # lotInfo.jsonを生成
         self.file_controller.create_lot_text(lot_item)
-        # サイドバー更新
-        self.sidebar_view.setup_change_lot_number(self.current_data_file)
+        # dataファイルの作成
+        self.create_new_index_item()
 
     # region SidebarView Callbacks
+
+    def create_new_index_item(self):
+        """インデックス用のdataファイルを作成"""
+
+        # ディレクトリ内のdataファイル名を取得
+        data_files = self.file_controller.get_lot_dir_data_list(self.current_lot_number)
+        # 作成するdataファイルのインデックスを決定
+        self.current_index = self.file_controller.next_data_index(data_files)
+        # インデックス用のdataファイルを作成
+        self.current_data_file = self.file_controller.create_detail_text(self.current_lot_number, self.current_index)
+        # main_viewの基盤選択ラベルを更新
+        self.main_view.set_board_index_text(self.current_index,self.current_index)
+        # サイドバー更新
+        self.sidebar_view.change_sidebar_board_label(self.current_data_file)
+        # サイドバーの基板番号を更新
+        self.sidebar_view.set_board_label(self.current_index)
+
     
     def on_entry_return(self, event):
         """サイドバーのエントリーでEnterキーが押された時の処理"""

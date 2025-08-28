@@ -119,8 +119,10 @@ class FileController:
             print(f"作業者情報保存エラー: {e}")
             return None
 
-    def create_detail_text(self, lot_number: str,index:int, detail: Detail = None)-> Optional[Path]:
+    def create_detail_text(self, lot_number: str,index:int, detail: List[Detail] = None)-> Optional[Path]:
         """インデックス用のdataファイルを作成"""
+        print("インデックスデータファイル作成")
+        print(f"[DEBUG] ロット番号: {lot_number}, インデックス: {index}")
         lot_directory = self.__create_lot_number_directory(lot_number)
         if not lot_directory:
             raise ValueError("ロットディレクトリが設定されていません。")
@@ -129,13 +131,16 @@ class FileController:
         index_str = f"{index:04d}"
         json_path = lot_directory / f"{index_str}.data"
 
+        # list[Detail]をjsonに変換
+        detail_json_list = [d.model_dump() for d in detail] if detail else []
+
         if not lot_directory:
             raise ValueError("ロットディレクトリが設定されていません。")
 
         try:
             with open(json_path, "w", encoding="utf-8") as f:
-                if detail:
-                    json.dump(detail.model_dump(), f, ensure_ascii=False, indent=4)
+                if detail_json_list:
+                    json.dump(detail_json_list, f, ensure_ascii=False, indent=4)
         except Exception as e:
             print(f"インデックスデータファイル作成エラー: {e}")
             return None

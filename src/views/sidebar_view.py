@@ -113,9 +113,9 @@ class SidebarView:
             return self.repaired_var.get()
         return "いいえ"
 
-    def get_item_number(self) -> str:
+    def get_item_number(self) -> int:
         """item_number_varの値を取得"""
-        return self.item_number_var.get()
+        return int(self.item_number_var.get()) if self.item_number_var.get().isdigit() else 0
 
     def get_reference(self) -> str:
         """reference_varの値を取得"""
@@ -614,14 +614,14 @@ class SidebarView:
             self.callbacks["on_form_data_changed"]()
 
         # 座標詳細情報の自動保存
-        self._auto_save_coordinate_detail()
+        self._auto_save_coordinate_detail(self.current_lot_number)
 
     def _on_comment_changed(self, event=None):
         """コメントフィールド変更時のコールバック"""
         # 座標詳細情報の自動保存
-        self._auto_save_coordinate_detail()
+        self._auto_save_coordinate_detail(self.current_lot_number)
 
-    def _auto_save_coordinate_detail(self):
+    def _auto_save_coordinate_detail(self, lot_number: str):
         """座標詳細情報を自動保存"""
         try:
             # CoordinateControllerが設定されていない場合は何もしない
@@ -629,7 +629,7 @@ class SidebarView:
                 return
 
             # 現在のフォームデータを取得
-            detail = self.get_coordinate_detail()
+            detail = self.get_coordinate_detail(self.current_lot_number, self.current_board_number)
 
             # CoordinateControllerを通じて詳細情報を更新（自動保存も実行される）
             self.coordinate_controller.update_current_coordinate_detail(detail)
@@ -705,22 +705,23 @@ class SidebarView:
         if hasattr(self, "repaired_var"):
             self.repaired_var.set(detail.get("repaired", "いいえ"))
 
+        print(f"Setting comment: {detail.get('comment', '')}")
+
         # コメント情報を設定
         if hasattr(self, "comment_text") and self.comment_text:
             self.comment_text.delete("1.0", tk.END)
             self.comment_text.insert("1.0", detail.get("comment", ""))
 
-    def get_coordinate_detail(self) -> Dict[str, Any]:
+    def get_coordinate_detail(self, lot_number: str, board_number: int) -> Dict[str, Any]:
         """座標詳細情報を取得"""
+
         detail = {
-            "item_number": self.item_number_var.get(),
+            "lot_number": lot_number,
+            "board_number": board_number,
+            "count_number": self.get_item_number(),
             "reference": self.reference_var.get(),
             "defect": self.defect_var.get(),
         }
-
-        # 修理済み情報を追加
-        if hasattr(self, "repaired_var"):
-            detail["repaired"] = self.repaired_var.get()
 
         # コメント情報を追加
         if hasattr(self, "comment_text") and self.comment_text:
@@ -730,7 +731,7 @@ class SidebarView:
 
     def get_form_data(self) -> Dict[str, Any]:
         """全フォームデータを取得（MVCでは座標詳細のみ）"""
-        return self.get_coordinate_detail()
+        return self.get_coordinate_detail(self.current_lot_number, self.current_board_number)
 
     def set_form_data(self, data: Dict[str, Any]):
         """フォームデータを設定（MVCでは座標詳細のみ）"""
@@ -848,7 +849,7 @@ class SidebarView:
         # 概要情報があれば表示（現在は特別な処理なし）
         # 必要に応じて将来的に概要情報の表示機能を追加
 
-    def setup_change_lot_number(self, data_file_path: Path):
+    def change_sidebar_board_label(self, data_file_path: Path):
         """ロットナンバー変更処理"""
         # data_file_pathからファイル名を取得
         file_name = data_file_path.name.split(".")[0]

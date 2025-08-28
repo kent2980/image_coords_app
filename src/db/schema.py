@@ -1,8 +1,9 @@
 from typing import Optional
-
 from sqlmodel import Field, SQLModel
 from uuid import UUID, uuid5, NAMESPACE_OID
 from datetime import datetime
+from pydantic import field_validator
+
 
 
 
@@ -30,32 +31,85 @@ class Worker(BaseModel):
     number: Optional[str] = Field(description="作業者番号")
 
 
+
 class Detail(BaseModel):
     """座標詳細データモデル"""
-    id: Optional[UUID] = Field(default=None, description="ID")
-    lot_number: Optional[str] = Field(description="ロット番号")
-    count_number: Optional[int] = Field(description="アイテム番号")
-    x: Optional[int] = Field(description="X座標")
-    y: Optional[int] = Field(description="Y座標")
-    reference: Optional[str] = Field(description="リファレンス")
-    defect: Optional[str] = Field(description="不良名")
-    comment: Optional[str] = Field(description="コメント")
+    id: Optional[str] = Field(default="", description="ID")
+    lot_number: Optional[str] = Field(default="", description="ロット番号")
+    board_number: Optional[int] = Field(default=None, description="基板番号")
+    count_number: Optional[int] = Field(default=None, description="アイテム番号")
+    x: Optional[int] = Field(default=None, description="X座標")
+    y: Optional[int] = Field(default=None, description="Y座標")
+    reference: Optional[str] = Field(default="", description="リファレンス")
+    defect: Optional[str] = Field(default="", description="不良名")
+    comment: Optional[str] = Field(default="", description="コメント")
+
+    @field_validator('board_number', mode='before')
+    @classmethod
+    def validate_board_number(cls, v):
+        """board_numberの型変換"""
+        if v is None:
+            return None
+        if isinstance(v, str):
+            try:
+                return int(v)
+            except ValueError:
+                return None
+        return v
+
+    @field_validator('count_number', mode='before')
+    @classmethod
+    def validate_count_number(cls, v):
+        """count_numberの型変換"""
+        if v is None:
+            return None
+        if isinstance(v, str):
+            try:
+                return int(v)
+            except ValueError:
+                return None
+        return v
+
+    @field_validator('x', mode='before')
+    @classmethod
+    def validate_x(cls, v):
+        """xの型変換"""
+        if v is None:
+            return None
+        if isinstance(v, str):
+            try:
+                return int(v)
+            except ValueError:
+                return None
+        return v
+
+    @field_validator('y', mode='before')
+    @classmethod
+    def validate_y(cls, v):
+        """yの型変換"""
+        if v is None:
+            return None
+        if isinstance(v, str):
+            try:
+                return int(v)
+            except ValueError:
+                return None
+        return v
 
     def __init__(self, **data):
         super().__init__(**data)
-        if self.id is None:
+        if not self.id:
             self.generate_id()
     
-    def generate_id(self) -> UUID:
+    def generate_id(self) -> str:
         """決定論的なIDを生成"""
-        identifier_string = f"{self.lot_number}_{self.count_number}"
-        self.id = uuid5(NAMESPACE_OID, identifier_string)
+        identifier_string = f"{self.lot_number}_{self.board_number}_{self.count_number}"
+        self.id = str(uuid5(NAMESPACE_OID, identifier_string))
         return self.id
     
     @classmethod
-    def create_with_auto_id(cls, lot_number: Optional[str], count_number: Optional[int], **kwargs):
+    def create_with_auto_id(cls, lot_number: Optional[str], board_number: Optional[int], count_number: Optional[int], **kwargs):
         """自動ID生成付きでインスタンスを作成"""
         instance = cls(lot_number=lot_number, count_number=count_number, **kwargs)
         instance.generate_id()
         return instance
-

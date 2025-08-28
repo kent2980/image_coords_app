@@ -627,12 +627,16 @@ class MainView:
         if hasattr(self, "coordinate_number_label") and self.coordinate_number_label:
             self.coordinate_number_label.config(text=text)
 
-    def update_coordinate_number_display(self, current_index: int, total_count: int):
+    def update_coordinate_number_display(self, current_index: int = None, total_count: int = None):
         """座標番号表示を更新（例：1/5）"""
-        if total_count > 0:
-            display_text = f"{current_index + 1}/{total_count}"
-        else:
+
+        if current_index is None and total_count is None:
             display_text = "0/0"
+        else:
+            if total_count > 0:
+                display_text = f"{current_index + 1}/{total_count}"
+            else:
+                display_text = "0/0"
         self.set_coordinate_number_text(display_text)
 
         # デバッグログ出力
@@ -644,6 +648,7 @@ class MainView:
         self, coordinates_data: List[Dict], selected_index: int = -1
     ):
         """リアルタイムで座標表示を更新"""
+        print("リアルタイムで座標表示を更新中...")
         total_count = len(coordinates_data)
 
         if total_count == 0:

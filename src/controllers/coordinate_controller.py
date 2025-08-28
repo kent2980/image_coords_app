@@ -6,7 +6,7 @@
 import os
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
-from src.models.coordinate_model import CoordinateItem
+from src.db.schema import Detail
 
 
 if TYPE_CHECKING:
@@ -264,8 +264,13 @@ class CoordinateController:
         """全座標詳細を取得"""
         return self.coordinate_model.coordinate_details
     
-    def get_all_coordinate_items(self) -> List[CoordinateItem]:
-        return self.coordinate_model.coordinate_items
+    def get_all_coordinate_items(self) -> List[Detail]:
+        """全座標詳細をDetailオブジェクトで取得"""
+        # idを自動生成処理
+        details = self.coordinate_model.details
+        for d in details:
+            d.generate_id()
+        return details
 
 
     def load_models_from_file(self, settings_model: Any) -> List[Dict[str, str]]:
@@ -474,6 +479,9 @@ class CoordinateController:
             self.main_view.update_coordinate_display_realtime(
                 coordinates_data, current_index
             )
+
+            # サイドバーの更新
+            self.sidebar_view.set_item_entry(current_index + 1)
 
             print(
                 f"[DEBUG] 座標表示更新: {len(coordinates_data)}個の座標, 選択インデックス: {current_index}"
