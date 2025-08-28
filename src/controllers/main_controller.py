@@ -1086,11 +1086,20 @@ class MainController:
         index = self.current_index
         self.file_controller.create_detail_text(lot_number, index, coord)
 
-        # 新しいdataファイルを作成
-        self.create_new_index_item()
-    
-        # 座標をクリア
-        self.clear_coordinates()
+        # dataファイルの検証
+        has_valid = self.file_controller.has_valid_detail_file(lot_number, index)
+
+        if has_valid:
+
+            # 新しいdataファイルを作成
+            self.create_new_index_item()
+        
+            # 座標をクリア
+            self.clear_coordinates()
+        
+        else:
+
+            self.main_view.show_message(title="無効な座標データ", message="現在の座標データが存在しないため、新しい基板に切替えできません。")
         
     def delete_board(self):
         """現在の基板を削除"""

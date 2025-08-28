@@ -7,6 +7,8 @@ import json
 import os
 from typing import TYPE_CHECKING, List, Optional
 
+from pydantic import ValidationError
+
 from src.db.schema import Detail, Lot, Worker
 
 if TYPE_CHECKING:
@@ -99,12 +101,14 @@ class FileController:
         """ロット情報を作成"""
         lot_directory = self.__create_lot_number_directory(lot.lot_number)
         json_path = lot_directory / "lotInfo.txt"
-        try:
-            with open(json_path, "w", encoding="utf-8") as f:
-                json.dump(lot.model_dump(), f, ensure_ascii=False, indent=4)
-        except Exception as e:
-            print(f"ロット情報保存エラー: {e}")
-            return None
+        exist = json_path.exists()
+        if not exist:
+            try:
+                with open(json_path, "w", encoding="utf-8") as f:
+                    json.dump(lot.model_dump(), f, ensure_ascii=False, indent=4)
+            except Exception as e:
+                print(f"ロット情報保存エラー: {e}")
+                return None
         return json_path
 
     def create_worker_text(self, lot_number: str, worker: Worker) -> Optional[Path]:
@@ -165,3 +169,29 @@ class FileController:
         with open(json_path, "r", encoding="utf-8") as f:
             data = json.load(f)
             return Lot(**data)
+        
+    def read_detail_text(self, lot_number:str, index: int) -> List[Detail] | None:
+        """インデックス用のdataファイルを読み込み"""
+        lot_directory = self.__create_lot_number_directory(lot_number)
+        if not lot_directory:
+            raise ValueError("ロットディレクトリが設定されていません。")
+
+        index_str = f"{index:04d}"
+        json_path = lot_directory / f"{index_str}.data"
+        if not json_path.exists():
+            raise FileNotFoundError(f"{json_path} が見つかりません。")
+
+        try:
+            with open(json_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                return [Detail(**item) for item in data]
+        except json.JSONDecodeError as e:
+            raise ValueError(f"無効なdataファイルです。")
+        
+    def has_valid_detail_file(self, lot_number: str, index: int) -> bool:
+        """有効なdataファイルが存在するか検証するメソッド"""
+        try:
+            details = self.read_detail_text(lot_number, index)
+            return True
+        except (FileNotFoundError, ValueError):
+            return False
