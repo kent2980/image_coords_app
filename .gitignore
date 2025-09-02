@@ -8,3 +8,6 @@ wheels/
 
 # Virtual environments
 .venv
+src/views/main_view_ttk.py
+src/views/coordinate_canvas_view_ttk.py
+src/views/sidebar_view_ttk.py
