@@ -373,8 +373,8 @@ class SidebarView:
                 lambda event: self._convert_to_uppercase(event, variable),
             )
             # 英数入力に固定（IME無効化）
-            entry.bind("<FocusIn>", self._set_alphanumeric_mode)
-            entry.bind("<Button-1>", self._set_alphanumeric_mode)
+            # entry.bind("<FocusIn>", self._set_alphanumeric_mode)
+            # entry.bind("<Button-1>", self._set_alphanumeric_mode)
 
             # Windows環境での追加設定
             import platform
