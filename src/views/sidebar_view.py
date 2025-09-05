@@ -8,6 +8,7 @@ import tkinter as tk
 from datetime import datetime
 from tkinter import ttk
 from typing import Any, Callable, Dict, List, Optional
+import unicodedata
 
 
 class SidebarView:
@@ -181,6 +182,8 @@ class SidebarView:
 
         # リファレンス入力フィールドにEnterキーのバインド
         self.reference_entry.bind("<Return>", self._on_entry_return)
+        # リファレンス入力フィールドに入力があるたびに呼ばれる
+        self.reference_entry.bind("<KeyRelease>", self.to_ref_halfwidth)
 
         # 不良名
         self.defect_combobox = self._create_defect_selection()
@@ -216,6 +219,18 @@ class SidebarView:
 
         # コメント入力フィールドにEnterキーのバインド
         self.comment_text.bind("<Return>", self._on_entry_return)
+
+    def to_ref_halfwidth(self, event):
+        print("[DEBUG] to_ref_halfwidth")
+        text = self.reference_entry.get()
+        print(text)
+        # 全角を半角に変換
+        half = unicodedata.normalize("NFKC", text)
+        # 小文字を大文字に変換
+        half = half.upper()
+        if text != half:
+            self.reference_entry.delete(0, tk.END)
+            self.reference_entry.insert(0, half)
 
     def _on_entry_return(self, event: tk.Event):
         """エンターキーが押されたときの処理"""
